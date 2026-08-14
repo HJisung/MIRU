@@ -1,5 +1,7 @@
 # Product roadmap
 
+Implementation proceeds as end-to-end slices described in [implementation-plan.md](implementation-plan.md). This roadmap describes product scope; it is not a promise to build all infrastructure before any flow is usable.
+
 ## MVP
 
 - Account and profile
@@ -32,4 +34,3 @@
 - Microservices per domain
 - Multi-region active-active writes
 - Custom video codec or custom recommendation model
-

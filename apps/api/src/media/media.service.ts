@@ -1,0 +1,146 @@
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { fileTypeFromBuffer } from 'file-type';
+import { randomUUID } from 'node:crypto';
+import sharp from 'sharp';
+import { MediaKind, MediaPurpose, MediaStatus } from '@stream/database';
+import { DatabaseService } from '../database/database.service.js';
+import { StorageService } from '../storage/storage.service.js';
+import type { CreateImageUploadDto } from './media.dto.js';
+
+const allowedSignatures = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+@Injectable()
+export class MediaService {
+  constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(StorageService) private readonly storage: StorageService,
+  ) {}
+
+  async createImageUpload(userId: string, input: CreateImageUploadDto) {
+    const assetId = randomUUID();
+    const sourceKey = `originals/${userId}/${assetId}`;
+    await this.database.client.mediaAsset.create({
+      data: {
+        id: assetId,
+        ownerId: userId,
+        kind: MediaKind.IMAGE,
+        purpose: MediaPurpose.POST_IMAGE,
+        sourceKey,
+        mimeType: input.contentType,
+        byteSize: BigInt(input.byteSize),
+      },
+    });
+    const uploadUrl = await this.storage.presignPut(
+      sourceKey,
+      input.contentType,
+      input.byteSize,
+    );
+    return {
+      assetId,
+      uploadUrl,
+      expiresInSeconds: 600,
+      requiredHeaders: { 'content-type': input.contentType },
+    };
+  }
+
+  async completeImage(userId: string, assetId: string) {
+    const asset = await this.ownedAsset(userId, assetId);
+    if (asset.status === MediaStatus.READY) return this.serialize(asset);
+    if (asset.status !== MediaStatus.PENDING_UPLOAD) {
+      throw new BadRequestException(
+        'Asset cannot be completed in its current state',
+      );
+    }
+
+    const head = await this.storage.head(asset.sourceKey).catch(() => null);
+    if (!head?.ContentLength)
+      throw new BadRequestException('Uploaded object not found');
+    if (
+      asset.byteSize !== null &&
+      BigInt(head.ContentLength) !== asset.byteSize
+    ) {
+      throw new BadRequestException(
+        'Uploaded object size does not match the upload session',
+      );
+    }
+
+    const object = await this.storage.get(asset.sourceKey);
+    const bytes = await object.Body?.transformToByteArray();
+    const detected = bytes ? await fileTypeFromBuffer(bytes) : undefined;
+    if (!detected || !allowedSignatures.has(detected.mime)) {
+      await this.database.client.mediaAsset.update({
+        where: { id: asset.id },
+        data: {
+          status: MediaStatus.FAILED,
+          failureCode: 'UNSUPPORTED_SIGNATURE',
+        },
+      });
+      throw new BadRequestException('Uploaded object is not a supported image');
+    }
+    const metadata = await sharp(bytes, {
+      failOn: 'warning',
+      limitInputPixels: 40_000_000,
+    })
+      .metadata()
+      .catch(() => null);
+    if (!metadata?.width || !metadata.height) {
+      throw new BadRequestException(
+        'Uploaded image could not be decoded safely',
+      );
+    }
+
+    const completed = await this.database.client.mediaAsset.update({
+      where: { id: asset.id },
+      data: {
+        status: MediaStatus.READY,
+        mimeType: detected.mime,
+        byteSize: BigInt(head.ContentLength),
+        width: metadata.width,
+        height: metadata.height,
+        publicUrl: `/api/v1/media/assets/${asset.id}/content`,
+      },
+    });
+    return this.serialize(completed);
+  }
+
+  async content(assetId: string) {
+    const asset = await this.database.client.mediaAsset.findFirst({
+      where: {
+        id: assetId,
+        status: MediaStatus.READY,
+        postLinks: {
+          some: { post: { status: 'PUBLISHED', visibility: 'PUBLIC' } },
+        },
+      },
+    });
+    if (!asset) throw new NotFoundException('Media not found');
+    return { asset, object: await this.storage.get(asset.sourceKey) };
+  }
+
+  private async ownedAsset(userId: string, assetId: string) {
+    const asset = await this.database.client.mediaAsset.findFirst({
+      where: { id: assetId, ownerId: userId, kind: MediaKind.IMAGE },
+    });
+    if (!asset) throw new NotFoundException('Media asset not found');
+    return asset;
+  }
+
+  private serialize(asset: {
+    id: string;
+    status: string;
+    mimeType: string | null;
+    byteSize: bigint | null;
+  }) {
+    return {
+      id: asset.id,
+      status: asset.status,
+      mimeType: asset.mimeType,
+      byteSize: asset.byteSize?.toString() ?? null,
+    };
+  }
+}

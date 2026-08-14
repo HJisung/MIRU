@@ -2,7 +2,7 @@
 
 Long-form video, short-form video, and image posts in one feed-oriented media platform.
 
-This repository currently contains architecture, workspace conventions, and local infrastructure only. Application source code and package manifests are intentionally deferred until the stack decision is approved.
+The repository is now in active implementation. Architecture and local infrastructure are established; executable applications are being added as end-to-end vertical slices.
 
 ## Chosen baseline
 
@@ -45,16 +45,25 @@ docs/
   runbooks/         # operating procedures
 ```
 
-## Local infrastructure
+## Get started
 
-Copy `.env.example` to `.env`, then run:
+Requirements: Node.js 24 LTS, Corepack/pnpm 11, and Docker Desktop.
 
-```shell
+```powershell
+Copy-Item .env.example .env
+corepack enable
+pnpm install
 docker compose up -d
-docker compose ps
+pnpm db:migrate -- --name init
+pnpm db:seed
+pnpm dev
 ```
 
-This starts PostgreSQL, Redis, and MinIO. MinIO console is available at `http://localhost:9001`. Credentials are local-development defaults and must never be reused outside a developer machine.
+Open the web app at `http://localhost:3000`, the API at `http://localhost:4000/api/v1`, and OpenAPI JSON at `http://localhost:4000/api/openapi.json`.
+
+Implemented flows include the public discovery feed, account sessions, profiles, direct image upload and publishing, likes/saves/follows/comments, a following feed, blocks/reports, and a role-protected moderation queue. The web app includes responsive discovery/detail pages plus registration/login and image publishing screens.
+
+PostgreSQL, Redis, and MinIO run through Compose. MinIO stores private originals and the API issues short-lived direct-upload URLs. Credentials in `.env.example` are local-only defaults.
 
 Stop containers without deleting data:
 
@@ -64,11 +73,17 @@ docker compose down
 
 Deleting named volumes is intentionally not included because it destroys local data.
 
-## Before application implementation
+## Everyday commands
 
-1. Confirm MVP scope in `docs/product/roadmap.md`.
-2. Lock exact package versions and create the root workspace manifests.
-3. Scaffold `apps/web`, `apps/api`, and `apps/media-worker` independently.
-4. Define the first OpenAPI contract and Prisma schema before UI integration.
-5. Add CI, tests, and application Dockerfiles alongside the first executable code.
+```shell
+pnpm dev                 # web + API with dependency packages built first
+pnpm build               # production builds through Turborepo
+pnpm lint
+pnpm typecheck
+pnpm test                # unit + PostgreSQL integration tests
+pnpm test:e2e            # Playwright visitor flow
+pnpm contract:generate   # export OpenAPI and regenerate TypeScript types
+pnpm db:seed             # reset deterministic local demo records
+```
 
+Start at [docs/product/implementation-plan.md](docs/product/implementation-plan.md) for the slice order. When learning the first flow, trace `apps/web/src/app/page.tsx` → `apps/web/src/lib/api.ts` → generated `packages/api-contract` types → `apps/api/src/feed` → `packages/database/prisma/schema.prisma`.

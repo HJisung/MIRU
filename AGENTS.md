@@ -6,7 +6,7 @@ Build a production-minded media platform for long video, short video, and image 
 
 ## Current phase
 
-The repository is in architecture/scaffolding phase. Do not add executable application code, package manifests, migrations, or generated clients unless the user explicitly starts implementation.
+The repository is in active implementation. Build the product in small, coherent vertical slices that connect UI, API, data, tests, and documentation. Avoid creating unused infrastructure or placeholder abstractions ahead of a real user flow.
 
 ## Read first
 
@@ -52,4 +52,3 @@ Before changing architecture or code, read:
 - Preserve user changes and unrelated worktree edits.
 - Update docs in the same change when behavior, contracts, architecture, or operations change.
 - State assumptions when product behavior is not decided; record durable decisions as ADRs.
-

@@ -1,5 +1,6 @@
 # Dependencies and build output
 node_modules/
+.pnpm-store/
 .next/
 .turbo/
 dist/
@@ -31,5 +32,4 @@ uploads/
 
 # Generated clients and ORM artifacts
 packages/api-contract/generated/
-packages/database/generated/
-
+packages/database/src/generated/

@@ -1,0 +1,32 @@
+packages:
+  - apps/*
+  - packages/*
+allowBuilds:
+  '@prisma/engines': true
+  '@scarf/scarf': false
+  esbuild: true
+  prisma: true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@nestjs/common@11.2.1'
+  - '@nestjs/core@11.2.1'
+  - '@nestjs/platform-fastify@11.2.1'
+  - '@next/env@16.3.1'
+  - '@next/eslint-plugin-next@16.3.1'
+  - '@next/swc-darwin-arm64@16.3.1'
+  - '@next/swc-darwin-x64@16.3.1'
+  - '@next/swc-linux-arm64-gnu@16.3.1'
+  - '@next/swc-linux-arm64-musl@16.3.1'
+  - '@next/swc-linux-x64-gnu@16.3.1'
+  - '@next/swc-linux-x64-musl@16.3.1'
+  - '@next/swc-win32-arm64-msvc@16.3.1'
+  - '@next/swc-win32-x64-msvc@16.3.1'
+  - '@turbo/darwin-64@2.10.10'
+  - '@turbo/darwin-arm64@2.10.10'
+  - '@turbo/linux-64@2.10.10'
+  - '@turbo/linux-arm64@2.10.10'
+  - '@turbo/windows-64@2.10.10'
+  - '@turbo/windows-arm64@2.10.10'
+  - eslint-config-next@16.3.1
+  - next@16.3.1
+  - turbo@2.10.10

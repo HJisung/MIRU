@@ -4,6 +4,7 @@
 
 | Area | Choice | Why |
 |---|---|---|
+| Runtime | Node.js 24 LTS, ESM | One supported runtime across Next.js, NestJS, Prisma, scripts, and tests |
 | Monorepo | pnpm workspaces + Turborepo | Fast installs, explicit workspace boundaries, cached task graph |
 | Web | Next.js 16 App Router + React + TypeScript | SEO/public pages, server rendering, routing, image handling, mature deployment options |
 | UI | Tailwind CSS + shadcn/ui primitives | Product-specific UI without locking into a heavy component suite |
@@ -11,14 +12,14 @@
 | Forms/validation | React Hook Form + Zod | Typed boundary validation and good form ergonomics |
 | API | NestJS 11 + Fastify adapter | Strong module conventions, DI, OpenAPI, guards, queues, and a faster HTTP adapter |
 | Contract | REST + OpenAPI | Easy CDN/cache semantics, generated clients, broad tooling; GraphQL is unnecessary initially |
-| ORM | Prisma | Productive schema/migrations and strong TypeScript ergonomics; use SQL intentionally for feed queries |
+| ORM | Prisma 7 + PostgreSQL driver adapter | Productive schema/migrations and strong TypeScript ergonomics; use SQL intentionally for feed queries |
 | Primary DB | PostgreSQL 18 | Relational integrity, transactions, JSON/search options, mature operations |
 | Cache/jobs | Redis 8 + BullMQ | Practical Node queue, delayed/retryable jobs, concurrency controls |
 | Media | FFmpeg + ffprobe | Industry-standard probing, transcoding, thumbnails, HLS packaging |
 | Storage | S3-compatible API | Direct multipart upload, lifecycle rules, CDN integration, vendor portability |
 | Playback | HLS + hls.js | Adaptive playback across web clients; native HLS where supported |
 | Auth | Better Auth or a managed OIDC provider | Avoid custom credential/session cryptography; decide build-vs-buy before implementation |
-| Tests | Vitest + Testing Library + Playwright + Testcontainers | Fast unit tests plus realistic API/data and browser coverage |
+| Tests | Vitest + Playwright; real Docker PostgreSQL integration | Fast unit tests plus realistic API/data and browser coverage; add Testcontainers when isolated parallel CI databases are needed |
 | Observability | OpenTelemetry + Pino-compatible structured logging | Vendor-neutral traces/metrics and machine-readable logs |
 
 ## Deliberately deferred
@@ -36,4 +37,5 @@
 - MinIO is a local S3-compatible development dependency, not a production architecture commitment.
 - Prisma should not hide database behavior. Complex feed and analytics paths may use reviewed parameterized SQL with query plans and indexes.
 - Exact npm/container versions should be locked during implementation and updated by an automated dependency process.
-
+- Next.js 16 does not run lint during `next build`; lint and build remain separate required checks.
+- Prisma 7 requires ESM and a database driver adapter for direct connections. Keep that wiring explicit in `packages/database`.
