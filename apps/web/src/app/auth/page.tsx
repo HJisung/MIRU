@@ -34,7 +34,7 @@ export default function AuthPage() {
   return (
     <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl place-items-center px-4 py-12 sm:px-8">
       <div className="grid w-full overflow-hidden rounded-[2rem] border border-line bg-panel-strong shadow-[0_24px_80px_rgba(24,32,28,0.10)] lg:grid-cols-[1.05fr_1fr]">
-        <section className="hidden bg-ink p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <section className="hidden bg-neutral-950 p-12 text-white lg:flex lg:flex-col lg:justify-between">
           <Sparkles className="size-7 text-[#f29a7d]" />
           <div>
             <p className="max-w-md text-4xl font-semibold leading-tight tracking-[-0.04em]">
@@ -71,7 +71,7 @@ export default function AuthPage() {
             <Field label="이메일" name="email" type="email" placeholder="you@example.com" />
             <Field label="비밀번호" name="password" type="password" placeholder="10자 이상 입력" minLength={10} />
             {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-            <button disabled={pending} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ink font-semibold text-white transition hover:bg-ink/90 disabled:opacity-50">
+            <button disabled={pending} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ink font-semibold text-background transition hover:opacity-90 disabled:opacity-50">
               {pending ? "처리 중…" : mode === "register" ? "채널 만들기" : "로그인"}
               {!pending && <ArrowRight className="size-4" />}
             </button>

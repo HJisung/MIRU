@@ -73,7 +73,7 @@ export default function CreatePage() {
           <label className="text-sm font-semibold">캡션<textarea name="caption" maxLength={2200} rows={8} placeholder="이 장면의 이야기를 들려주세요…" className="mt-3 w-full resize-none rounded-xl border border-line bg-background p-4 text-sm leading-6 outline-none focus:border-accent" /></label>
           {file && <div className="mt-5 flex items-center gap-3 rounded-xl bg-[#edf0e7] p-3 text-xs"><CheckCircle2 className="size-4 text-green-700" /><span className="min-w-0 flex-1 truncate">{file.name}</span><span className="text-muted">{(file.size / 1024 / 1024).toFixed(1)} MB</span></div>}
           {error && <p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-          <button disabled={busy || !file} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ink font-semibold text-white disabled:opacity-40">{busy ? <LoaderCircle className="size-4 animate-spin" /> : <UploadCloud className="size-4" />}{stageLabel}</button>
+          <button disabled={busy || !file} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ink font-semibold text-background disabled:opacity-40">{busy ? <LoaderCircle className="size-4 animate-spin" /> : <UploadCloud className="size-4" />}{stageLabel}</button>
         </div>
       </form>
     </div>

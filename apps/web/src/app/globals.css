@@ -9,19 +9,20 @@
   --ink: #18201c;
   --muted: #69716c;
   --line: #dedfd8;
-  --accent: #e45839;
-  --accent-soft: #f8ded6;
+  --accent: #252a27;
+  --accent-soft: #eceeec;
+  color-scheme: light;
 }
 
 .dark {
-  --background: #0f1110;
-  --panel: #151816;
-  --panel-strong: #1b1f1c;
-  --ink: #f4f6f4;
-  --muted: #9da49f;
-  --line: #303530;
-  --accent: #ff7658;
-  --accent-soft: #46241d;
+  --background: #0b0c0c;
+  --panel: #151616;
+  --panel-strong: #101111;
+  --ink: #f3f4f3;
+  --muted: #a1a5a2;
+  --line: #292c2a;
+  --accent: #f3f4f3;
+  --accent-soft: #242725;
   color-scheme: dark;
 }
 
@@ -44,6 +45,8 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
 }
+
+html, body { min-height: 100%; }
 
 ::selection {
   background: var(--accent-soft);
