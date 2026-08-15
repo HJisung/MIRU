@@ -1,6 +1,8 @@
 # Web
 
-Next.js App Router application for Stream.
+Next.js App Router application for the media platform.
+
+Public-facing product identity is centralized in `src/config/brand.ts`. Change the service name, tagline, description, and logo paths there instead of scattering brand strings across components.
 
 ## Feature map
 

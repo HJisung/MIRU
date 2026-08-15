@@ -1,16 +1,22 @@
+import Image from "next/image";
 import Link from "next/link";
+import { brand } from "@/config/brand";
 
 export function BrandMark() {
   return (
     <Link
       href="/"
-      className="group inline-flex items-center gap-2.5"
-      aria-label="Stream 홈"
+      className="group inline-flex h-10 w-[7.5rem] shrink-0 items-center"
+      aria-label={`${brand.displayName} 홈`}
     >
-      <span className="grid size-8 place-items-center rounded-[11px] bg-ink text-sm font-black text-white transition-transform group-hover:-rotate-3">
-        S
-      </span>
-      <span className="text-lg font-bold tracking-[-0.035em]">stream</span>
+      <Image
+        src={brand.assets.lockupDark}
+        alt={brand.displayName}
+        width={120}
+        height={40}
+        priority
+        className="h-auto w-full object-contain transition-transform group-hover:scale-[1.02]"
+      />
     </Link>
   );
 }
