@@ -90,6 +90,7 @@ model User {
   blocksMade  Block[]       @relation("Blocker")
   blocksReceived Block[]    @relation("Blocked")
   reports     Report[]
+  series      Series[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -150,6 +151,9 @@ model Post {
   saves        PostSave[]
   comments     Comment[]
   reports      Report[]
+  seriesId     String?        @db.Uuid
+  series       Series?        @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  episodeNumber Int?
   likeCount    Int            @default(0)
   commentCount Int            @default(0)
   publishedAt  DateTime?
@@ -158,6 +162,21 @@ model Post {
 
   @@index([status, visibility, publishedAt(sort: Desc), id(sort: Desc)])
   @@index([authorId, publishedAt(sort: Desc)])
+  @@unique([seriesId, episodeNumber])
+  @@index([seriesId])
+}
+
+model Series {
+  id          String   @id @default(uuid()) @db.Uuid
+  creatorId   String   @db.Uuid
+  creator     User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  title       String
+  description String   @default("")
+  posts       Post[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([creatorId, createdAt(sort: Desc)])
 }
 
 model Block {

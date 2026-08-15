@@ -21,6 +21,13 @@ export class MediaSummaryDto {
     | null;
 }
 
+export class SeriesSummaryDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() title!: string;
+  @ApiProperty() episodeNumber!: number;
+  @ApiProperty() episodeCount!: number;
+}
+
 export class FeedItemDto {
   @ApiProperty() id!: string;
   @ApiProperty({ enum: PostFormat, enumName: 'PostFormat' })
@@ -32,6 +39,8 @@ export class FeedItemDto {
   @ApiProperty() commentCount!: number;
   @ApiProperty({ type: CreatorSummaryDto }) author!: CreatorSummaryDto;
   @ApiProperty({ type: [MediaSummaryDto] }) media!: MediaSummaryDto[];
+  @ApiPropertyOptional({ type: SeriesSummaryDto, nullable: true })
+  series!: SeriesSummaryDto | null;
 }
 
 export class DiscoveryFeedDto {

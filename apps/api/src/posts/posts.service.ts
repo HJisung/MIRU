@@ -24,6 +24,13 @@ export class PostsService {
         visibility: PostVisibility.PUBLIC,
       },
       include: {
+        series: {
+          select: {
+            id: true,
+            title: true,
+            _count: { select: { posts: true } },
+          },
+        },
         author: {
           select: {
             id: true,

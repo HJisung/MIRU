@@ -151,15 +151,29 @@ const demoPosts = [
   },
 ] as const;
 
+const craftSeriesId = "40000000-0000-4000-8000-000000000001";
+const craftEpisodeAssetId = "20000000-0000-4000-8000-000000000007";
+const craftEpisodePostId = "30000000-0000-4000-8000-000000000007";
+
 async function seed() {
   await prisma.$transaction([
     prisma.postMedia.deleteMany(),
     prisma.post.deleteMany(),
+    prisma.series.deleteMany(),
     prisma.mediaAsset.deleteMany(),
     prisma.user.deleteMany(),
   ]);
 
   for (const user of demoUsers) await prisma.user.create({ data: user });
+
+  await prisma.series.create({
+    data: {
+      id: craftSeriesId,
+      creatorId: demoUsers[2].id,
+      title: "손으로 만드는 도시",
+      description: "오래된 기술과 손의 감각을 기록하는 다큐멘터리 시리즈",
+    },
+  });
 
   for (const post of demoPosts) {
     await prisma.mediaAsset.create({
@@ -192,16 +206,53 @@ async function seed() {
         publishedAt: post.publishedAt,
         likeCount: post.likeCount,
         commentCount: post.commentCount,
+        ...(post.id === "30000000-0000-4000-8000-000000000003"
+          ? { seriesId: craftSeriesId, episodeNumber: 1 }
+          : {}),
         media: { create: { assetId: post.assetId, order: 0 } },
       },
     });
   }
+
+  await prisma.mediaAsset.create({
+    data: {
+      id: craftEpisodeAssetId,
+      ownerId: demoUsers[2].id,
+      kind: MediaKind.VIDEO,
+      purpose: MediaPurpose.LONG_VIDEO,
+      status: MediaStatus.READY,
+      sourceKey: `demo/${craftEpisodeAssetId}/source`,
+      publicUrl: "/demo/ceramic-hands.png",
+      mimeType: "image/png",
+      width: 1600,
+      height: 900,
+      durationMs: 1_536_000,
+      byteSize: BigInt(0),
+    },
+  });
+  await prisma.post.create({
+    data: {
+      id: craftEpisodePostId,
+      authorId: demoUsers[2].id,
+      format: PostFormat.LONG_VIDEO,
+      status: PostStatus.PUBLISHED,
+      visibility: PostVisibility.PUBLIC,
+      title: "흙이 그릇이 되는 시간",
+      caption: "두 번째 이야기. 흙과 불, 그리고 도예가의 손을 따라갑니다.",
+      publishedAt: new Date("2026-08-11T12:00:00.000Z"),
+      likeCount: 3_418,
+      commentCount: 126,
+      seriesId: craftSeriesId,
+      episodeNumber: 2,
+      media: { create: { assetId: craftEpisodeAssetId, order: 0 } },
+    },
+  });
 }
 
 seed()
   .then(() =>
     console.log(
-      `Seeded ${demoUsers.length} creators and ${demoPosts.length} posts.`,
+      `Seeded ${demoUsers.length} creators and ${demoPosts.length + 1} posts.`,
     ),
   )
   .finally(async () => prisma.$disconnect());

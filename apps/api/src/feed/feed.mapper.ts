@@ -9,6 +9,12 @@ interface FeedPostRecord {
   publishedAt: Date | null;
   likeCount: number;
   commentCount: number;
+  episodeNumber: number | null;
+  series: {
+    id: string;
+    title: string;
+    _count: { posts: number };
+  } | null;
   author: {
     id: string;
     handle: string;
@@ -38,6 +44,15 @@ export function toFeedItem(post: FeedPostRecord): FeedItemDto {
     publishedAt: post.publishedAt.toISOString(),
     likeCount: post.likeCount,
     commentCount: post.commentCount,
+    series:
+      post.series && post.episodeNumber
+        ? {
+            id: post.series.id,
+            title: post.series.title,
+            episodeNumber: post.episodeNumber,
+            episodeCount: post.series._count.posts,
+          }
+        : null,
     author: post.author,
     media: post.media.map(({ asset }) => {
       if (

@@ -50,6 +50,13 @@ export class FeedService {
           : {}),
       },
       include: {
+        series: {
+          select: {
+            id: true,
+            title: true,
+            _count: { select: { posts: true } },
+          },
+        },
         author: {
           select: {
             id: true,

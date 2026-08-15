@@ -19,7 +19,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ko" className="h-full antialiased">
+    <html lang="ko" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{const t=localStorage.getItem('miru-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch{}`,
+          }}
+        />
+      </head>
       <body className="min-h-full">
         <AppShell>{children}</AppShell>
       </body>

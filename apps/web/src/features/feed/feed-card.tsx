@@ -29,7 +29,7 @@ export function FeedCard({
   return (
     <article className="group min-w-0">
       <Link
-        href={`/post/${item.id}`}
+        href={item.format === "LONG_VIDEO" ? `/watch/${item.id}` : `/post/${item.id}`}
         className={`relative block overflow-hidden rounded-[1.35rem] bg-[#dde0d8] ${ratio}`}
       >
         <Image
@@ -61,7 +61,7 @@ export function FeedCard({
         </div>
         <div className="min-w-0 flex-1">
           <Link
-            href={`/post/${item.id}`}
+            href={item.format === "LONG_VIDEO" ? `/watch/${item.id}` : `/post/${item.id}`}
             className="line-clamp-2 text-[15px] font-semibold leading-5 tracking-[-0.015em] hover:underline"
           >
             {item.title ?? item.caption}

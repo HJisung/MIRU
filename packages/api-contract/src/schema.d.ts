@@ -433,6 +433,12 @@ export interface components {
             height: number;
             durationMs?: number | null;
         };
+        SeriesSummaryDto: {
+            id: string;
+            title: string;
+            episodeNumber: number;
+            episodeCount: number;
+        };
         FeedItemDto: {
             id: string;
             format: components["schemas"]["PostFormat"];
@@ -443,6 +449,7 @@ export interface components {
             commentCount: number;
             author: components["schemas"]["CreatorSummaryDto"];
             media: components["schemas"]["MediaSummaryDto"][];
+            series?: components["schemas"]["SeriesSummaryDto"] | null;
         };
         DiscoveryFeedDto: {
             items: components["schemas"]["FeedItemDto"][];

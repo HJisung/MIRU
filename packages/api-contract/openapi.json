@@ -986,6 +986,29 @@
           "height"
         ]
       },
+      "SeriesSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "episodeNumber": {
+            "type": "number"
+          },
+          "episodeCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "episodeNumber",
+          "episodeCount"
+        ]
+      },
       "FeedItemDto": {
         "type": "object",
         "properties": {
@@ -1023,6 +1046,14 @@
             "items": {
               "$ref": "#/components/schemas/MediaSummaryDto"
             }
+          },
+          "series": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SeriesSummaryDto"
+              }
+            ]
           }
         },
         "required": [

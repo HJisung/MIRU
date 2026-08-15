@@ -45,6 +45,15 @@ The first read-only discovery slice uses `MediaAsset.publicUrl` only for reposit
 
 A join entity orders one or more ready media assets within a post. Publishing is rejected unless every required asset is ready.
 
+### Series
+
+- `id`, `creatorId`, `title`, `description`
+- contains only explicitly assigned long-form posts
+- a post stores nullable `seriesId` and `episodeNumber`
+- `(seriesId, episodeNumber)` is unique so an episode position cannot be reused
+
+A long-form post without a series is presented as a standalone, single-work video. A long-form post with a series is presented with its series title, episode position, and total episode count. Series are curated containers owned by one creator, not general-purpose user playlists.
+
 ### Social and engagement
 
 - `Follow(followerId, followingId)` with a unique pair and no self-follow
