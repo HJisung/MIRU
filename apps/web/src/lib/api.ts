@@ -1,4 +1,12 @@
-import type { DiscoveryFeed, FeedItem } from "@stream/api-contract";
+import type {
+  DiscoveryFeed,
+  FeedItem,
+  HomeVideo,
+  HomeVideoList,
+  CollectionList,
+  Series,
+  SeriesList,
+} from "@stream/api-contract";
 
 const apiUrl =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
@@ -35,4 +43,24 @@ export function getDiscoveryFeed(cursor?: string, format?: "IMAGE" | "SHORT_VIDE
 
 export function getPost(postId: string) {
   return apiFetch<FeedItem>(`/posts/${encodeURIComponent(postId)}`);
+}
+
+export function getHomeVideos() {
+  return apiFetch<HomeVideoList>("/home/videos");
+}
+
+export function getHomeVideo(videoId: string) {
+  return apiFetch<HomeVideo>(`/home/videos/${encodeURIComponent(videoId)}`);
+}
+
+export function getCollections() {
+  return apiFetch<CollectionList>("/home/collections");
+}
+
+export function getSeriesList() {
+  return apiFetch<SeriesList>("/series");
+}
+
+export function getSeries(seriesId: string) {
+  return apiFetch<Series>(`/series/${encodeURIComponent(seriesId)}`);
 }

@@ -2,12 +2,22 @@
 
 Implementation proceeds as end-to-end slices described in [implementation-plan.md](implementation-plan.md). This roadmap describes product scope; it is not a promise to build all infrastructure before any flow is usable.
 
+## Product foundation (current)
+
+- Align schema, API, routes, tests, and documentation to Home, Series,
+  Shortform, and Community Post
+- Preserve authentication, direct upload, media lifecycle, social actions, and
+  moderation while removing product dependence on the universal Post model
+- Complete Home Single list/detail as the reference vertical slice
+- Add Collection foundations and a Series browse/detail foundation with review
+  states
+
 ## MVP
 
 - Account and profile
 - Direct multipart upload for images and video
 - Processing status and failure recovery
-- Image posts, short video, and long video
+- Home Single video, Collection, reviewed Series works, Shortform, and Community Post
 - Following feed and discovery feed with cursor pagination
 - Playback, likes, saves, follows, and top-level comments
 - Basic report/block flows and admin moderation queue
@@ -34,3 +44,4 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
 - Microservices per domain
 - Multi-region active-active writes
 - Custom video codec or custom recommendation model
+- WebRTC, OBS ingest, live HLS, or large-scale realtime chat

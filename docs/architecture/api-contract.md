@@ -25,7 +25,27 @@ Errors use one stable envelope so UI handling is predictable:
 
 `code` is stable and machine-readable. `message` is safe for developers but is not assumed to be final localized UI copy. Validation details identify fields without echoing secrets or large user input.
 
-## First vertical slice
+## Product-domain reads
+
+### `GET /api/v1/home/videos`
+
+Returns published Home Singles only. Series episodes are intentionally excluded.
+
+### `GET /api/v1/home/videos/{videoId}`
+
+Returns one published Home Single with its compatibility publication read model
+for media and engagement counts.
+
+### `GET /api/v1/home/collections`
+
+Returns public Collections with ordered references to existing Home Singles.
+
+### `GET /api/v1/series` and `GET /api/v1/series/{seriesId}`
+
+Return published reviewed works and their ordered episodes. Series remains a
+separate browse surface from Home.
+
+## Compatibility reads
 
 ### `GET /api/v1/health/live`
 
@@ -37,7 +57,9 @@ Returns readiness and verifies PostgreSQL connectivity.
 
 ### `GET /api/v1/feed/discovery?cursor=&limit=`
 
-Returns published posts and an opaque `nextCursor`. The initial maximum page size is 24. A feed item includes author summary, format, display-ready media, caption/title, publication time, and engagement counts needed by the card.
+Returns legacy published publication records and an opaque `nextCursor` while
+Shortform and Community Post slices migrate to explicit endpoints. The initial
+maximum page size is 24.
 
 ### `GET /api/v1/posts/{postId}`
 

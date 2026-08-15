@@ -70,29 +70,76 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum DomainPublicationStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  UNLISTED
+  ARCHIVED
+  REMOVED
+}
+
+enum SeriesWorkType {
+  SINGLE_WORK
+  EPISODIC
+}
+
+enum SeriesSubmissionStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ShortFormType {
+  VIDEO
+  IMAGE_CAROUSEL
+}
+
+enum CommunityPostType {
+  TEXT
+  IMAGE
+  VIDEO
+  LINK
+}
+
+enum PlaylistVisibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
 model User {
-  id          String       @id @default(uuid()) @db.Uuid
-  email       String       @unique
-  handle      String       @unique
-  displayName String
-  bio         String       @default("")
-  avatarUrl   String?
-  passwordHash String?
-  role         UserRole     @default(MEMBER)
-  sessions    Session[]
-  mediaAssets MediaAsset[]
-  posts       Post[]
-  following   Follow[]     @relation("Follower")
-  followers   Follow[]     @relation("Followee")
-  likes       PostLike[]
-  saves       PostSave[]
-  comments    Comment[]
-  blocksMade  Block[]       @relation("Blocker")
-  blocksReceived Block[]    @relation("Blocked")
-  reports     Report[]
-  series      Series[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id                String             @id @default(uuid()) @db.Uuid
+  email             String             @unique
+  handle            String             @unique
+  displayName       String
+  bio               String             @default("")
+  avatarUrl         String?
+  passwordHash      String?
+  role              UserRole           @default(MEMBER)
+  sessions          Session[]
+  mediaAssets       MediaAsset[]
+  posts             Post[]
+  following         Follow[]           @relation("Follower")
+  followers         Follow[]           @relation("Followee")
+  likes             PostLike[]
+  saves             PostSave[]
+  comments          Comment[]
+  blocksMade        Block[]            @relation("Blocker")
+  blocksReceived    Block[]            @relation("Blocked")
+  reports           Report[]
+  series            Series[]
+  homeVideos        HomeVideo[]
+  collections       Collection[]
+  seriesSubmissions SeriesSubmission[] @relation("SeriesApplicant")
+  seriesReviews     SeriesSubmission[] @relation("SeriesReviewer")
+  shortForms        ShortForm[]
+  communityPosts    CommunityPost[]
+  playlists         Playlist[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@index([createdAt])
 }
@@ -113,70 +160,282 @@ model Session {
 }
 
 model MediaAsset {
-  id           String        @id @default(uuid()) @db.Uuid
-  ownerId      String        @db.Uuid
-  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  kind         MediaKind
-  purpose      MediaPurpose
-  status       MediaStatus   @default(PENDING_UPLOAD)
-  sourceKey    String        @unique
-  publicUrl    String?
-  mimeType     String?
-  byteSize     BigInt?
-  width        Int?
-  height       Int?
-  durationMs   Int?
-  blurDataUrl  String?
-  failureCode  String?
-  pipelineVersion Int        @default(1)
-  postLinks    PostMedia[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id               String       @id @default(uuid()) @db.Uuid
+  ownerId          String       @db.Uuid
+  owner            User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  kind             MediaKind
+  purpose          MediaPurpose
+  status           MediaStatus  @default(PENDING_UPLOAD)
+  sourceKey        String       @unique
+  publicUrl        String?
+  mimeType         String?
+  byteSize         BigInt?
+  width            Int?
+  height           Int?
+  durationMs       Int?
+  blurDataUrl      String?
+  failureCode      String?
+  pipelineVersion  Int          @default(1)
+  postLinks        PostMedia[]
+  collectionCovers Collection[] @relation("CollectionCover")
+  seriesPosters    Series[]     @relation("SeriesPoster")
+  seriesBackdrops  Series[]     @relation("SeriesBackdrop")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   @@index([ownerId, createdAt])
   @@index([status])
 }
 
 model Post {
-  id           String         @id @default(uuid()) @db.Uuid
-  authorId     String         @db.Uuid
-  author       User           @relation(fields: [authorId], references: [id], onDelete: Restrict)
-  format       PostFormat
-  status       PostStatus     @default(DRAFT)
-  visibility   PostVisibility @default(PUBLIC)
-  title        String?
-  caption      String         @default("")
-  media        PostMedia[]
-  likes        PostLike[]
-  saves        PostSave[]
-  comments     Comment[]
-  reports      Report[]
-  seriesId     String?        @db.Uuid
-  series       Series?        @relation(fields: [seriesId], references: [id], onDelete: SetNull)
-  episodeNumber Int?
-  likeCount    Int            @default(0)
-  commentCount Int            @default(0)
-  publishedAt  DateTime?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id               String         @id @default(uuid()) @db.Uuid
+  authorId         String         @db.Uuid
+  author           User           @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  format           PostFormat
+  status           PostStatus     @default(DRAFT)
+  visibility       PostVisibility @default(PUBLIC)
+  title            String?
+  caption          String         @default("")
+  media            PostMedia[]
+  likes            PostLike[]
+  saves            PostSave[]
+  comments         Comment[]
+  reports          Report[]
+  seriesId         String?        @db.Uuid
+  series           Series?        @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  episodeNumber    Int?
+  likeCount        Int            @default(0)
+  commentCount     Int            @default(0)
+  publishedAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  homeVideo        HomeVideo?
+  seriesSingleWork Series?        @relation("SeriesSingleWork")
+  seriesEpisode    SeriesEpisode?
+  shortForm        ShortForm?
+  communityPost    CommunityPost?
+  playlistItems    PlaylistItem[]
 
+  @@unique([seriesId, episodeNumber])
   @@index([status, visibility, publishedAt(sort: Desc), id(sort: Desc)])
   @@index([authorId, publishedAt(sort: Desc)])
-  @@unique([seriesId, episodeNumber])
   @@index([seriesId])
 }
 
 model Series {
-  id          String   @id @default(uuid()) @db.Uuid
-  creatorId   String   @db.Uuid
-  creator     User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  title       String
-  description String   @default("")
-  posts       Post[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                      String                  @id @default(uuid()) @db.Uuid
+  creatorId               String                  @db.Uuid
+  creator                 User                    @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  title                   String
+  description             String                  @default("")
+  posts                   Post[]
+  workType                SeriesWorkType          @default(EPISODIC)
+  publicationStatus       DomainPublicationStatus @default(DRAFT)
+  synopsis                String                  @default("")
+  posterAssetId           String?                 @db.Uuid
+  posterAsset             MediaAsset?             @relation("SeriesPoster", fields: [posterAssetId], references: [id], onDelete: SetNull)
+  backdropAssetId         String?                 @db.Uuid
+  backdropAsset           MediaAsset?             @relation("SeriesBackdrop", fields: [backdropAssetId], references: [id], onDelete: SetNull)
+  genres                  String[]                @default([])
+  tags                    String[]                @default([])
+  ageRating               String?
+  productionInfo          Json?
+  releaseDate             DateTime?
+  singleWorkPublicationId String?                 @unique @db.Uuid
+  singleWorkPublication   Post?                   @relation("SeriesSingleWork", fields: [singleWorkPublicationId], references: [id], onDelete: SetNull)
+  seasons                 SeriesSeason[]
+  episodes                SeriesEpisode[]
+  submissions             SeriesSubmission[]
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
 
   @@index([creatorId, createdAt(sort: Desc)])
+  @@index([publicationStatus, releaseDate(sort: Desc)])
+}
+
+/// MIRU Home's ordinary, self-contained video. `publicationId` bridges the
+/// proven upload/engagement aggregate while domain APIs migrate incrementally.
+model HomeVideo {
+  id              String                  @id @default(uuid()) @db.Uuid
+  creatorId       String                  @db.Uuid
+  creator         User                    @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  publicationId   String                  @unique @db.Uuid
+  publication     Post                    @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  title           String
+  description     String                  @default("")
+  status          DomainPublicationStatus @default(DRAFT)
+  publishedAt     DateTime?
+  collectionItems CollectionItem[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@index([status, publishedAt(sort: Desc), id(sort: Desc)])
+  @@index([creatorId, createdAt(sort: Desc)])
+}
+
+model Collection {
+  id           String                  @id @default(uuid()) @db.Uuid
+  ownerId      String                  @db.Uuid
+  owner        User                    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title        String
+  description  String                  @default("")
+  coverAssetId String?                 @db.Uuid
+  coverAsset   MediaAsset?             @relation("CollectionCover", fields: [coverAssetId], references: [id], onDelete: SetNull)
+  status       DomainPublicationStatus @default(DRAFT)
+  items        CollectionItem[]
+  publishedAt  DateTime?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([status, publishedAt(sort: Desc)])
+}
+
+model CollectionItem {
+  collectionId String     @db.Uuid
+  homeVideoId  String     @db.Uuid
+  position     Int
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  homeVideo    HomeVideo  @relation(fields: [homeVideoId], references: [id], onDelete: Restrict)
+  addedAt      DateTime   @default(now())
+
+  @@id([collectionId, homeVideoId])
+  @@unique([collectionId, position])
+  @@index([homeVideoId])
+}
+
+model SeriesSeason {
+  id           String          @id @default(uuid()) @db.Uuid
+  seriesId     String          @db.Uuid
+  series       Series          @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  seasonNumber Int
+  title        String?
+  description  String          @default("")
+  episodes     SeriesEpisode[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([seriesId, seasonNumber])
+}
+
+model SeriesEpisode {
+  id                  String        @id @default(uuid()) @db.Uuid
+  seriesId            String        @db.Uuid
+  series              Series        @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  seasonId            String?       @db.Uuid
+  season              SeriesSeason? @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+  publicationId       String        @unique @db.Uuid
+  publication         Post          @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  episodeNumber       Int
+  seasonEpisodeNumber Int?
+  title               String
+  synopsis            String        @default("")
+  publishedAt         DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@unique([seriesId, episodeNumber])
+  @@index([seasonId, seasonEpisodeNumber])
+}
+
+model SeriesSubmission {
+  id             String                 @id @default(uuid()) @db.Uuid
+  seriesId       String                 @db.Uuid
+  series         Series                 @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  applicantId    String                 @db.Uuid
+  applicant      User                   @relation("SeriesApplicant", fields: [applicantId], references: [id], onDelete: Restrict)
+  status         SeriesSubmissionStatus @default(DRAFT)
+  submittedAt    DateTime?
+  reviewedById   String?                @db.Uuid
+  reviewedBy     User?                  @relation("SeriesReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt     DateTime?
+  decisionReason String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([status, submittedAt])
+  @@index([applicantId, createdAt(sort: Desc)])
+}
+
+model ShortForm {
+  id                  String                  @id @default(uuid()) @db.Uuid
+  creatorId           String                  @db.Uuid
+  creator             User                    @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  publicationId       String                  @unique @db.Uuid
+  publication         Post                    @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  type                ShortFormType
+  title               String?
+  description         String                  @default("")
+  musicKey            String?
+  promotedHomeVideoId String?                 @db.Uuid
+  promotedSeriesId    String?                 @db.Uuid
+  promotedEpisodeId   String?                 @db.Uuid
+  status              DomainPublicationStatus @default(DRAFT)
+  publishedAt         DateTime?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  @@index([status, publishedAt(sort: Desc), id(sort: Desc)])
+  @@index([musicKey])
+}
+
+model CommunityCategory {
+  id          String          @id @default(uuid()) @db.Uuid
+  slug        String          @unique
+  name        String
+  description String          @default("")
+  isActive    Boolean         @default(true)
+  sortOrder   Int             @default(0)
+  posts       CommunityPost[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model CommunityPost {
+  id            String                  @id @default(uuid()) @db.Uuid
+  authorId      String                  @db.Uuid
+  author        User                    @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  publicationId String                  @unique @db.Uuid
+  publication   Post                    @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  categoryId    String?                 @db.Uuid
+  category      CommunityCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  type          CommunityPostType
+  body          String                  @default("")
+  linkUrl       String?
+  status        DomainPublicationStatus @default(DRAFT)
+  publishedAt   DateTime?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  @@index([categoryId, status, publishedAt(sort: Desc)])
+  @@index([status, publishedAt(sort: Desc), id(sort: Desc)])
+}
+
+model Playlist {
+  id          String             @id @default(uuid()) @db.Uuid
+  ownerId     String             @db.Uuid
+  owner       User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title       String
+  description String             @default("")
+  visibility  PlaylistVisibility @default(PRIVATE)
+  items       PlaylistItem[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([ownerId, updatedAt(sort: Desc)])
+}
+
+model PlaylistItem {
+  playlistId    String   @db.Uuid
+  publicationId String   @db.Uuid
+  position      Int
+  playlist      Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  publication   Post     @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  addedAt       DateTime @default(now())
+
+  @@id([playlistId, publicationId])
+  @@unique([playlistId, position])
+  @@index([publicationId])
 }
 
 model Block {

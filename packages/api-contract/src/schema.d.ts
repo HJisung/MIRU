@@ -361,6 +361,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/home/videos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HomeController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/home/videos/{videoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HomeController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/home/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HomeController_collections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SeriesController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series/{seriesId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SeriesController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -459,6 +539,67 @@ export interface components {
             /** Format: uuid */
             assetId: string;
             caption: string;
+        };
+        HomeVideoDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            publicationId: string;
+            title: string;
+            description: string;
+            /** @enum {string} */
+            status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "UNLISTED" | "ARCHIVED" | "REMOVED";
+            publishedAt: string;
+            creator: components["schemas"]["CreatorSummaryDto"];
+            publication: components["schemas"]["FeedItemDto"];
+        };
+        HomeVideoListDto: {
+            items: components["schemas"]["HomeVideoDto"][];
+        };
+        CollectionItemDto: {
+            position: number;
+            video: components["schemas"]["HomeVideoDto"];
+        };
+        CollectionDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            description: string;
+            owner: components["schemas"]["CreatorSummaryDto"];
+            publishedAt: string;
+            items: components["schemas"]["CollectionItemDto"][];
+        };
+        CollectionListDto: {
+            items: components["schemas"]["CollectionDto"][];
+        };
+        SeriesEpisodeDto: {
+            /** Format: uuid */
+            id: string;
+            episodeNumber: number;
+            seasonEpisodeNumber?: number | null;
+            title: string;
+            synopsis: string;
+            publishedAt?: string | null;
+            publication: components["schemas"]["FeedItemDto"];
+        };
+        SeriesDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            synopsis: string;
+            /** @enum {string} */
+            workType: "SINGLE_WORK" | "EPISODIC";
+            /** @enum {string} */
+            publicationStatus: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "UNLISTED" | "ARCHIVED" | "REMOVED";
+            genres: string[];
+            tags: string[];
+            ageRating?: string | null;
+            releaseDate?: string | null;
+            creator: components["schemas"]["CreatorSummaryDto"];
+            episodes: components["schemas"]["SeriesEpisodeDto"][];
+        };
+        SeriesListDto: {
+            items: components["schemas"]["SeriesDto"][];
         };
     };
     responses: never;
@@ -1017,6 +1158,119 @@ export interface operations {
                 };
             };
             /** @description Post does not exist or is not public */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    HomeController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeVideoListDto"];
+                };
+            };
+        };
+    };
+    HomeController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                videoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeVideoDto"];
+                };
+            };
+            /** @description Home video is not published */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    HomeController_collections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionListDto"];
+                };
+            };
+        };
+    };
+    SeriesController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesListDto"];
+                };
+            };
+        };
+    };
+    SeriesController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesDto"];
+                };
+            };
+            /** @description Series is not published */
             404: {
                 headers: {
                     [name: string]: unknown;

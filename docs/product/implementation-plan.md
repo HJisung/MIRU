@@ -1,4 +1,58 @@
-# Vertical-slice implementation plan
+# MIRU domain migration and vertical-slice plan
+
+The product terms in [domain-model.md](domain-model.md) are authoritative. The
+original universal Prisma `Post` is a compatibility aggregate, not the future
+meaning of product Post.
+
+## Phase A: product alignment
+
+Status: implemented for the repository source of truth.
+
+- Record the gap between the working repository and current product language
+- Establish Home, Collection, Series, Shortform, Community Post, Category, and
+  Playlist as explicit boundaries
+- Keep the existing stack and media lifecycle decisions
+
+## Phase B: relational migration
+
+Status: domain foundation implemented; legacy publication removal is deferred
+until all dependent slices have moved.
+
+- Add explicit domain records and migrate deterministic demo data
+- Expand Series to work type, publication/review state, optional Season, and
+  Episode
+- Keep Collection and personal Playlist structurally and legally separate
+- Preserve legacy publication identifiers while dependent flows are migrated
+
+## Phase C: API contracts
+
+Status: Home Single, Collection, and Series public reads implemented. Explicit
+Shortform and Community Post contracts remain next.
+
+- Introduce `/home`, `/series`, `/shortforms`, and `/community-posts` contracts
+- Generate TypeScript types from OpenAPI
+- Keep compatibility endpoints only while an implemented flow still uses them
+
+## Phase D: web information architecture
+
+Status: primary navigation and independent Home/Series screens implemented.
+
+- Primary navigation: Home, Series, Shortform, Post
+- Home never presents Series as a subtype of ordinary video
+- Give Series a work-oriented browse and detail experience
+
+## Phase E: completed slices
+
+Complete one slice at a time through UI, API, database, generated contract, and
+tests. Order: Home Single, Collection, Series browse/detail and review
+foundation, then Shortform and Community Post migration.
+
+- Home Single list/detail: complete
+- Collection public list foundation: complete
+- Series browse/detail and approval-capable data foundation: complete
+- Shortform and Community Post explicit API migration: pending
+
+## Existing implementation history
 
 Each slice ends with working UI, API/data behavior, relevant tests, and updated documentation. The order prioritizes visible product progress and establishes difficult boundaries before adding social breadth.
 

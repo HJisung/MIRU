@@ -1,5 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  CommunityPostType,
+  DomainPublicationStatus,
   MediaPurpose,
   MediaStatus,
   PostFormat,
@@ -69,6 +71,7 @@ export class PostsService {
     });
     if (!asset)
       throw new NotFoundException('Ready unlinked image asset not found');
+    const publishedAt = new Date();
     return this.database.client.post.create({
       data: {
         authorId: userId,
@@ -76,8 +79,17 @@ export class PostsService {
         status: PostStatus.PUBLISHED,
         visibility: PostVisibility.PUBLIC,
         caption: input.caption.trim(),
-        publishedAt: new Date(),
+        publishedAt,
         media: { create: { assetId: asset.id, order: 0 } },
+        communityPost: {
+          create: {
+            authorId: userId,
+            type: CommunityPostType.IMAGE,
+            body: input.caption.trim(),
+            status: DomainPublicationStatus.PUBLISHED,
+            publishedAt,
+          },
+        },
       },
       select: { id: true, status: true, publishedAt: true },
     });

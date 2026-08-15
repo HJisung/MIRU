@@ -14,13 +14,25 @@ Browser / mobile web
 
 Production adds a CDN and managed equivalents; the application talks through PostgreSQL, Redis, and S3-compatible interfaces so local Compose does not dictate the cloud vendor.
 
-## API modules
+## Product domain modules
+
+- home: ordinary Single videos and public Collections
+- series: reviewed single-work and episodic works, submissions, seasons, episodes
+- shortform: vertical video and image carousels
+- community: community Posts and managed Categories
+- library: personal Playlists, saves, and viewing history
+
+These product modules share identity, media, engagement, moderation, and feed
+capabilities without collapsing their publication models into one table.
+
+## Platform capability modules
 
 - identity: accounts, sessions, OAuth/passkeys, roles
 - profiles: public profiles and settings
 - social: follow, block, mute
 - media: upload sessions, assets, renditions, lifecycle state
-- posts: captions, visibility, long/short/image post composition
+- legacy publications: temporary compatibility boundary while existing flows
+  migrate to the four explicit product domains
 - feed: candidate selection, ranking, cursor pagination
 - engagement: likes, saves, shares, view events
 - comments: threaded comments and moderation state
@@ -56,4 +68,3 @@ Jobs are idempotent by asset plus pipeline version. Originals, intermediate file
 3. Add CDN and lifecycle rules; move to managed PostgreSQL/Redis/object storage.
 4. Add read replicas/search/analytics based on measured bottlenecks.
 5. Extract a domain service only when ownership, scaling, or release cadence clearly requires it.
-

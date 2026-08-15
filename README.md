@@ -1,6 +1,9 @@
-# Stream Platform
+# MIRU
 
-Long-form video, short-form video, and image posts in one feed-oriented media platform.
+MIRU is a media platform organized around four product services: **Home** for
+ordinary single videos and public Collections, **Series** for reviewed works,
+**Shortform** for vertical video and image carousels, and **Post** for community
+conversation.
 
 The repository is now in active implementation. Architecture and local infrastructure are established; executable applications are being added as end-to-end vertical slices.
 
@@ -61,7 +64,13 @@ pnpm dev
 
 Open the web app at `http://localhost:3000`, the API at `http://localhost:4000/api/v1`, and OpenAPI JSON at `http://localhost:4000/api/openapi.json`.
 
-Implemented flows include the public discovery feed, account sessions, profiles, direct image upload and publishing, likes/saves/follows/comments, a following feed, blocks/reports, and a role-protected moderation queue. The web app includes responsive discovery/detail pages plus registration/login and image publishing screens.
+Implemented foundations include account sessions, profiles, direct image upload
+and publishing, likes/saves/follows/comments, a following feed, blocks/reports,
+and a role-protected moderation queue. The current domain migration is moving
+the original universal publication model into the explicit MIRU services without
+discarding these working flows. See
+[the product domain](docs/product/domain-model.md) and
+[the implementation plan](docs/product/implementation-plan.md).
 
 PostgreSQL, Redis, and MinIO run through Compose. MinIO stores private originals and the API issues short-lived direct-upload URLs. Credentials in `.env.example` are local-only defaults.
 
@@ -86,4 +95,8 @@ pnpm contract:generate   # export OpenAPI and regenerate TypeScript types
 pnpm db:seed             # reset deterministic local demo records
 ```
 
-Start at [docs/product/implementation-plan.md](docs/product/implementation-plan.md) for the slice order. When learning the first flow, trace `apps/web/src/app/page.tsx` → `apps/web/src/lib/api.ts` → generated `packages/api-contract` types → `apps/api/src/feed` → `packages/database/prisma/schema.prisma`.
+Start at [docs/product/domain-model.md](docs/product/domain-model.md), then read
+[docs/product/implementation-plan.md](docs/product/implementation-plan.md).
+When learning the first flow, trace `apps/web/src/app/page.tsx` →
+`apps/web/src/lib/api.ts` → generated `packages/api-contract` types →
+`apps/api/src/feed` → `packages/database/prisma/schema.prisma`.

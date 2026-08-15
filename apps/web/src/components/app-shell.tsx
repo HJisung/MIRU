@@ -4,11 +4,12 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bookmark, Clapperboard, FileText, Home, Menu, Moon, PlaySquare, Search, Sun, Upload, Users, X } from "lucide-react";
+import { Bookmark, Clapperboard, FileText, Home, Layers3, Menu, Moon, PlaySquare, Search, Sun, Upload, Users, X } from "lucide-react";
 import { BrandMark } from "./brand-mark";
 
 const navigation = [
-  { label: "홈", description: "롱폼 영상", href: "/", icon: Home },
+  { label: "홈", description: "Single과 Collection", href: "/", icon: Home },
+  { label: "시리즈", description: "영화와 에피소드 작품", href: "/series", icon: Layers3 },
   { label: "숏폼", description: "짧은 영상", href: "/shorts", icon: PlaySquare },
   { label: "포스트", description: "사진과 이야기", href: "/posts", icon: FileText },
   { label: "팔로잉", description: "구독한 채널", href: "/following", icon: Users },

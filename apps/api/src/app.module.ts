@@ -11,6 +11,8 @@ import { MediaModule } from './media/media.module.js';
 import { SocialModule } from './social/social.module.js';
 import { CommentsModule } from './comments/comments.module.js';
 import { ModerationModule } from './moderation/moderation.module.js';
+import { HomeModule } from './home/home.module.js';
+import { SeriesModule } from './series/series.module.js';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { ModerationModule } from './moderation/moderation.module.js';
     HealthModule,
     FeedModule,
     PostsModule,
+    HomeModule,
+    SeriesModule,
   ],
 })
 export class AppModule {}

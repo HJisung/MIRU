@@ -715,6 +715,135 @@
           "posts"
         ]
       }
+    },
+    "/api/v1/home/videos": {
+      "get": {
+        "operationId": "HomeController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeVideoListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "home"
+        ]
+      }
+    },
+    "/api/v1/home/videos/{videoId}": {
+      "get": {
+        "operationId": "HomeController_findOne",
+        "parameters": [
+          {
+            "name": "videoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeVideoDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Home video is not published"
+          }
+        },
+        "tags": [
+          "home"
+        ]
+      }
+    },
+    "/api/v1/home/collections": {
+      "get": {
+        "operationId": "HomeController_collections",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "home"
+        ]
+      }
+    },
+    "/api/v1/series": {
+      "get": {
+        "operationId": "SeriesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/{seriesId}": {
+      "get": {
+        "operationId": "SeriesController_findOne",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Series is not published"
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
     }
   },
   "info": {
@@ -1100,6 +1229,256 @@
         "required": [
           "assetId",
           "caption"
+        ]
+      },
+      "HomeVideoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "publicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PENDING_REVIEW",
+              "PUBLISHED",
+              "UNLISTED",
+              "ARCHIVED",
+              "REMOVED"
+            ]
+          },
+          "publishedAt": {
+            "type": "string"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/CreatorSummaryDto"
+          },
+          "publication": {
+            "$ref": "#/components/schemas/FeedItemDto"
+          }
+        },
+        "required": [
+          "id",
+          "publicationId",
+          "title",
+          "description",
+          "status",
+          "publishedAt",
+          "creator",
+          "publication"
+        ]
+      },
+      "HomeVideoListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HomeVideoDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CollectionItemDto": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "number"
+          },
+          "video": {
+            "$ref": "#/components/schemas/HomeVideoDto"
+          }
+        },
+        "required": [
+          "position",
+          "video"
+        ]
+      },
+      "CollectionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/CreatorSummaryDto"
+          },
+          "publishedAt": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionItemDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "owner",
+          "publishedAt",
+          "items"
+        ]
+      },
+      "CollectionListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "SeriesEpisodeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "episodeNumber": {
+            "type": "number"
+          },
+          "seasonEpisodeNumber": {
+            "type": "number",
+            "nullable": true
+          },
+          "title": {
+            "type": "string"
+          },
+          "synopsis": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "publication": {
+            "$ref": "#/components/schemas/FeedItemDto"
+          }
+        },
+        "required": [
+          "id",
+          "episodeNumber",
+          "title",
+          "synopsis",
+          "publication"
+        ]
+      },
+      "SeriesDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "synopsis": {
+            "type": "string"
+          },
+          "workType": {
+            "type": "string",
+            "enum": [
+              "SINGLE_WORK",
+              "EPISODIC"
+            ]
+          },
+          "publicationStatus": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PENDING_REVIEW",
+              "PUBLISHED",
+              "UNLISTED",
+              "ARCHIVED",
+              "REMOVED"
+            ]
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ageRating": {
+            "type": "string",
+            "nullable": true
+          },
+          "releaseDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "creator": {
+            "$ref": "#/components/schemas/CreatorSummaryDto"
+          },
+          "episodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeriesEpisodeDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "synopsis",
+          "workType",
+          "publicationStatus",
+          "genres",
+          "tags",
+          "creator",
+          "episodes"
+        ]
+      },
+      "SeriesListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeriesDto"
+            }
+          }
+        },
+        "required": [
+          "items"
         ]
       }
     }

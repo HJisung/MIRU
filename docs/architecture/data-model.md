@@ -1,4 +1,4 @@
-# Initial data model
+# MIRU data model
 
 This is the smallest relational model that supports the first product slices without pretending the full product is already known. Names are singular in the domain and mapped consistently in the database.
 
@@ -35,7 +35,7 @@ The original filename is presentation metadata only. Object keys are server-gene
 
 The first read-only discovery slice uses `MediaAsset.publicUrl` only for repository-owned demo images. `MediaRendition` is added with the upload/processing migration so the schema does not contain unused speculative tables. Production publication will reference verified renditions rather than a client-provided URL.
 
-### Post
+### LegacyPublication (migration only)
 
 - `id`, `authorId`
 - `format`: `IMAGE`, `SHORT_VIDEO`, `LONG_VIDEO`
@@ -43,16 +43,42 @@ The first read-only discovery slice uses `MediaAsset.publicUrl` only for reposit
 - caption/title/description fields appropriate to the format
 - visibility and publishing timestamps
 
-A join entity orders one or more ready media assets within a post. Publishing is rejected unless every required asset is ready.
+The original Prisma model is still named `Post` during the first compatibility
+migration. It is not the product Community Post. A join entity orders ready
+media assets, and existing upload/social/moderation flows continue to use it
+until their domain slice is migrated. New product features must not extend this
+model with more cross-domain nullable fields.
+
+### HomeSingle and Collection
+
+- HomeSingle represents MIRU's ordinary one-video publication.
+- Collection contains ordered references to existing HomeSingles and never
+  duplicates their media.
+- Playlist is viewer-owned and separate from Collection.
 
 ### Series
 
-- `id`, `creatorId`, `title`, `description`
-- contains only explicitly assigned long-form posts
-- a post stores nullable `seriesId` and `episodeNumber`
-- `(seriesId, episodeNumber)` is unique so an episode position cannot be reused
+- work type is `SINGLE_WORK` or `EPISODIC`
+- publication and review state are explicit
+- an optional Season groups Episodes; episodes may also belong directly to a
+  Series
+- creator submissions preserve reviewer decision and reason
+- poster/backdrop and work metadata belong to the Series, not an episode
 
-A long-form post without a series is presented as a standalone, single-work video. A long-form post with a series is presented with its series title, episode position, and total episode count. Series are curated containers owned by one creator, not general-purpose user playlists.
+Series is an independent reviewed service. Home videos are not promoted into a
+Series by setting a nullable foreign key, and Series is not a playlist.
+
+### ShortForm
+
+- kind: `VIDEO` or `IMAGE_CAROUSEL`
+- one video or one to ten ordered images
+- optional music and internal promotion target
+
+### CommunityPost and Category
+
+- community content may be text, image, video, or link
+- nullable category means the general Post Home feed
+- categories are service-managed records
 
 ### Social and engagement
 

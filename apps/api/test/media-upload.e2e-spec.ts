@@ -56,6 +56,9 @@ describe('direct image upload and publish (MinIO + PostgreSQL integration)', () 
   afterAll(async () => {
     const user = await database.client.user.findUnique({ where: { email } });
     if (user) {
+      await database.client.communityPost.deleteMany({
+        where: { authorId: user.id },
+      });
       await database.client.post.deleteMany({ where: { authorId: user.id } });
       await database.client.mediaAsset.deleteMany({
         where: { ownerId: user.id },

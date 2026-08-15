@@ -11,7 +11,7 @@
   },
   "scripts": {
     "build": "prisma generate && tsc -p tsconfig.json",
-    "format": "prettier --write \"{src,prisma}/**/*.{ts,prisma}\" \"prisma.config.ts\"",
+    "format": "prisma format && prettier --write \"src/**/*.ts\" \"prisma/seed.ts\" \"prisma.config.ts\"",
     "generate": "prisma generate",
     "migrate:dev": "prisma migrate dev",
     "seed": "prisma db seed",

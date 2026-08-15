@@ -94,4 +94,38 @@ describe('public discovery flow (PostgreSQL integration)', () => {
       items.map((item) => item.series?.episodeNumber).filter(Boolean),
     ).toEqual(expect.arrayContaining([1, 2]));
   });
+
+  it('serves Home Singles independently from reviewed Series works', async () => {
+    const home = await app.inject({
+      method: 'GET',
+      url: '/api/v1/home/videos',
+    });
+    expect(home.statusCode).toBe(200);
+    const homeItems = home.json<{
+      items: Array<{ id: string; publication: { series: unknown } }>;
+    }>().items;
+    expect(homeItems.length).toBeGreaterThan(0);
+    expect(homeItems.every((item) => item.publication.series === null)).toBe(
+      true,
+    );
+
+    const collections = await app.inject({
+      method: 'GET',
+      url: '/api/v1/home/collections',
+    });
+    expect(collections.statusCode).toBe(200);
+    expect(
+      collections.json<{ items: Array<{ items: unknown[] }> }>().items[0]?.items
+        .length,
+    ).toBeGreaterThan(0);
+
+    const series = await app.inject({ method: 'GET', url: '/api/v1/series' });
+    expect(series.statusCode).toBe(200);
+    const works = series.json<{
+      items: Array<{ workType: string; episodes: Array<{ id: string }> }>;
+    }>().items;
+    const episodic = works.find((work) => work.workType === 'EPISODIC');
+    expect(episodic).toBeDefined();
+    expect(episodic?.episodes.length).toBeGreaterThan(0);
+  });
 });

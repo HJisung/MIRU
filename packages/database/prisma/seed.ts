@@ -2,6 +2,8 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import {
+  CommunityPostType,
+  DomainPublicationStatus,
   MediaKind,
   MediaPurpose,
   MediaStatus,
@@ -9,6 +11,9 @@ import {
   PostStatus,
   PostVisibility,
   PrismaClient,
+  SeriesSubmissionStatus,
+  SeriesWorkType,
+  ShortFormType,
   UserRole,
 } from "../src/generated/prisma/client.js";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -157,6 +162,17 @@ const craftEpisodePostId = "30000000-0000-4000-8000-000000000007";
 
 async function seed() {
   await prisma.$transaction([
+    prisma.playlistItem.deleteMany(),
+    prisma.playlist.deleteMany(),
+    prisma.communityPost.deleteMany(),
+    prisma.communityCategory.deleteMany(),
+    prisma.shortForm.deleteMany(),
+    prisma.seriesSubmission.deleteMany(),
+    prisma.seriesEpisode.deleteMany(),
+    prisma.seriesSeason.deleteMany(),
+    prisma.collectionItem.deleteMany(),
+    prisma.collection.deleteMany(),
+    prisma.homeVideo.deleteMany(),
     prisma.postMedia.deleteMany(),
     prisma.post.deleteMany(),
     prisma.series.deleteMany(),
@@ -172,6 +188,15 @@ async function seed() {
       creatorId: demoUsers[2].id,
       title: "손으로 만드는 도시",
       description: "오래된 기술과 손의 감각을 기록하는 다큐멘터리 시리즈",
+      synopsis:
+        "서울 곳곳에서 오래된 기술을 이어가는 사람과 손의 시간을 기록합니다.",
+      workType: SeriesWorkType.EPISODIC,
+      publicationStatus: DomainPublicationStatus.PUBLISHED,
+      genres: ["다큐멘터리", "라이프스타일"],
+      tags: ["장인", "서울", "기록"],
+      ageRating: "ALL",
+      productionInfo: { studio: "Field Notes", country: "KR" },
+      releaseDate: new Date("2026-08-11T12:00:00.000Z"),
     },
   });
 
@@ -247,12 +272,132 @@ async function seed() {
       media: { create: { assetId: craftEpisodeAssetId, order: 0 } },
     },
   });
+
+  const standalone = demoPosts.find(
+    (post) => post.id === "30000000-0000-4000-8000-000000000005",
+  );
+  if (!standalone) throw new Error("Standalone Home demo video is missing");
+
+  const homeVideo = await prisma.homeVideo.create({
+    data: {
+      id: "50000000-0000-4000-8000-000000000001",
+      creatorId: standalone.authorId,
+      publicationId: standalone.id,
+      title: standalone.title,
+      description: standalone.caption,
+      status: DomainPublicationStatus.PUBLISHED,
+      publishedAt: standalone.publishedAt,
+    },
+  });
+
+  await prisma.collection.create({
+    data: {
+      id: "60000000-0000-4000-8000-000000000001",
+      ownerId: standalone.authorId,
+      title: "두 바퀴로 만나는 섬",
+      description: "자전거로 천천히 지나간 길과 풍경을 모았습니다.",
+      status: DomainPublicationStatus.PUBLISHED,
+      publishedAt: new Date("2026-08-10T10:00:00.000Z"),
+      items: { create: { homeVideoId: homeVideo.id, position: 1 } },
+    },
+  });
+
+  await prisma.seriesEpisode.createMany({
+    data: [
+      {
+        id: "70000000-0000-4000-8000-000000000001",
+        seriesId: craftSeriesId,
+        publicationId: "30000000-0000-4000-8000-000000000003",
+        episodeNumber: 1,
+        title: "서울의 마지막 활판 인쇄공",
+        synopsis: "잉크와 활자, 사십 년의 손기억을 기록합니다.",
+        publishedAt: new Date("2026-08-13T12:00:00.000Z"),
+      },
+      {
+        id: "70000000-0000-4000-8000-000000000002",
+        seriesId: craftSeriesId,
+        publicationId: craftEpisodePostId,
+        episodeNumber: 2,
+        title: "흙이 그릇이 되는 시간",
+        synopsis: "흙과 불, 그리고 도예가의 손을 따라갑니다.",
+        publishedAt: new Date("2026-08-11T12:00:00.000Z"),
+      },
+    ],
+  });
+
+  await prisma.seriesSubmission.create({
+    data: {
+      id: "71000000-0000-4000-8000-000000000001",
+      seriesId: craftSeriesId,
+      applicantId: demoUsers[2].id,
+      status: SeriesSubmissionStatus.APPROVED,
+      submittedAt: new Date("2026-08-01T09:00:00.000Z"),
+      reviewedById: demoUsers[2].id,
+      reviewedAt: new Date("2026-08-02T09:00:00.000Z"),
+      decisionReason: "작품 정보와 공개 권한을 확인했습니다.",
+    },
+  });
+
+  for (const post of demoPosts.filter(
+    (item) => item.format === PostFormat.SHORT_VIDEO,
+  )) {
+    await prisma.shortForm.create({
+      data: {
+        creatorId: post.authorId,
+        publicationId: post.id,
+        type: ShortFormType.VIDEO,
+        title: post.title,
+        description: post.caption,
+        status: DomainPublicationStatus.PUBLISHED,
+        publishedAt: post.publishedAt,
+      },
+    });
+  }
+
+  const developCategory = await prisma.communityCategory.create({
+    data: {
+      id: "80000000-0000-4000-8000-000000000001",
+      slug: "develop",
+      name: "Develop",
+      description: "개발과 기술에 관한 이야기",
+      sortOrder: 10,
+    },
+  });
+  await prisma.communityCategory.createMany({
+    data: [
+      { slug: "ride", name: "Ride", sortOrder: 20 },
+      { slug: "soccer", name: "Soccer", sortOrder: 30 },
+      { slug: "baseball", name: "Baseball", sortOrder: 40 },
+      {
+        slug: "internet-broadcasting",
+        name: "Internet Broadcasting",
+        sortOrder: 50,
+      },
+    ],
+  });
+
+  const imagePosts = demoPosts.filter(
+    (item) => item.format === PostFormat.IMAGE,
+  );
+  for (const [index, post] of imagePosts.entries()) {
+    await prisma.communityPost.create({
+      data: {
+        authorId: post.authorId,
+        publicationId: post.id,
+        categoryId: index === 0 ? null : developCategory.id,
+        type: CommunityPostType.IMAGE,
+        body: post.caption,
+        status: DomainPublicationStatus.PUBLISHED,
+        publishedAt: post.publishedAt,
+      },
+    });
+  }
 }
 
 seed()
   .then(() =>
     console.log(
-      `Seeded ${demoUsers.length} creators and ${demoPosts.length + 1} posts.`,
+      `Seeded ${demoUsers.length} creators across the MIRU product domains.`,
     ),
   )
   .finally(async () => prisma.$disconnect());
