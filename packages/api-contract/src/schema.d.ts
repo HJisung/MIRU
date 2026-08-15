@@ -416,9 +416,9 @@ export interface components {
         CreateReportDto: {
             reason: components["schemas"]["ReportReason"];
         };
-        Object: Record<string, never>;
         /** @enum {string} */
         PostFormat: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO";
+        Object: Record<string, never>;
         CreatorSummaryDto: {
             id: string;
             handle: string;
@@ -924,6 +924,7 @@ export interface operations {
     FeedController_discover: {
         parameters: {
             query?: {
+                format?: components["schemas"]["PostFormat"];
                 /** @description Opaque cursor returned by the previous page */
                 cursor?: string;
                 limit?: components["schemas"]["Object"];
@@ -947,6 +948,7 @@ export interface operations {
     FeedController_following: {
         parameters: {
             query?: {
+                format?: components["schemas"]["PostFormat"];
                 /** @description Opaque cursor returned by the previous page */
                 cursor?: string;
                 limit?: components["schemas"]["Object"];

@@ -567,6 +567,14 @@
         "operationId": "FeedController_discover",
         "parameters": [
           {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PostFormat"
+            }
+          },
+          {
             "name": "cursor",
             "required": false,
             "in": "query",
@@ -606,6 +614,14 @@
       "get": {
         "operationId": "FeedController_following",
         "parameters": [
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PostFormat"
+            }
+          },
           {
             "name": "cursor",
             "required": false,
@@ -904,10 +920,6 @@
           "reason"
         ]
       },
-      "Object": {
-        "type": "object",
-        "properties": {}
-      },
       "PostFormat": {
         "type": "string",
         "enum": [
@@ -915,6 +927,10 @@
           "SHORT_VIDEO",
           "LONG_VIDEO"
         ]
+      },
+      "Object": {
+        "type": "object",
+        "properties": {}
       },
       "CreatorSummaryDto": {
         "type": "object",

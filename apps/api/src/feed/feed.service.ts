@@ -30,6 +30,7 @@ export class FeedService {
         status: PostStatus.PUBLISHED,
         visibility: PostVisibility.PUBLIC,
         publishedAt: { not: null },
+        ...(query.format ? { format: query.format } : {}),
         ...(followerId
           ? {
               author: {

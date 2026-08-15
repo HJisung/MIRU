@@ -26,9 +26,10 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export function getDiscoveryFeed(cursor?: string) {
+export function getDiscoveryFeed(cursor?: string, format?: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO") {
   const query = new URLSearchParams({ limit: "12" });
   if (cursor) query.set("cursor", cursor);
+  if (format) query.set("format", format);
   return apiFetch<DiscoveryFeed>(`/feed/discovery?${query}`);
 }
 

@@ -1,8 +1,14 @@
 import { Transform } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { PostFormat } from '@stream/database';
 
 export class FeedQuery {
+  @ApiPropertyOptional({ enum: PostFormat, enumName: 'PostFormat' })
+  @IsOptional()
+  @IsEnum(PostFormat)
+  format?: PostFormat;
+
   @ApiPropertyOptional({
     description: 'Opaque cursor returned by the previous page',
   })
