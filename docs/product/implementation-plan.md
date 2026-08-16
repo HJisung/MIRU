@@ -26,8 +26,8 @@ until all dependent slices have moved.
 
 ## Phase C: API contracts
 
-Status: Home Single, Collection, and Series public reads implemented. Explicit
-Shortform and Community Post contracts remain next.
+Status: Home Single, Collection, Series, Shortform, and Community Post public
+read contracts are implemented and generated into the web contract package.
 
 - Introduce `/home`, `/series`, `/shortforms`, and `/community-posts` contracts
 - Generate TypeScript types from OpenAPI
@@ -35,7 +35,8 @@ Shortform and Community Post contracts remain next.
 
 ## Phase D: web information architecture
 
-Status: primary navigation and independent Home/Series screens implemented.
+Status: primary navigation and independent experiences for all four services
+implemented at the MVP read baseline.
 
 - Primary navigation: Home, Series, Shortform, Post
 - Home never presents Series as a subtype of ordinary video
@@ -50,7 +51,27 @@ foundation, then Shortform and Community Post migration.
 - Home Single list/detail: complete
 - Collection public list foundation: complete
 - Series browse/detail and approval-capable data foundation: complete
-- Shortform and Community Post explicit API migration: pending
+- Shortform explicit API, ordered carousel media, promotion CTA, and immersive
+  web feed: complete
+- Community Post Home, managed Category filtering, detail, image publishing,
+  and timeline: complete
+
+## LegacyPublication migration status
+
+Product routes no longer read Shortform or Community Post through discovery
+format filters. The compatibility aggregate remains for:
+
+- the proven engagement target used by likes, saves, comments, and reports
+- existing feed/following ranking and moderation services
+- Home and Series playback metadata while their media/player slice still uses
+  the compatibility publication
+- the direct-upload publish transaction, which creates both a Community Post
+  and its compatibility engagement target atomically
+
+Removal is safe only after engagement has a domain-aware target boundary,
+moderation and comments accept those targets, and Home/Series playback no
+longer requires the legacy publication DTO. No new product read should query
+the compatibility table directly.
 
 ## Existing implementation history
 

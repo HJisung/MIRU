@@ -8,12 +8,14 @@ export default defineConfig({
   use: { baseURL: "http://localhost:3000", trace: "on-first-retry" },
   webServer: [
     {
-      command: "pnpm --filter @stream/api start:prod",
+      command: "node dist/main.js",
+      cwd: "../api",
       url: "http://localhost:4000/api/v1/health/ready",
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: "pnpm --filter @stream/web start",
+      command: "node node_modules/next/dist/bin/next start",
+      cwd: ".",
       url: "http://localhost:3000",
       reuseExistingServer: !process.env.CI,
     },

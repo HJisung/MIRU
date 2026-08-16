@@ -441,6 +441,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/shortforms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List published Shortforms */
+        get: operations["ShortformsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shortforms/{shortformId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** View one published Shortform */
+        get: operations["ShortformsController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/community-posts/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CommunityController_createImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/community-posts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Post Home or one managed Category */
+        get: operations["CommunityController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/community-posts/{postId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** View one published Community Post */
+        get: operations["CommunityController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/community-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active Community Categories */
+        get: operations["CommunityController_categories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -600,6 +701,77 @@ export interface components {
         };
         SeriesListDto: {
             items: components["schemas"]["SeriesDto"][];
+        };
+        ShortformPromotionDto: {
+            /** @enum {string} */
+            kind: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE";
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** Format: uuid */
+            publicationId?: Record<string, never> | null;
+        };
+        ShortformDto: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Compatibility engagement target
+             */
+            engagementTargetId: string;
+            /** @enum {string} */
+            type: "VIDEO" | "IMAGE_CAROUSEL";
+            title?: string | null;
+            description: string;
+            /** @description External music catalog reference */
+            musicKey?: string | null;
+            publishedAt: string;
+            likeCount: number;
+            commentCount: number;
+            creator: components["schemas"]["CreatorSummaryDto"];
+            media: components["schemas"]["MediaSummaryDto"][];
+            promotedContent?: components["schemas"]["ShortformPromotionDto"] | null;
+        };
+        ShortformListDto: {
+            items: components["schemas"]["ShortformDto"][];
+        };
+        CreateCommunityImagePostDto: {
+            /** Format: uuid */
+            assetId: string;
+            caption: string;
+            categorySlug?: string;
+        };
+        CommunityCategoryDto: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            name: string;
+            description: string;
+        };
+        CommunityPostDto: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Compatibility engagement target
+             */
+            engagementTargetId: string;
+            /** @enum {string} */
+            type: "TEXT" | "IMAGE" | "VIDEO" | "LINK";
+            body: string;
+            linkUrl?: string | null;
+            publishedAt: string;
+            likeCount: number;
+            commentCount: number;
+            author: components["schemas"]["CreatorSummaryDto"];
+            category?: components["schemas"]["CommunityCategoryDto"] | null;
+            media: components["schemas"]["MediaSummaryDto"][];
+        };
+        CommunityPostListDto: {
+            items: components["schemas"]["CommunityPostDto"][];
+        };
+        CommunityCategoryListDto: {
+            items: components["schemas"]["CommunityCategoryDto"][];
         };
     };
     responses: never;
@@ -1276,6 +1448,143 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ShortformsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShortformListDto"];
+                };
+            };
+        };
+    };
+    ShortformsController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shortformId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShortformDto"];
+                };
+            };
+            /** @description Shortform is not published or does not exist */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CommunityController_createImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommunityImagePostDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CommunityController_list: {
+        parameters: {
+            query?: {
+                /** @description Category slug. Omit for Post Home. */
+                category?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPostListDto"];
+                };
+            };
+        };
+    };
+    CommunityController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPostDto"];
+                };
+            };
+            /** @description Community Post is not published or does not exist */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CommunityController_categories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityCategoryListDto"];
+                };
             };
         };
     };

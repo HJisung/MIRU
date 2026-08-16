@@ -11,6 +11,8 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
 - Complete Home Single list/detail as the reference vertical slice
 - Add Collection foundations and a Series browse/detail foundation with review
   states
+- Complete explicit Shortform and Community Post read slices, including ordered
+  carousel media and Category-backed Post navigation
 
 ## MVP
 
@@ -25,6 +27,9 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
 
 ## Next
 
+- Migrate shared engagement and moderation from compatibility publication IDs
+  to an explicit domain-target boundary
+- Add authenticated Shortform creation and Community TEXT/VIDEO/LINK authoring
 - Nested comments, notifications, richer creator tools
 - Search, hashtags/topics, captions/subtitles
 - Resumable upload UX and creator analytics

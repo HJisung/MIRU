@@ -12,3 +12,10 @@ export type CollectionList = components["schemas"]["CollectionListDto"];
 export type SeriesEpisode = components["schemas"]["SeriesEpisodeDto"];
 export type Series = components["schemas"]["SeriesDto"];
 export type SeriesList = components["schemas"]["SeriesListDto"];
+export type Shortform = components["schemas"]["ShortformDto"];
+export type ShortformList = components["schemas"]["ShortformListDto"];
+export type CommunityCategory = components["schemas"]["CommunityCategoryDto"];
+export type CommunityCategoryList =
+  components["schemas"]["CommunityCategoryListDto"];
+export type CommunityPost = components["schemas"]["CommunityPostDto"];
+export type CommunityPostList = components["schemas"]["CommunityPostListDto"];

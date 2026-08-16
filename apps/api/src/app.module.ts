@@ -13,6 +13,8 @@ import { CommentsModule } from './comments/comments.module.js';
 import { ModerationModule } from './moderation/moderation.module.js';
 import { HomeModule } from './home/home.module.js';
 import { SeriesModule } from './series/series.module.js';
+import { ShortformsModule } from './shortforms/shortforms.module.js';
+import { CommunityModule } from './community/community.module.js';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { SeriesModule } from './series/series.module.js';
     PostsModule,
     HomeModule,
     SeriesModule,
+    ShortformsModule,
+    CommunityModule,
   ],
 })
 export class AppModule {}

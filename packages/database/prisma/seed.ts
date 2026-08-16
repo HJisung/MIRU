@@ -164,6 +164,8 @@ async function seed() {
   await prisma.$transaction([
     prisma.playlistItem.deleteMany(),
     prisma.playlist.deleteMany(),
+    prisma.communityPostMedia.deleteMany(),
+    prisma.shortFormMedia.deleteMany(),
     prisma.communityPost.deleteMany(),
     prisma.communityCategory.deleteMany(),
     prisma.shortForm.deleteMany(),
@@ -348,11 +350,71 @@ async function seed() {
         type: ShortFormType.VIDEO,
         title: post.title,
         description: post.caption,
+        musicKey: post.id.endsWith("2") ? "demo:morning-trail" : null,
+        promotedHomeVideoId: post.id.endsWith("2") ? homeVideo.id : null,
         status: DomainPublicationStatus.PUBLISHED,
         publishedAt: post.publishedAt,
+        media: { create: { assetId: post.assetId, position: 0 } },
       },
     });
   }
+
+  const carouselPublicationId = "30000000-0000-4000-8000-000000000008";
+  await prisma.post.create({
+    data: {
+      id: carouselPublicationId,
+      authorId: demoUsers[0].id,
+      format: PostFormat.IMAGE,
+      status: PostStatus.PUBLISHED,
+      visibility: PostVisibility.PUBLIC,
+      caption: "서울의 아침을 두 장면으로 넘겨보세요.",
+      publishedAt: new Date("2026-08-15T01:00:00.000Z"),
+      likeCount: 724,
+      commentCount: 18,
+      media: {
+        create: [
+          { assetId: demoPosts[0].assetId, order: 0 },
+          { assetId: demoPosts[3].assetId, order: 1 },
+        ],
+      },
+      shortForm: {
+        create: {
+          creatorId: demoUsers[0].id,
+          type: ShortFormType.IMAGE_CAROUSEL,
+          title: "조용한 서울의 아침",
+          description: "왼쪽과 오른쪽 버튼으로 장면을 넘길 수 있어요.",
+          promotedSeriesId: craftSeriesId,
+          status: DomainPublicationStatus.PUBLISHED,
+          publishedAt: new Date("2026-08-15T01:00:00.000Z"),
+          media: {
+            create: [
+              { assetId: demoPosts[0].assetId, position: 0 },
+              { assetId: demoPosts[3].assetId, position: 1 },
+            ],
+          },
+        },
+      },
+    },
+  });
+
+  await prisma.post.create({
+    data: {
+      id: "30000000-0000-4000-8000-000000000009",
+      authorId: demoUsers[1].id,
+      format: PostFormat.SHORT_VIDEO,
+      status: PostStatus.DRAFT,
+      visibility: PostVisibility.PUBLIC,
+      caption: "공개 전 Shortform",
+      shortForm: {
+        create: {
+          creatorId: demoUsers[1].id,
+          type: ShortFormType.VIDEO,
+          description: "공개 API에 노출되면 안 됩니다.",
+          status: DomainPublicationStatus.DRAFT,
+        },
+      },
+    },
+  });
 
   const developCategory = await prisma.communityCategory.create({
     data: {
@@ -389,9 +451,72 @@ async function seed() {
         body: post.caption,
         status: DomainPublicationStatus.PUBLISHED,
         publishedAt: post.publishedAt,
+        media: { create: { assetId: post.assetId, position: 0 } },
       },
     });
   }
+
+  await prisma.post.create({
+    data: {
+      id: "30000000-0000-4000-8000-000000000010",
+      authorId: demoUsers[2].id,
+      format: PostFormat.IMAGE,
+      status: PostStatus.DRAFT,
+      visibility: PostVisibility.PUBLIC,
+      caption: "MIRU를 만들며 배운 점을 공유합니다.",
+      publishedAt: new Date("2026-08-15T02:00:00.000Z"),
+      communityPost: {
+        create: {
+          authorId: demoUsers[2].id,
+          categoryId: developCategory.id,
+          type: CommunityPostType.LINK,
+          body: "도메인을 명확하게 나누면 코드를 따라가기 쉬워집니다.",
+          linkUrl: "https://example.com/miru-domain-notes",
+          status: DomainPublicationStatus.PUBLISHED,
+          publishedAt: new Date("2026-08-15T02:00:00.000Z"),
+        },
+      },
+    },
+  });
+
+  await prisma.post.create({
+    data: {
+      id: "30000000-0000-4000-8000-000000000011",
+      authorId: demoUsers[0].id,
+      format: PostFormat.IMAGE,
+      status: PostStatus.DRAFT,
+      visibility: PostVisibility.PUBLIC,
+      caption: "공개 전 Community Post",
+      communityPost: {
+        create: {
+          authorId: demoUsers[0].id,
+          type: CommunityPostType.TEXT,
+          body: "공개 API에 노출되면 안 됩니다.",
+          status: DomainPublicationStatus.DRAFT,
+        },
+      },
+    },
+  });
+
+  await prisma.post.create({
+    data: {
+      id: "30000000-0000-4000-8000-000000000012",
+      authorId: demoUsers[0].id,
+      format: PostFormat.IMAGE,
+      status: PostStatus.REMOVED,
+      visibility: PostVisibility.PUBLIC,
+      caption: "삭제 처리된 Community Post",
+      communityPost: {
+        create: {
+          authorId: demoUsers[0].id,
+          type: CommunityPostType.TEXT,
+          body: "삭제 처리된 Community Post",
+          status: DomainPublicationStatus.REMOVED,
+          publishedAt: new Date("2026-08-15T03:00:00.000Z"),
+        },
+      },
+    },
+  });
 }
 
 seed()

@@ -1,7 +1,10 @@
 export const clientApiUrl =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
-export async function clientApi<T>(path: string, init?: RequestInit): Promise<T> {
+export async function clientApi<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
   const response = await fetch(`${clientApiUrl}${path}`, {
     ...init,
     credentials: "include",
@@ -21,5 +24,7 @@ export async function clientApi<T>(path: string, init?: RequestInit): Promise<T>
 }
 
 export function mediaUrl(url: string) {
-  return url.startsWith("/api/") ? `${clientApiUrl.replace(/\/api\/v1$/, "")}${url}` : url;
+  return url.startsWith("/api/")
+    ? `${clientApiUrl.replace(/\/api\/v1$/, "")}${url}`
+    : url;
 }

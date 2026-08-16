@@ -15,7 +15,7 @@
     "test:e2e": "turbo run test:e2e",
     "typecheck": "turbo run typecheck",
     "db:generate": "pnpm --filter @stream/database generate",
-    "db:migrate": "pnpm --dir packages/database exec prisma migrate dev",
+    "db:migrate": "pnpm --filter @stream/database exec prisma migrate dev",
     "db:seed": "pnpm --filter @stream/database seed",
     "contract:generate": "pnpm --filter @stream/database build && pnpm --filter @stream/api openapi:export && pnpm --filter @stream/api-contract generate",
     "infra:up": "docker compose up -d",

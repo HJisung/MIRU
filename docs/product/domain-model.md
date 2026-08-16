@@ -60,8 +60,11 @@ quality grade, or review type.
 ## Shortform
 
 Shortform supports `VIDEO` and `IMAGE_CAROUSEL`. A carousel contains one to ten
-ordered images. A Shortform can reference a reusable music record and may point
-to a Home Single, Series work, or Series episode as its internal call to action.
+ordered images through `ShortFormMedia`. A Shortform may point to a Home Single,
+Series work, or Series episode as its internal call to action. For the MVP,
+`musicKey` is an optional external catalog reference rather than a local Music
+entity; a dedicated catalog is deferred until ownership and reuse requirements
+exist.
 
 ## Community Post
 
@@ -69,6 +72,10 @@ Post means a community publication, not a universal media row. A Post can hold
 text, images, video, or a link and supports likes, comments, reposts, sharing,
 saving, and reporting. `categoryId = null` means the general Post Home feed;
 otherwise it belongs to a service-managed Category.
+
+Community media is ordered through `CommunityPostMedia`. Category records are
+the source of truth for navigation. Omitting the category filter means Post Home
+and returns only records whose `categoryId` is null.
 
 ## Shared capabilities
 
@@ -87,3 +94,7 @@ retained temporarily so authentication, upload, feed, engagement, comments,
 and moderation remain operational while each product service receives an
 explicit model and API. The migration is complete only when `Post` unambiguously
 means Community Post in product-facing code.
+
+The compatibility ID is currently exposed as `engagementTargetId` only where
+the existing like/comment/save/report implementation still requires it. Product
+reads and media traversal do not start from the compatibility aggregate.

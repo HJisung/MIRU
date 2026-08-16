@@ -1,11 +1,15 @@
 import type {
-  DiscoveryFeed,
   FeedItem,
   HomeVideo,
   HomeVideoList,
   CollectionList,
   Series,
   SeriesList,
+  Shortform,
+  ShortformList,
+  CommunityCategoryList,
+  CommunityPost,
+  CommunityPostList,
 } from "@stream/api-contract";
 
 const apiUrl =
@@ -34,13 +38,6 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export function getDiscoveryFeed(cursor?: string, format?: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO") {
-  const query = new URLSearchParams({ limit: "12" });
-  if (cursor) query.set("cursor", cursor);
-  if (format) query.set("format", format);
-  return apiFetch<DiscoveryFeed>(`/feed/discovery?${query}`);
-}
-
 export function getPost(postId: string) {
   return apiFetch<FeedItem>(`/posts/${encodeURIComponent(postId)}`);
 }
@@ -63,4 +60,27 @@ export function getSeriesList() {
 
 export function getSeries(seriesId: string) {
   return apiFetch<Series>(`/series/${encodeURIComponent(seriesId)}`);
+}
+
+export function getShortforms() {
+  return apiFetch<ShortformList>("/shortforms");
+}
+
+export function getShortform(shortformId: string) {
+  return apiFetch<Shortform>(`/shortforms/${encodeURIComponent(shortformId)}`);
+}
+
+export function getCommunityCategories() {
+  return apiFetch<CommunityCategoryList>("/community-categories");
+}
+
+export function getCommunityPosts(category?: string) {
+  const query = category ? `?category=${encodeURIComponent(category)}` : "";
+  return apiFetch<CommunityPostList>(`/community-posts${query}`);
+}
+
+export function getCommunityPost(postId: string) {
+  return apiFetch<CommunityPost>(
+    `/community-posts/${encodeURIComponent(postId)}`,
+  );
 }

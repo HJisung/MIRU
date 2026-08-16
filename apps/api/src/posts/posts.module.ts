@@ -7,5 +7,6 @@ import { AuthModule } from '../auth/auth.module.js';
   imports: [AuthModule],
   controllers: [PostsController],
   providers: [PostsService],
+  exports: [PostsService],
 })
 export class PostsModule {}

@@ -844,6 +844,174 @@
           "series"
         ]
       }
+    },
+    "/api/v1/shortforms": {
+      "get": {
+        "operationId": "ShortformsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShortformListDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List published Shortforms",
+        "tags": [
+          "shortforms"
+        ]
+      }
+    },
+    "/api/v1/shortforms/{shortformId}": {
+      "get": {
+        "operationId": "ShortformsController_findOne",
+        "parameters": [
+          {
+            "name": "shortformId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShortformDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shortform is not published or does not exist"
+          }
+        },
+        "summary": "View one published Shortform",
+        "tags": [
+          "shortforms"
+        ]
+      }
+    },
+    "/api/v1/community-posts/images": {
+      "post": {
+        "operationId": "CommunityController_createImage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommunityImagePostDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community-posts": {
+      "get": {
+        "operationId": "CommunityController_list",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "Category slug. Omit for Post Home.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityPostListDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List Post Home or one managed Category",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community-posts/{postId}": {
+      "get": {
+        "operationId": "CommunityController_findOne",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityPostDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Community Post is not published or does not exist"
+          }
+        },
+        "summary": "View one published Community Post",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community-categories": {
+      "get": {
+        "operationId": "CommunityController_categories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityCategoryListDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List active Community Categories",
+        "tags": [
+          "community"
+        ]
+      }
     }
   },
   "info": {
@@ -1474,6 +1642,259 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SeriesDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ShortformPromotionDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "HOME_VIDEO",
+              "SERIES",
+              "SERIES_EPISODE"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "publicationId": {
+            "type": "object",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "title"
+        ]
+      },
+      "ShortformDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "engagementTargetId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Compatibility engagement target"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "VIDEO",
+              "IMAGE_CAROUSEL"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string"
+          },
+          "musicKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "External music catalog reference"
+          },
+          "publishedAt": {
+            "type": "string"
+          },
+          "likeCount": {
+            "type": "number"
+          },
+          "commentCount": {
+            "type": "number"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/CreatorSummaryDto"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaSummaryDto"
+            }
+          },
+          "promotedContent": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ShortformPromotionDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "engagementTargetId",
+          "type",
+          "description",
+          "publishedAt",
+          "likeCount",
+          "commentCount",
+          "creator",
+          "media"
+        ]
+      },
+      "ShortformListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShortformDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CreateCommunityImagePostDto": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "caption": {
+            "type": "string",
+            "maxLength": 2200
+          },
+          "categorySlug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetId",
+          "caption"
+        ]
+      },
+      "CommunityCategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description"
+        ]
+      },
+      "CommunityPostDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "engagementTargetId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Compatibility engagement target"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "TEXT",
+              "IMAGE",
+              "VIDEO",
+              "LINK"
+            ]
+          },
+          "body": {
+            "type": "string"
+          },
+          "linkUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "publishedAt": {
+            "type": "string"
+          },
+          "likeCount": {
+            "type": "number"
+          },
+          "commentCount": {
+            "type": "number"
+          },
+          "author": {
+            "$ref": "#/components/schemas/CreatorSummaryDto"
+          },
+          "category": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommunityCategoryDto"
+              }
+            ]
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "engagementTargetId",
+          "type",
+          "body",
+          "publishedAt",
+          "likeCount",
+          "commentCount",
+          "author",
+          "media"
+        ]
+      },
+      "CommunityPostListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityPostDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CommunityCategoryListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityCategoryDto"
             }
           }
         },

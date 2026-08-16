@@ -11,6 +11,7 @@ import {
 import { DatabaseService } from '../database/database.service.js';
 import { toFeedItem } from '../feed/feed.mapper.js';
 import type { CreateImagePostDto } from './posts.dto.js';
+import type { CreateCommunityImagePostDto } from '../community/community.dto.js';
 
 @Injectable()
 export class PostsService {
@@ -60,6 +61,18 @@ export class PostsService {
   }
 
   async createImagePost(userId: string, input: CreateImagePostDto) {
+    const created = await this.createCommunityImagePost(userId, input);
+    return {
+      id: created.engagementTargetId,
+      status: PostStatus.PUBLISHED,
+      publishedAt: created.publishedAt,
+    };
+  }
+
+  async createCommunityImagePost(
+    userId: string,
+    input: CreateCommunityImagePostDto,
+  ) {
     const asset = await this.database.client.mediaAsset.findFirst({
       where: {
         id: input.assetId,
@@ -71,8 +84,16 @@ export class PostsService {
     });
     if (!asset)
       throw new NotFoundException('Ready unlinked image asset not found');
+    const category = input.categorySlug
+      ? await this.database.client.communityCategory.findFirst({
+          where: { slug: input.categorySlug, isActive: true },
+          select: { id: true },
+        })
+      : null;
+    if (input.categorySlug && !category)
+      throw new NotFoundException('Active Community Category not found');
     const publishedAt = new Date();
-    return this.database.client.post.create({
+    const created = await this.database.client.post.create({
       data: {
         authorId: userId,
         format: PostFormat.IMAGE,
@@ -84,14 +105,23 @@ export class PostsService {
         communityPost: {
           create: {
             authorId: userId,
+            categoryId: category?.id,
             type: CommunityPostType.IMAGE,
             body: input.caption.trim(),
             status: DomainPublicationStatus.PUBLISHED,
             publishedAt,
+            media: { create: { assetId: asset.id, position: 0 } },
           },
         },
       },
-      select: { id: true, status: true, publishedAt: true },
+      select: { id: true, communityPost: { select: { id: true } } },
     });
+    if (!created.communityPost)
+      throw new Error('Community Post creation failed');
+    return {
+      id: created.communityPost.id,
+      engagementTargetId: created.id,
+      publishedAt: publishedAt.toISOString(),
+    };
   }
 }

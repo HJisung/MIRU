@@ -97,6 +97,7 @@ pnpm db:seed             # reset deterministic local demo records
 
 Start at [docs/product/domain-model.md](docs/product/domain-model.md), then read
 [docs/product/implementation-plan.md](docs/product/implementation-plan.md).
-When learning the first flow, trace `apps/web/src/app/page.tsx` →
-`apps/web/src/lib/api.ts` → generated `packages/api-contract` types →
-`apps/api/src/feed` → `packages/database/prisma/schema.prisma`.
+When learning the product flows, trace `apps/web/src/app/shorts/page.tsx` or
+`apps/web/src/app/posts/page.tsx` → `apps/web/src/lib/api.ts` → generated
+`packages/api-contract` types → `apps/api/src/shortforms` or
+`apps/api/src/community` → `packages/database/prisma/schema.prisma`.

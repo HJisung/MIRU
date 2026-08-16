@@ -19,6 +19,7 @@ describe('direct image upload and publish (MinIO + PostgreSQL integration)', () 
   const handle = `upload_${Date.now()}`;
   let cookie = '';
   let postId = '';
+  let engagementTargetId = '';
 
   beforeAll(async () => {
     app = await NestFactory.create<NestFastifyApplication>(
@@ -98,18 +99,20 @@ describe('direct image upload and publish (MinIO + PostgreSQL integration)', () 
 
     const post = await app.inject({
       method: 'POST',
-      url: '/api/v1/posts/images',
+      url: '/api/v1/community-posts/images',
       headers: { cookie },
       payload: { assetId: upload.assetId, caption: 'A real uploaded image.' },
     });
     expect(post.statusCode).toBe(201);
-    postId = post.json<{ id: string }>().id;
+    const created = post.json<{ id: string; engagementTargetId: string }>();
+    postId = created.id;
+    engagementTargetId = created.engagementTargetId;
   });
 
   it('serves the published object without exposing its private key', async () => {
     const detail = await app.inject({
       method: 'GET',
-      url: `/api/v1/posts/${postId}`,
+      url: `/api/v1/community-posts/${postId}`,
     });
     const media = detail.json<{
       media: Array<{ url: string; width: number }>;
@@ -122,5 +125,6 @@ describe('direct image upload and publish (MinIO + PostgreSQL integration)', () 
     expect(content.statusCode).toBe(200);
     expect(content.headers['content-type']).toBe('image/png');
     expect(content.rawPayload.byteLength).toBeGreaterThan(100);
+    expect(engagementTargetId).toMatch(/^[0-9a-f-]{36}$/);
   });
 });

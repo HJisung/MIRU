@@ -25,7 +25,9 @@ export default function AuthPage() {
       router.push(mode === "register" ? "/create" : "/");
       router.refresh();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "다시 시도해 주세요.");
+      setError(
+        caught instanceof Error ? caught.message : "다시 시도해 주세요.",
+      );
     } finally {
       setPending(false);
     }
@@ -38,7 +40,9 @@ export default function AuthPage() {
           <Sparkles className="size-7 text-[#f29a7d]" />
           <div>
             <p className="max-w-md text-4xl font-semibold leading-tight tracking-[-0.04em]">
-              보고 싶은 장면과<br />들려주고 싶은 이야기를 한곳에.
+              보고 싶은 장면과
+              <br />
+              들려주고 싶은 이야기를 한곳에.
             </p>
             <p className="mt-5 max-w-sm text-sm leading-6 text-white/60">
               사진 한 장, 짧은 순간, 긴 기록까지 나만의 채널에서 시작하세요.
@@ -51,7 +55,10 @@ export default function AuthPage() {
               <button
                 key={item}
                 type="button"
-                onClick={() => { setMode(item); setError(""); }}
+                onClick={() => {
+                  setMode(item);
+                  setError("");
+                }}
                 className={`flex-1 rounded-lg py-2.5 transition ${mode === item ? "bg-white shadow-sm" : "text-muted"}`}
               >
                 {item === "register" ? "가입하기" : "로그인"}
@@ -59,35 +66,76 @@ export default function AuthPage() {
             ))}
           </div>
           <h1 className="mt-8 text-2xl font-semibold tracking-[-0.03em]">
-            {mode === "register" ? "새로운 채널을 만들어보세요" : "다시 만나서 반가워요"}
+            {mode === "register"
+              ? "새로운 채널을 만들어보세요"
+              : "다시 만나서 반가워요"}
           </h1>
           <form onSubmit={submit} className="mt-7 space-y-4">
             {mode === "register" && (
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="표시 이름" name="displayName" placeholder="홍길동" />
+                <Field
+                  label="표시 이름"
+                  name="displayName"
+                  placeholder="홍길동"
+                />
                 <Field label="핸들" name="handle" placeholder="gildong.daily" />
               </div>
             )}
-            <Field label="이메일" name="email" type="email" placeholder="you@example.com" />
-            <Field label="비밀번호" name="password" type="password" placeholder="10자 이상 입력" minLength={10} />
-            {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-            <button disabled={pending} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ink font-semibold text-background transition hover:opacity-90 disabled:opacity-50">
-              {pending ? "처리 중…" : mode === "register" ? "채널 만들기" : "로그인"}
+            <Field
+              label="이메일"
+              name="email"
+              type="email"
+              placeholder="you@example.com"
+            />
+            <Field
+              label="비밀번호"
+              name="password"
+              type="password"
+              placeholder="10자 이상 입력"
+              minLength={10}
+            />
+            {error && (
+              <p
+                role="alert"
+                className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
+                {error}
+              </p>
+            )}
+            <button
+              disabled={pending}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ink font-semibold text-background transition hover:opacity-90 disabled:opacity-50"
+            >
+              {pending
+                ? "처리 중…"
+                : mode === "register"
+                  ? "채널 만들기"
+                  : "로그인"}
               {!pending && <ArrowRight className="size-4" />}
             </button>
           </form>
-          <p className="mt-5 flex items-center justify-center gap-1.5 text-xs text-muted"><LockKeyhole className="size-3.5" /> 비밀번호와 세션은 안전하게 암호화되어 관리됩니다.</p>
+          <p className="mt-5 flex items-center justify-center gap-1.5 text-xs text-muted">
+            <LockKeyhole className="size-3.5" /> 비밀번호와 세션은 안전하게
+            암호화되어 관리됩니다.
+          </p>
         </section>
       </div>
     </div>
   );
 }
 
-function Field({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+function Field({
+  label,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
     <label className="block text-sm font-medium">
       {label}
-      <input required {...props} className="mt-2 h-12 w-full rounded-xl border border-line bg-background px-4 outline-none transition focus:border-accent" />
+      <input
+        required
+        {...props}
+        className="mt-2 h-12 w-full rounded-xl border border-line bg-background px-4 outline-none transition focus:border-accent"
+      />
     </label>
   );
 }

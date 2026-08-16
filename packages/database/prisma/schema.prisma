@@ -160,13 +160,13 @@ model Session {
 }
 
 model MediaAsset {
-  id               String       @id @default(uuid()) @db.Uuid
-  ownerId          String       @db.Uuid
-  owner            User         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  id               String               @id @default(uuid()) @db.Uuid
+  ownerId          String               @db.Uuid
+  owner            User                 @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   kind             MediaKind
   purpose          MediaPurpose
-  status           MediaStatus  @default(PENDING_UPLOAD)
-  sourceKey        String       @unique
+  status           MediaStatus          @default(PENDING_UPLOAD)
+  sourceKey        String               @unique
   publicUrl        String?
   mimeType         String?
   byteSize         BigInt?
@@ -175,13 +175,15 @@ model MediaAsset {
   durationMs       Int?
   blurDataUrl      String?
   failureCode      String?
-  pipelineVersion  Int          @default(1)
+  pipelineVersion  Int                  @default(1)
   postLinks        PostMedia[]
-  collectionCovers Collection[] @relation("CollectionCover")
-  seriesPosters    Series[]     @relation("SeriesPoster")
-  seriesBackdrops  Series[]     @relation("SeriesBackdrop")
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  shortFormLinks   ShortFormMedia[]
+  communityLinks   CommunityPostMedia[]
+  collectionCovers Collection[]         @relation("CollectionCover")
+  seriesPosters    Series[]             @relation("SeriesPoster")
+  seriesBackdrops  Series[]             @relation("SeriesBackdrop")
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
 
   @@index([ownerId, createdAt])
   @@index([status])
@@ -246,6 +248,7 @@ model Series {
   seasons                 SeriesSeason[]
   episodes                SeriesEpisode[]
   submissions             SeriesSubmission[]
+  promotedBy              ShortForm[]             @relation("PromotedSeries")
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
 
@@ -266,6 +269,7 @@ model HomeVideo {
   status          DomainPublicationStatus @default(DRAFT)
   publishedAt     DateTime?
   collectionItems CollectionItem[]
+  promotedBy      ShortForm[]             @relation("PromotedHomeVideo")
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
 
@@ -326,6 +330,7 @@ model SeriesEpisode {
   season              SeriesSeason? @relation(fields: [seasonId], references: [id], onDelete: SetNull)
   publicationId       String        @unique @db.Uuid
   publication         Post          @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  promotedBy          ShortForm[]   @relation("PromotedSeriesEpisode")
   episodeNumber       Int
   seasonEpisodeNumber Int?
   title               String
@@ -368,8 +373,12 @@ model ShortForm {
   description         String                  @default("")
   musicKey            String?
   promotedHomeVideoId String?                 @db.Uuid
+  promotedHomeVideo   HomeVideo?              @relation("PromotedHomeVideo", fields: [promotedHomeVideoId], references: [id], onDelete: SetNull)
   promotedSeriesId    String?                 @db.Uuid
+  promotedSeries      Series?                 @relation("PromotedSeries", fields: [promotedSeriesId], references: [id], onDelete: SetNull)
   promotedEpisodeId   String?                 @db.Uuid
+  promotedEpisode     SeriesEpisode?          @relation("PromotedSeriesEpisode", fields: [promotedEpisodeId], references: [id], onDelete: SetNull)
+  media               ShortFormMedia[]
   status              DomainPublicationStatus @default(DRAFT)
   publishedAt         DateTime?
   createdAt           DateTime                @default(now())
@@ -377,6 +386,21 @@ model ShortForm {
 
   @@index([status, publishedAt(sort: Desc), id(sort: Desc)])
   @@index([musicKey])
+  @@index([promotedHomeVideoId])
+  @@index([promotedSeriesId])
+  @@index([promotedEpisodeId])
+}
+
+model ShortFormMedia {
+  shortFormId String     @db.Uuid
+  assetId     String     @db.Uuid
+  position    Int
+  shortForm   ShortForm  @relation(fields: [shortFormId], references: [id], onDelete: Cascade)
+  asset       MediaAsset @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@id([shortFormId, assetId])
+  @@unique([shortFormId, position])
+  @@index([assetId])
 }
 
 model CommunityCategory {
@@ -402,6 +426,7 @@ model CommunityPost {
   type          CommunityPostType
   body          String                  @default("")
   linkUrl       String?
+  media         CommunityPostMedia[]
   status        DomainPublicationStatus @default(DRAFT)
   publishedAt   DateTime?
   createdAt     DateTime                @default(now())
@@ -409,6 +434,18 @@ model CommunityPost {
 
   @@index([categoryId, status, publishedAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc), id(sort: Desc)])
+}
+
+model CommunityPostMedia {
+  communityPostId String        @db.Uuid
+  assetId         String        @db.Uuid
+  position        Int
+  communityPost   CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
+  asset           MediaAsset    @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@id([communityPostId, assetId])
+  @@unique([communityPostId, position])
+  @@index([assetId])
 }
 
 model Playlist {
