@@ -1,10 +1,14 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LoaderCircle, UploadCloud, Video } from "lucide-react";
 import { clientApi } from "@/lib/client-api";
+import { waitForVideoProcessing } from "@/features/media/processing-status";
+
+const pendingKey = "miru:pending-home-video";
+type Pending = { assetId: string; draftId: string };
 
 type Stage =
   | "idle"
@@ -19,6 +23,43 @@ export function CreateHomeVideoForm() {
   const [file, setFile] = useState<File | null>(null);
   const [stage, setStage] = useState<Stage>("idle");
   const [error, setError] = useState("");
+  const [pending, setPending] = useState<Pending | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(pendingKey);
+    if (!stored) return;
+    const timeout = window.setTimeout(
+      () => setPending(JSON.parse(stored) as Pending),
+      0,
+    );
+    return () => window.clearTimeout(timeout);
+  }, []);
+
+  async function finish(current: Pending) {
+    setStage("processing");
+    setError("");
+    const result = await waitForVideoProcessing(current.assetId);
+    if (result.status === "FAILED") {
+      throw new Error(
+        `영상 처리 실패: ${result.failureCode ?? "알 수 없는 오류"}`,
+      );
+    }
+    if (result.status === "TIMEOUT") {
+      setStage("idle");
+      setError(
+        "아직 처리 중입니다. 잠시 후 ‘처리 상태 다시 확인’을 눌러주세요.",
+      );
+      return;
+    }
+    setStage("publishing");
+    await clientApi(`/home/videos/${current.draftId}/publish`, {
+      method: "POST",
+    });
+    localStorage.removeItem(pendingKey);
+    setPending(null);
+    router.push(`/watch/home/${current.draftId}`);
+    router.refresh();
+  }
 
   function choose(event: ChangeEvent<HTMLInputElement>) {
     setFile(event.target.files?.[0] ?? null);
@@ -60,23 +101,10 @@ export function CreateHomeVideoForm() {
           description: String(data.get("description") ?? ""),
         }),
       });
-      setStage("processing");
-      for (;;) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        const asset = await clientApi<{
-          status: string;
-          failureCode: string | null;
-        }>(`/media/video-assets/${session.assetId}/status`);
-        if (asset.status === "FAILED")
-          throw new Error(
-            `영상 처리 실패: ${asset.failureCode ?? "알 수 없는 오류"}`,
-          );
-        if (asset.status === "READY") break;
-      }
-      setStage("publishing");
-      await clientApi(`/home/videos/${draft.id}/publish`, { method: "POST" });
-      router.push(`/watch/home/${draft.id}`);
-      router.refresh();
+      const current = { assetId: session.assetId, draftId: draft.id };
+      localStorage.setItem(pendingKey, JSON.stringify(current));
+      setPending(current);
+      await finish(current);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -97,16 +125,45 @@ export function CreateHomeVideoForm() {
   };
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <Link
-        href="/create"
-        className="float-right rounded-full border border-line px-4 py-2 text-sm font-semibold"
-      >
-        Post 이미지 업로드
-      </Link>
+      <nav aria-label="업로드 유형" className="mb-6 flex flex-wrap gap-2">
+        <Link
+          href="/create?type=shortform-video"
+          className="rounded-full border border-line px-4 py-2 text-sm font-semibold"
+        >
+          Shortform
+        </Link>
+        <Link
+          href="/create?type=series-single"
+          className="rounded-full border border-line px-4 py-2 text-sm font-semibold"
+        >
+          Series 단편
+        </Link>
+        <Link
+          href="/create?type=series-episode"
+          className="rounded-full border border-line px-4 py-2 text-sm font-semibold"
+        >
+          Series 에피소드
+        </Link>
+        <Link
+          href="/create"
+          className="rounded-full border border-line px-4 py-2 text-sm font-semibold"
+        >
+          Post 이미지
+        </Link>
+      </nav>
       <h1 className="text-3xl font-semibold">Home 영상 업로드</h1>
       <p className="mt-2 text-sm text-muted">
         MP4, MOV, WebM · 최대 500MB · 처리 완료 후 자동 공개됩니다.
       </p>
+      {pending && stage === "idle" && (
+        <button
+          type="button"
+          onClick={() => void finish(pending).catch(handleError)}
+          className="mt-5 rounded-full border border-line px-4 py-2 text-sm font-semibold"
+        >
+          처리 상태 다시 확인
+        </button>
+      )}
       <form
         onSubmit={submit}
         className="mt-8 space-y-5 rounded-3xl border border-line bg-panel-strong p-6"
@@ -156,4 +213,11 @@ export function CreateHomeVideoForm() {
       </form>
     </div>
   );
+
+  function handleError(caught: unknown) {
+    setError(
+      caught instanceof Error ? caught.message : "영상을 처리하지 못했습니다.",
+    );
+    setStage("idle");
+  }
 }

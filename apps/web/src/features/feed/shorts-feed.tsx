@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { mediaUrl } from "@/lib/client-api";
 import { compactNumber } from "@/lib/format";
+import { VideoPlayer } from "@/components/video-player";
 
 export function ShortsFeed({ feed }: { feed: ShortformList }) {
   return (
@@ -42,17 +43,21 @@ function ShortformSlide({ item }: { item: ShortformList["items"][number] }) {
   return (
     <article className="relative mx-auto flex min-h-full w-full snap-start items-center justify-center bg-black">
       <div className="relative h-[calc(100vh-5.5rem)] max-h-[60rem] w-full max-w-[34rem] overflow-hidden bg-neutral-950 sm:rounded-2xl">
-        <Image
-          src={mediaUrl(media.url)}
-          unoptimized={media.url.startsWith("/api/")}
-          alt={item.title ?? item.description}
-          fill
-          priority
-          className="object-cover"
-          sizes="544px"
-        />
+        {!isCarousel && media.mimeType === "application/vnd.apple.mpegurl" ? (
+          <VideoPlayer source={media.url} poster={media.posterUrl} />
+        ) : (
+          <Image
+            src={mediaUrl(media.url)}
+            unoptimized={media.url.startsWith("/api/")}
+            alt={item.title ?? item.description}
+            fill
+            priority
+            className="object-cover"
+            sizes="544px"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/10" />
-        {!isCarousel && (
+        {!isCarousel && media.mimeType !== "application/vnd.apple.mpegurl" && (
           <button
             aria-label="재생"
             className="absolute inset-0 m-auto grid size-16 place-items-center rounded-full bg-black/35 text-white backdrop-blur-sm"

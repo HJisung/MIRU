@@ -1,5 +1,8 @@
 import {
+  DeleteObjectsCommand,
+  DeleteObjectCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -37,6 +40,38 @@ export class WorkerStorage {
         Body: createReadStream(source),
         ContentType: contentType,
       }),
+    );
+  }
+
+  async clearPrefix(prefix: string) {
+    let continuationToken: string | undefined;
+    do {
+      const listed = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: `${prefix}/`,
+          ContinuationToken: continuationToken,
+        }),
+      );
+      const objects = (listed.Contents ?? [])
+        .map(({ Key }) => Key)
+        .filter((Key): Key is string => Boolean(Key))
+        .map((Key) => ({ Key }));
+      if (objects.length) {
+        await this.client.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: { Objects: objects, Quiet: true },
+          }),
+        );
+      }
+      continuationToken = listed.NextContinuationToken;
+    } while (continuationToken);
+  }
+
+  async delete(key: string) {
+    await this.client.send(
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
     );
   }
 }

@@ -986,6 +986,116 @@
         ]
       }
     },
+    "/api/v1/series/{seriesId}/single-work/video": {
+      "post": {
+        "operationId": "SeriesController_attachSingleWork",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachSingleWorkVideoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesMediaDraftDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/{seriesId}/episodes": {
+      "post": {
+        "operationId": "SeriesController_createEpisode",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSeriesEpisodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesMediaDraftDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/episodes/{episodeId}/publish": {
+      "post": {
+        "operationId": "SeriesController_publishEpisode",
+        "parameters": [
+          {
+            "name": "episodeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesEpisodeDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
     "/api/v1/series/episodes/{episodeId}": {
       "get": {
         "operationId": "SeriesController_findEpisode",
@@ -1069,6 +1179,67 @@
           }
         },
         "summary": "List published Shortforms",
+        "tags": [
+          "shortforms"
+        ]
+      }
+    },
+    "/api/v1/shortforms/videos": {
+      "post": {
+        "operationId": "ShortformsController_createVideo",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVideoShortformDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShortformDraftDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "shortforms"
+        ]
+      }
+    },
+    "/api/v1/shortforms/{shortformId}/publish": {
+      "post": {
+        "operationId": "ShortformsController_publish",
+        "parameters": [
+          {
+            "name": "shortformId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShortformDto"
+                }
+              }
+            }
+          }
+        },
         "tags": [
           "shortforms"
         ]
@@ -1640,11 +1811,20 @@
             "type": "number",
             "minimum": 1,
             "maximum": 500000000
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "LONG_VIDEO",
+              "SHORT_VIDEO"
+            ],
+            "default": "LONG_VIDEO"
           }
         },
         "required": [
           "contentType",
-          "byteSize"
+          "byteSize",
+          "purpose"
         ]
       },
       "MediaAssetStatusDto": {
@@ -2301,6 +2481,82 @@
           "items"
         ]
       },
+      "AttachSingleWorkVideoDto": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "assetId"
+        ]
+      },
+      "SeriesMediaDraftDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PENDING_REVIEW",
+              "PUBLISHED",
+              "UNLISTED",
+              "ARCHIVED",
+              "REMOVED"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "assetId",
+          "status"
+        ]
+      },
+      "CreateSeriesEpisodeDto": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "episodeNumber": {
+            "type": "number"
+          },
+          "seasonId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "seasonEpisodeNumber": {
+            "type": "number",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "synopsis": {
+            "type": "string",
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "assetId",
+          "episodeNumber",
+          "title",
+          "synopsis"
+        ]
+      },
       "ShortformPromotionDto": {
         "type": "object",
         "properties": {
@@ -2406,6 +2662,72 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "CreateVideoShortformDto": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2200
+          },
+          "musicKey": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "promotedKind": {
+            "type": "string",
+            "enum": [
+              "HOME_VIDEO",
+              "SERIES",
+              "SERIES_EPISODE"
+            ]
+          },
+          "promotedId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "assetId",
+          "description"
+        ]
+      },
+      "ShortformDraftDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PENDING_REVIEW",
+              "PUBLISHED",
+              "UNLISTED",
+              "ARCHIVED",
+              "REMOVED"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "assetId",
+          "status"
         ]
       },
       "CreateCommunityImagePostDto": {

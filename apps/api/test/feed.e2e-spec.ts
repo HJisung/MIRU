@@ -133,13 +133,17 @@ describe('public discovery flow (PostgreSQL integration)', () => {
         episodes: Array<{ id: string; playable: unknown }>;
       }>;
     }>().items;
-    const episodic = works.find((work) => work.workType === 'EPISODIC');
+    const episodic = works.find(
+      (work) => work.id === '40000000-0000-4000-8000-000000000001',
+    );
     expect(episodic).toBeDefined();
     expect(
       (episodic as { engagementTarget?: unknown }).engagementTarget,
     ).toBeNull();
     expect(episodic?.episodes.length).toBeGreaterThan(0);
-    const single = works.find((work) => work.workType === 'SINGLE_WORK');
+    const single = works.find(
+      (work) => work.id === '40000000-0000-4000-8000-000000000002',
+    );
     expect(single?.episodes).toHaveLength(0);
     expect(single?.singleWork?.id).toBe(single?.id);
     expect(

@@ -112,3 +112,34 @@ test("creation surface exposes the Home video upload flow", async ({
   ).toBeVisible();
   await expect(page.getByText(/MP4, MOV, WebM · 최대 500MB/)).toBeVisible();
 });
+
+test("video creation surfaces reuse recoverable processing state", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "miru:pending-home-video",
+      JSON.stringify({
+        assetId: crypto.randomUUID(),
+        draftId: crypto.randomUUID(),
+      }),
+    );
+  });
+  await page.goto("/create?type=video");
+  await expect(
+    page.getByRole("button", { name: "처리 상태 다시 확인" }),
+  ).toBeVisible();
+
+  await page.goto("/create?type=series-single");
+  await expect(
+    page.getByRole("heading", { name: "Series SINGLE_WORK 영상 연결" }),
+  ).toBeVisible();
+  await page.goto("/create?type=series-episode");
+  await expect(
+    page.getByRole("heading", { name: "Series Episode 업로드" }),
+  ).toBeVisible();
+  await page.goto("/create?type=shortform-video");
+  await expect(
+    page.getByRole("heading", { name: "Shortform VIDEO 업로드" }),
+  ).toBeVisible();
+});

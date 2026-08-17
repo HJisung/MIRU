@@ -1,12 +1,29 @@
-import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { ShortformDto, ShortformListDto } from './shortforms.dto.js';
+import {
+  CreateVideoShortformDto,
+  ShortformDraftDto,
+  ShortformDto,
+  ShortformListDto,
+} from './shortforms.dto.js';
 import { ShortformsService } from './shortforms.service.js';
+import type { AuthUser } from '../auth/auth.service.js';
+import { CurrentUser, SessionGuard } from '../auth/session.guard.js';
 
 @ApiTags('shortforms')
 @Controller('shortforms')
@@ -20,6 +37,27 @@ export class ShortformsController {
   @ApiOkResponse({ type: ShortformListDto })
   list() {
     return this.shortforms.list();
+  }
+
+  @Post('videos')
+  @UseGuards(SessionGuard)
+  @ApiOkResponse({ type: ShortformDraftDto })
+  createVideo(
+    @CurrentUser() user: AuthUser,
+    @Body() input: CreateVideoShortformDto,
+  ) {
+    return this.shortforms.createVideo(user.id, input);
+  }
+
+  @Post(':shortformId/publish')
+  @UseGuards(SessionGuard)
+  @HttpCode(200)
+  @ApiOkResponse({ type: ShortformDto })
+  publish(
+    @CurrentUser() user: AuthUser,
+    @Param('shortformId', new ParseUUIDPipe()) id: string,
+  ) {
+    return this.shortforms.publish(user.id, id);
   }
 
   @Get(':shortformId')

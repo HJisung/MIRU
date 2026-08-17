@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsInt, Max, Min } from 'class-validator';
-import { MediaStatus } from '@stream/database';
+import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { MediaPurpose, MediaStatus } from '@stream/database';
 import { videoUploadPolicy } from '@stream/media';
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp'] as const;
@@ -34,6 +34,14 @@ export class CreateVideoUploadDto {
   @Min(1)
   @Max(videoUploadPolicy.maxBytes)
   byteSize!: number;
+
+  @ApiProperty({
+    enum: [MediaPurpose.LONG_VIDEO, MediaPurpose.SHORT_VIDEO],
+    default: MediaPurpose.LONG_VIDEO,
+  })
+  @IsOptional()
+  @IsIn([MediaPurpose.LONG_VIDEO, MediaPurpose.SHORT_VIDEO])
+  purpose?: 'LONG_VIDEO' | 'SHORT_VIDEO';
 }
 
 export class MediaAssetStatusDto {

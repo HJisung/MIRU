@@ -3,6 +3,49 @@ import { DomainPublicationStatus, SeriesWorkType } from '@stream/database';
 import { EngagementTargetDto } from '../engagement/engagement.dto.js';
 import { CreatorSummaryDto, MediaSummaryDto } from '../feed/feed.dto.js';
 import { PlayableDto } from '../playback/playback.dto.js';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
+
+export class AttachSingleWorkVideoDto {
+  @ApiProperty({ format: 'uuid' }) @IsUUID() assetId!: string;
+}
+
+export class CreateSeriesEpisodeDto {
+  @ApiProperty({ format: 'uuid' }) @IsUUID() assetId!: string;
+  @ApiProperty() @IsInt() @Min(1) episodeNumber!: number;
+  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  @IsOptional()
+  @IsUUID()
+  seasonId?: string;
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  seasonEpisodeNumber?: number;
+  @ApiProperty({ maxLength: 160 })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(160)
+  title!: string;
+  @ApiProperty({ maxLength: 5000 })
+  @IsString()
+  @MaxLength(5000)
+  synopsis!: string;
+}
+
+export class SeriesMediaDraftDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ format: 'uuid' }) assetId!: string;
+  @ApiProperty({ enum: DomainPublicationStatus })
+  status!: DomainPublicationStatus;
+}
 
 export class SeriesEpisodeDto {
   @ApiProperty({ format: 'uuid' }) id!: string;

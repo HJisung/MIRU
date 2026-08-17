@@ -1,7 +1,25 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { DomainPublicationStatus, MediaStatus } from '@stream/database';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  DomainPublicationStatus,
+  MediaPurpose,
+  MediaStatus,
+  PostFormat,
+  PostStatus,
+  PostVisibility,
+  SeriesSubmissionStatus,
+  SeriesWorkType,
+} from '@stream/database';
 import { DatabaseService } from '../database/database.service.js';
 import { toPlayableMedia } from '../playback/playback.mapper.js';
+import type { AuthUser } from '../auth/auth.service.js';
+import type { CreateSeriesEpisodeDto } from './series.dto.js';
+import { MediaAttachmentService } from '../media/media-attachment.service.js';
 
 const seriesInclude = {
   creator: {
@@ -23,6 +41,8 @@ const seriesInclude = {
 export class SeriesService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(MediaAttachmentService)
+    private readonly mediaAttachments: MediaAttachmentService,
   ) {}
 
   async list() {
@@ -54,6 +74,164 @@ export class SeriesService {
     });
     if (!episode) throw new NotFoundException('Series episode not found');
     return this.mapEpisode(episode);
+  }
+
+  async attachSingleWork(user: AuthUser, seriesId: string, assetId: string) {
+    const series = await this.manageableSeries(user, seriesId);
+    if (series.workType !== SeriesWorkType.SINGLE_WORK)
+      throw new BadRequestException('Series is not a SINGLE_WORK');
+    await this.mediaAttachments.readyUnlinkedOwnedVideo(
+      user.id,
+      assetId,
+      MediaPurpose.LONG_VIDEO,
+    );
+
+    await this.database.client.$transaction(async (tx) => {
+      let publicationId = series.singleWorkPublicationId;
+      if (!publicationId) {
+        const publication = await tx.post.create({
+          data: {
+            authorId: user.id,
+            format: PostFormat.LONG_VIDEO,
+            status:
+              series.publicationStatus === DomainPublicationStatus.PUBLISHED
+                ? PostStatus.PUBLISHED
+                : PostStatus.DRAFT,
+            visibility: PostVisibility.PUBLIC,
+            title: series.title,
+            caption: series.synopsis,
+            publishedAt:
+              series.publicationStatus === DomainPublicationStatus.PUBLISHED
+                ? new Date()
+                : null,
+            media: { create: { assetId, order: 0 } },
+          },
+        });
+        publicationId = publication.id;
+      } else {
+        await tx.postMedia.deleteMany({ where: { postId: publicationId } });
+        await tx.postMedia.create({
+          data: { postId: publicationId, assetId, order: 0 },
+        });
+      }
+      await tx.series.update({
+        where: { id: series.id },
+        data: {
+          singleWorkAssetId: assetId,
+          singleWorkPublicationId: publicationId,
+        },
+      });
+    });
+    return {
+      id: series.id,
+      assetId,
+      status: series.publicationStatus,
+    };
+  }
+
+  async createEpisode(
+    user: AuthUser,
+    seriesId: string,
+    input: CreateSeriesEpisodeDto,
+  ) {
+    const series = await this.manageableSeries(user, seriesId);
+    if (series.workType !== SeriesWorkType.EPISODIC)
+      throw new BadRequestException('Series is not EPISODIC');
+    await this.mediaAttachments.readyUnlinkedOwnedVideo(
+      user.id,
+      input.assetId,
+      MediaPurpose.LONG_VIDEO,
+    );
+    if (input.seasonId) {
+      const season = await this.database.client.seriesSeason.findFirst({
+        where: { id: input.seasonId, seriesId },
+      });
+      if (!season)
+        throw new BadRequestException('Season does not belong to Series');
+    }
+    const episode = await this.database.client.post.create({
+      data: {
+        authorId: user.id,
+        format: PostFormat.LONG_VIDEO,
+        status: PostStatus.DRAFT,
+        visibility: PostVisibility.PUBLIC,
+        title: input.title.trim(),
+        caption: input.synopsis.trim(),
+        media: { create: { assetId: input.assetId, order: 0 } },
+        seriesEpisode: {
+          create: {
+            seriesId,
+            seasonId: input.seasonId,
+            videoAssetId: input.assetId,
+            episodeNumber: input.episodeNumber,
+            seasonEpisodeNumber: input.seasonEpisodeNumber,
+            title: input.title.trim(),
+            synopsis: input.synopsis.trim(),
+          },
+        },
+      },
+      select: { seriesEpisode: { select: { id: true, videoAssetId: true } } },
+    });
+    if (!episode.seriesEpisode) throw new Error('Episode creation failed');
+    return {
+      id: episode.seriesEpisode.id,
+      assetId: episode.seriesEpisode.videoAssetId!,
+      status: DomainPublicationStatus.DRAFT,
+    };
+  }
+
+  async publishEpisode(user: AuthUser, episodeId: string) {
+    const episode = await this.database.client.seriesEpisode.findUnique({
+      where: { id: episodeId },
+      include: { series: { include: { submissions: true } }, videoAsset: true },
+    });
+    if (!episode) throw new NotFoundException('Series episode not found');
+    this.assertSeriesManager(user, episode.series);
+    if (episode.series.publicationStatus !== DomainPublicationStatus.PUBLISHED)
+      throw new BadRequestException('Series must be published first');
+    if (episode.videoAsset?.status !== MediaStatus.READY)
+      throw new BadRequestException('Episode video is not ready');
+    const publishedAt = new Date();
+    await this.database.client.$transaction([
+      this.database.client.seriesEpisode.update({
+        where: { id: episode.id },
+        data: { publishedAt },
+      }),
+      this.database.client.post.update({
+        where: { id: episode.publicationId },
+        data: { status: PostStatus.PUBLISHED, publishedAt },
+      }),
+    ]);
+    return this.findEpisode(episode.id);
+  }
+
+  private async manageableSeries(user: AuthUser, id: string) {
+    const series = await this.database.client.series.findUnique({
+      where: { id },
+      include: { submissions: true },
+    });
+    if (!series) throw new NotFoundException('Series not found');
+    this.assertSeriesManager(user, series);
+    return series;
+  }
+
+  private assertSeriesManager(
+    user: AuthUser,
+    series: {
+      creatorId: string;
+      submissions: Array<{
+        applicantId: string;
+        status: SeriesSubmissionStatus;
+      }>;
+    },
+  ) {
+    const approved = series.submissions.some(
+      (submission) =>
+        submission.applicantId === user.id &&
+        submission.status === SeriesSubmissionStatus.APPROVED,
+    );
+    if (series.creatorId !== user.id || (user.role !== 'ADMIN' && !approved))
+      throw new ForbiddenException('Approved Series management is required');
   }
 
   private map(work: Awaited<ReturnType<SeriesService['findRecord']>>) {

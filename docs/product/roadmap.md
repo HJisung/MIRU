@@ -27,11 +27,10 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
 
 ## Next
 
-- Expand the proven single-rendition Home pipeline into an ABR ladder and attach
-  it to Series and Shortform video creation
+- Expand the shared single-rendition pipeline into an ABR ladder
 - Move engagement persistence behind the now domain-aware target API from
   compatibility publication foreign keys to native target storage
-- Add authenticated Shortform creation and Community TEXT/VIDEO/LINK authoring
+- Add Community TEXT/VIDEO/LINK authoring and richer Series creator review UI
 - Nested comments, notifications, richer creator tools
 - Search, hashtags/topics, captions/subtitles
 - Resumable upload UX and creator analytics

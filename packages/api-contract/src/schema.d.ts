@@ -505,6 +505,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/series/{seriesId}/single-work/video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SeriesController_attachSingleWork"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series/{seriesId}/episodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SeriesController_createEpisode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series/episodes/{episodeId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SeriesController_publishEpisode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/series/episodes/{episodeId}": {
         parameters: {
             query?: never;
@@ -548,6 +596,38 @@ export interface paths {
         get: operations["ShortformsController_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shortforms/videos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ShortformsController_createVideo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shortforms/{shortformId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ShortformsController_publish"];
         delete?: never;
         options?: never;
         head?: never;
@@ -755,6 +835,11 @@ export interface components {
             /** @enum {string} */
             contentType: "video/mp4" | "video/quicktime" | "video/webm";
             byteSize: number;
+            /**
+             * @default LONG_VIDEO
+             * @enum {string}
+             */
+            purpose: "LONG_VIDEO" | "SHORT_VIDEO";
         };
         MediaAssetStatusDto: {
             /** Format: uuid */
@@ -918,6 +1003,28 @@ export interface components {
         SeriesListDto: {
             items: components["schemas"]["SeriesDto"][];
         };
+        AttachSingleWorkVideoDto: {
+            /** Format: uuid */
+            assetId: string;
+        };
+        SeriesMediaDraftDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            assetId: string;
+            /** @enum {string} */
+            status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "UNLISTED" | "ARCHIVED" | "REMOVED";
+        };
+        CreateSeriesEpisodeDto: {
+            /** Format: uuid */
+            assetId: string;
+            episodeNumber: number;
+            /** Format: uuid */
+            seasonId?: string | null;
+            seasonEpisodeNumber?: number | null;
+            title: string;
+            synopsis: string;
+        };
         ShortformPromotionDto: {
             /** @enum {string} */
             kind: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE";
@@ -944,6 +1051,25 @@ export interface components {
         };
         ShortformListDto: {
             items: components["schemas"]["ShortformDto"][];
+        };
+        CreateVideoShortformDto: {
+            /** Format: uuid */
+            assetId: string;
+            title?: string;
+            description: string;
+            musicKey?: string;
+            /** @enum {string} */
+            promotedKind?: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE";
+            /** Format: uuid */
+            promotedId?: string;
+        };
+        ShortformDraftDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            assetId: string;
+            /** @enum {string} */
+            status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "UNLISTED" | "ARCHIVED" | "REMOVED";
         };
         CreateCommunityImagePostDto: {
             /** Format: uuid */
@@ -1756,6 +1882,77 @@ export interface operations {
             };
         };
     };
+    SeriesController_attachSingleWork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachSingleWorkVideoDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesMediaDraftDto"];
+                };
+            };
+        };
+    };
+    SeriesController_createEpisode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSeriesEpisodeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesMediaDraftDto"];
+                };
+            };
+        };
+    };
+    SeriesController_publishEpisode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episodeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesEpisodeDto"];
+                };
+            };
+        };
+    };
     SeriesController_findEpisode: {
         parameters: {
             query?: never;
@@ -1827,6 +2024,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ShortformListDto"];
+                };
+            };
+        };
+    };
+    ShortformsController_createVideo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVideoShortformDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShortformDraftDto"];
+                };
+            };
+        };
+    };
+    ShortformsController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shortformId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShortformDto"];
                 };
             };
         };

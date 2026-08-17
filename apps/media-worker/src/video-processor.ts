@@ -21,6 +21,7 @@ export async function processVideo(
   database: DatabaseClient,
   storage: WorkerStorage,
   assetId: string,
+  options: { finalAttempt?: boolean } = {},
 ) {
   const asset = await database.mediaAsset.findUnique({
     where: { id: assetId },
@@ -55,6 +56,8 @@ export async function processVideo(
   const poster = join(workDir, "poster.jpg");
   try {
     await storage.download(asset.sourceKey, source);
+    const prefix = `derived/${assetId}/v${VIDEO_PIPELINE_VERSION}`;
+    await storage.clearPrefix(prefix);
     const probe = JSON.parse(
       await runProcess(
         process.env.FFPROBE_PATH ?? "ffprobe",
@@ -146,7 +149,6 @@ export async function processVideo(
       120_000,
     );
 
-    const prefix = `derived/${assetId}/v${VIDEO_PIPELINE_VERSION}`;
     const files = await readdir(workDir);
     for (const file of files.filter((name) => name.endsWith(".ts"))) {
       await storage.upload(
@@ -182,7 +184,10 @@ export async function processVideo(
     await database.mediaAsset.update({
       where: { id: assetId },
       data: {
-        status: MediaStatus.FAILED,
+        status:
+          options.finalAttempt === false
+            ? MediaStatus.PROCESSING
+            : MediaStatus.FAILED,
         failureCode: message.split(":")[0]?.slice(0, 100),
         failureMessage: message.slice(0, 2000),
       },

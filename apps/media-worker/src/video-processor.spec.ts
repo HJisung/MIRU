@@ -47,6 +47,7 @@ function harness(source: string, output: string) {
     updatedAt: new Date(),
   };
   let uploads = 0;
+  let clears = 0;
   const database = {
     mediaAsset: {
       findUnique: async () => asset,
@@ -61,8 +62,17 @@ function harness(source: string, output: string) {
       uploads += 1;
       await copyFile(file, join(output, key.replaceAll("/", "-")));
     },
+    clearPrefix: async () => {
+      clears += 1;
+    },
   } as unknown as WorkerStorage;
-  return { asset, database, storage, uploads: () => uploads };
+  return {
+    asset,
+    database,
+    storage,
+    uploads: () => uploads,
+    clears: () => clears,
+  };
 }
 
 describe("real video processor", () => {
@@ -100,6 +110,7 @@ describe("real video processor", () => {
     expect(test.asset.status).toBe(MediaStatus.READY);
     expect(test.asset.hlsManifestKey).toMatch(/index\.m3u8$/);
     expect(test.asset.posterKey).toMatch(/poster\.jpg$/);
+    expect(test.clears()).toBe(1);
     const uploaded = test.uploads();
     await processVideo(test.database, test.storage, test.asset.id);
     expect(test.uploads()).toBe(uploaded);
@@ -116,6 +127,11 @@ describe("real video processor", () => {
     ).rejects.toThrow();
     expect(test.asset.status).toBe(MediaStatus.FAILED);
     expect(test.asset.failureCode).toBeTruthy();
+    expect(test.clears()).toBe(1);
+    await expect(
+      processVideo(test.database, test.storage, test.asset.id),
+    ).rejects.toThrow();
+    expect(test.clears()).toBe(2);
     expect(await readFile(source, "utf8")).toBe("not a video");
   });
 });

@@ -15,7 +15,9 @@ JPEG poster with FFmpeg.
 Generated objects use `derived/{assetId}/v{pipelineVersion}`. The manifest,
 poster, normalized metadata, and pipeline version are persisted on MediaAsset.
 Only after every required upload succeeds does the worker mark the asset
-`READY`. Product playback continues to start from HomeVideo.videoAsset.
+`READY`. Home, Series single works, Series episodes, and video Shortforms all
+attach the same processed MediaAsset directly; product publication remains a
+separate explicit decision.
 
 ## Why one rendition
 
@@ -28,8 +30,8 @@ master playlist and several renditions without changing product IDs.
 ## Limits
 
 - No adaptive bitrate ladder, captions, DRM, CDN, or signed delivery yet.
-- Failed attempts can leave deterministic partial objects. They are invisible
-  because artifact delivery requires `READY`; lifecycle cleanup is a later
-  operational task.
+- Before regeneration the worker clears only the current asset and pipeline
+  version prefix. Retries therefore replace one deterministic logical output
+  instead of accumulating partial segments; source uploads are never deleted.
 - Worker concurrency is one and FFmpeg has explicit timeouts. Production must
   also apply container CPU/memory limits.

@@ -59,7 +59,7 @@ export class MediaService {
         id: assetId,
         ownerId: userId,
         kind: MediaKind.VIDEO,
-        purpose: MediaPurpose.LONG_VIDEO,
+        purpose: input.purpose ?? MediaPurpose.LONG_VIDEO,
         sourceKey,
         mimeType: input.contentType,
         byteSize: BigInt(input.byteSize),
@@ -88,6 +88,14 @@ export class MediaService {
       asset.status === MediaStatus.READY
     )
       return this.statusResult(asset);
+    if (asset.status === MediaStatus.FAILED) {
+      const retrying = await this.database.client.mediaAsset.update({
+        where: { id: asset.id },
+        data: { status: MediaStatus.UPLOADED },
+      });
+      await this.videoQueue.enqueue(asset.id);
+      return this.statusResult(retrying);
+    }
     if (asset.status !== MediaStatus.PENDING_UPLOAD)
       throw new BadRequestException(
         'Video cannot be completed in its current state',
@@ -128,7 +136,27 @@ export class MediaService {
       where: {
         id: assetId,
         status: MediaStatus.READY,
-        homeVideos: { some: { status: 'PUBLISHED' } },
+        OR: [
+          { homeVideos: { some: { status: 'PUBLISHED' } } },
+          {
+            seriesSingleWork: {
+              some: { publicationStatus: 'PUBLISHED' },
+            },
+          },
+          {
+            seriesEpisodes: {
+              some: {
+                publishedAt: { not: null },
+                series: { publicationStatus: 'PUBLISHED' },
+              },
+            },
+          },
+          {
+            shortFormLinks: {
+              some: { shortForm: { status: 'PUBLISHED' } },
+            },
+          },
+        ],
       },
     });
     if (!asset?.hlsManifestKey || !asset.posterKey)

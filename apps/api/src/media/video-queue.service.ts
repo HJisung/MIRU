@@ -32,12 +32,21 @@ export class VideoQueueService implements OnModuleDestroy {
     });
   }
 
-  enqueue(assetId: string) {
+  async enqueue(assetId: string) {
     this.used = true;
+    const jobId = `${assetId}-v${VIDEO_PIPELINE_VERSION}`;
+    const existing = await this.queue.getJob(jobId);
+    if (existing) {
+      const state = await existing.getState();
+      if (state === 'failed') {
+        await existing.retry();
+      }
+      return existing;
+    }
     return this.queue.add(
       VIDEO_PROCESS_JOB,
       { assetId, pipelineVersion: VIDEO_PIPELINE_VERSION },
-      { jobId: `${assetId}-v${VIDEO_PIPELINE_VERSION}` },
+      { jobId },
     );
   }
 

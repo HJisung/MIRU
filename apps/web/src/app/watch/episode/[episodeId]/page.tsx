@@ -5,6 +5,7 @@ import { ArrowLeft, Play } from "lucide-react";
 import { ApiError, getSeriesEpisode } from "@/lib/api";
 import { mediaUrl } from "@/lib/client-api";
 import { duration } from "@/lib/format";
+import { VideoPlayer } from "@/components/video-player";
 
 export default async function EpisodeWatch({
   params,
@@ -28,21 +29,25 @@ export default async function EpisodeWatch({
         <ArrowLeft className="size-4" /> 작품으로
       </Link>
       <div className="relative aspect-video overflow-hidden rounded-2xl bg-black">
-        <Image
-          src={mediaUrl(episode.media.url)}
-          unoptimized={episode.media.url.startsWith("/api/")}
-          alt={episode.title}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-        <button
-          aria-label="영상 재생"
-          className="absolute inset-0 m-auto grid size-16 place-items-center rounded-full bg-white/90 text-black"
-        >
-          <Play className="ml-1 size-6 fill-current" />
-        </button>
+        {episode.media.mimeType === "application/vnd.apple.mpegurl" ? (
+          <VideoPlayer
+            source={episode.media.url}
+            poster={episode.media.posterUrl}
+          />
+        ) : (
+          <>
+            <Image
+              src={mediaUrl(episode.media.url)}
+              unoptimized={episode.media.url.startsWith("/api/")}
+              alt={episode.title}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+            <Play className="absolute inset-0 m-auto size-14 text-white" />
+          </>
+        )}
         <span className="absolute bottom-4 right-4 rounded bg-black/70 px-2 py-1 text-xs text-white">
           {duration(episode.media.durationMs ?? null)}
         </span>

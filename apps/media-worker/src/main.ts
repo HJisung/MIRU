@@ -19,7 +19,10 @@ const worker = new Worker<ProcessVideoJob>(
   VIDEO_PROCESSING_QUEUE,
   async (job) => {
     if (job.name !== VIDEO_PROCESS_JOB) throw new Error("UNKNOWN_MEDIA_JOB");
-    await processVideo(database, storage, job.data.assetId);
+    const attempts = job.opts.attempts ?? 1;
+    await processVideo(database, storage, job.data.assetId, {
+      finalAttempt: job.attemptsMade + 1 >= attempts,
+    });
   },
   {
     connection: {

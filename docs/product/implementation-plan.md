@@ -109,12 +109,15 @@ Status: implemented for the synchronous image MVP path. Normalized renditions an
 
 ## Slice 4: Short and long video
 
-Status: first Home Single vertical slice implemented with one HLS rendition.
+Status: shared single-rendition pipeline implemented for Home, Series
+SINGLE_WORK, Series Episode, and Shortform VIDEO.
 
 - Direct video upload, real ffprobe validation, poster and single-rendition HLS
 - Resource-bounded FFmpeg worker with deterministic job/output identity and retries
 - Accessible HLS player for processed Home Singles
-- Full ABR ladder, dead-letter administration, and Series/Shortform creation remain pending
+- Bounded recoverable processing polling, deterministic derived cleanup, and a
+  real API → MinIO → BullMQ → worker → FFmpeg → HLS integration test
+- Full ABR ladder and dead-letter administration remain pending
 
 ## Slice 5: Social and engagement
 
