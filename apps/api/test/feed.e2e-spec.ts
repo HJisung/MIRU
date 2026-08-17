@@ -135,10 +135,16 @@ describe('public discovery flow (PostgreSQL integration)', () => {
     }>().items;
     const episodic = works.find((work) => work.workType === 'EPISODIC');
     expect(episodic).toBeDefined();
+    expect(
+      (episodic as { engagementTarget?: unknown }).engagementTarget,
+    ).toBeNull();
     expect(episodic?.episodes.length).toBeGreaterThan(0);
     const single = works.find((work) => work.workType === 'SINGLE_WORK');
     expect(single?.episodes).toHaveLength(0);
     expect(single?.singleWork?.id).toBe(single?.id);
+    expect(
+      (single as { engagementTarget?: unknown })?.engagementTarget,
+    ).toEqual({ type: 'SERIES', id: single?.id });
 
     const episode = await app.inject({
       method: 'GET',

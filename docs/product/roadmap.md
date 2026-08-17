@@ -27,6 +27,8 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
 
 ## Next
 
+- Expand the proven single-rendition Home pipeline into an ABR ladder and attach
+  it to Series and Shortform video creation
 - Move engagement persistence behind the now domain-aware target API from
   compatibility publication foreign keys to native target storage
 - Add authenticated Shortform creation and Community TEXT/VIDEO/LINK authoring

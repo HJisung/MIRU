@@ -11,6 +11,8 @@ import { MediaKind, MediaPurpose, MediaStatus } from '@stream/database';
 import { DatabaseService } from '../database/database.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import type { CreateImageUploadDto } from './media.dto.js';
+import type { CreateVideoUploadDto } from './media.dto.js';
+import { VideoQueueService } from './video-queue.service.js';
 
 const allowedSignatures = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
@@ -19,6 +21,7 @@ export class MediaService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(StorageService) private readonly storage: StorageService,
+    @Inject(VideoQueueService) private readonly videoQueue: VideoQueueService,
   ) {}
 
   async createImageUpload(userId: string, input: CreateImageUploadDto) {
@@ -46,6 +49,95 @@ export class MediaService {
       expiresInSeconds: 600,
       requiredHeaders: { 'content-type': input.contentType },
     };
+  }
+
+  async createVideoUpload(userId: string, input: CreateVideoUploadDto) {
+    const assetId = randomUUID();
+    const sourceKey = `originals/${userId}/${assetId}`;
+    await this.database.client.mediaAsset.create({
+      data: {
+        id: assetId,
+        ownerId: userId,
+        kind: MediaKind.VIDEO,
+        purpose: MediaPurpose.LONG_VIDEO,
+        sourceKey,
+        mimeType: input.contentType,
+        byteSize: BigInt(input.byteSize),
+      },
+    });
+    return {
+      assetId,
+      uploadUrl: await this.storage.presignPut(
+        sourceKey,
+        input.contentType,
+        input.byteSize,
+      ),
+      expiresInSeconds: 600,
+      requiredHeaders: { 'content-type': input.contentType },
+    };
+  }
+
+  async completeVideo(userId: string, assetId: string) {
+    const asset = await this.ownedVideo(userId, assetId);
+    if (asset.status === MediaStatus.UPLOADED) {
+      await this.videoQueue.enqueue(asset.id);
+      return this.statusResult(asset);
+    }
+    if (
+      asset.status === MediaStatus.PROCESSING ||
+      asset.status === MediaStatus.READY
+    )
+      return this.statusResult(asset);
+    if (asset.status !== MediaStatus.PENDING_UPLOAD)
+      throw new BadRequestException(
+        'Video cannot be completed in its current state',
+      );
+    const head = await this.storage.head(asset.sourceKey).catch(() => null);
+    if (!head?.ContentLength)
+      throw new BadRequestException('Uploaded object not found');
+    if (
+      asset.byteSize !== null &&
+      BigInt(head.ContentLength) !== asset.byteSize
+    )
+      throw new BadRequestException(
+        'Uploaded object size does not match the upload session',
+      );
+    if (head.ContentType && head.ContentType !== asset.mimeType)
+      throw new BadRequestException(
+        'Uploaded object content type does not match the upload session',
+      );
+    const updated = await this.database.client.mediaAsset.update({
+      where: { id: asset.id },
+      data: {
+        status: MediaStatus.UPLOADED,
+        byteSize: BigInt(head.ContentLength),
+      },
+    });
+    await this.videoQueue.enqueue(asset.id);
+    return this.statusResult(updated);
+  }
+
+  async status(userId: string, assetId: string) {
+    return this.statusResult(await this.ownedVideo(userId, assetId));
+  }
+
+  async derivedContent(assetId: string, file: string) {
+    if (!/^(index\.m3u8|segment-\d{5}\.ts|poster\.jpg)$/.test(file))
+      throw new NotFoundException('Media artifact not found');
+    const asset = await this.database.client.mediaAsset.findFirst({
+      where: {
+        id: assetId,
+        status: MediaStatus.READY,
+        homeVideos: { some: { status: 'PUBLISHED' } },
+      },
+    });
+    if (!asset?.hlsManifestKey || !asset.posterKey)
+      throw new NotFoundException('Media artifact not found');
+    const prefix = asset.hlsManifestKey.slice(
+      0,
+      asset.hlsManifestKey.lastIndexOf('/'),
+    );
+    return this.storage.get(`${prefix}/${file}`);
   }
 
   async completeImage(userId: string, assetId: string) {
@@ -128,6 +220,34 @@ export class MediaService {
     });
     if (!asset) throw new NotFoundException('Media asset not found');
     return asset;
+  }
+
+  private async ownedVideo(userId: string, assetId: string) {
+    const asset = await this.database.client.mediaAsset.findFirst({
+      where: { id: assetId, ownerId: userId, kind: MediaKind.VIDEO },
+    });
+    if (!asset) throw new NotFoundException('Video asset not found');
+    return asset;
+  }
+
+  private statusResult(asset: {
+    id: string;
+    status: MediaStatus;
+    failureCode: string | null;
+    hlsManifestKey: string | null;
+    posterKey: string | null;
+  }) {
+    return {
+      id: asset.id,
+      status: asset.status,
+      failureCode: asset.failureCode,
+      playbackUrl: asset.hlsManifestKey
+        ? `/api/v1/media/assets/${asset.id}/hls/index.m3u8`
+        : null,
+      posterUrl: asset.posterKey
+        ? `/api/v1/media/assets/${asset.id}/hls/poster.jpg`
+        : null,
+    };
   }
 
   private serialize(asset: {

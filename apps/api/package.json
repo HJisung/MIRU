@@ -33,10 +33,13 @@
     "@nestjs/swagger": "11.2.6",
     "@node-rs/argon2": "2.0.2",
     "@stream/database": "workspace:*",
+    "@stream/media": "workspace:*",
+    "bullmq": "5.58.5",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.3",
     "fastify": "5.11.3",
     "file-type": "^22.0.1",
+    "ioredis": "5.7.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sharp": "^0.35.3"

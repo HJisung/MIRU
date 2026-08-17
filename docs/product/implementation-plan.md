@@ -109,9 +109,12 @@ Status: implemented for the synchronous image MVP path. Normalized renditions an
 
 ## Slice 4: Short and long video
 
-- Probe/validation, poster and thumbnail generation, HLS ladder
-- Resource-bounded FFmpeg worker, retries, dead-letter visibility
-- Accessible player and short-form viewing interaction
+Status: first Home Single vertical slice implemented with one HLS rendition.
+
+- Direct video upload, real ffprobe validation, poster and single-rendition HLS
+- Resource-bounded FFmpeg worker with deterministic job/output identity and retries
+- Accessible HLS player for processed Home Singles
+- Full ABR ladder, dead-letter administration, and Series/Shortform creation remain pending
 
 ## Slice 5: Social and engagement
 

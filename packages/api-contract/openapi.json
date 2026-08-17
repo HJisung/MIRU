@@ -190,6 +190,121 @@
         ]
       }
     },
+    "/api/v1/media/video-uploads": {
+      "post": {
+        "operationId": "MediaController_createVideoUpload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVideoUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/media/video-assets/{assetId}/complete": {
+      "post": {
+        "operationId": "MediaController_completeVideo",
+        "parameters": [
+          {
+            "name": "assetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/media/video-assets/{assetId}/status": {
+      "get": {
+        "operationId": "MediaController_status",
+        "parameters": [
+          {
+            "name": "assetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaAssetStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/media/assets/{assetId}/hls/{file}": {
+      "get": {
+        "operationId": "MediaController_hls",
+        "parameters": [
+          {
+            "name": "assetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "file",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "media"
+        ]
+      }
+    },
     "/api/v1/media/assets/{assetId}/complete": {
       "post": {
         "operationId": "MediaController_complete",
@@ -727,6 +842,65 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HomeVideoListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "home"
+        ]
+      },
+      "post": {
+        "operationId": "HomeController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHomeVideoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeVideoDraftDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "home"
+        ]
+      }
+    },
+    "/api/v1/home/videos/{videoId}/publish": {
+      "post": {
+        "operationId": "HomeController_publish",
+        "parameters": [
+          {
+            "name": "videoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeVideoDto"
                 }
               }
             }
@@ -1451,6 +1625,67 @@
           "requiredHeaders"
         ]
       },
+      "CreateVideoUploadDto": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "video/mp4",
+              "video/quicktime",
+              "video/webm"
+            ]
+          },
+          "byteSize": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 500000000
+          }
+        },
+        "required": [
+          "contentType",
+          "byteSize"
+        ]
+      },
+      "MediaAssetStatusDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_UPLOAD",
+              "UPLOADED",
+              "PROCESSING",
+              "READY",
+              "FAILED",
+              "DELETED"
+            ]
+          },
+          "failureCode": {
+            "type": "object",
+            "nullable": true
+          },
+          "playbackUrl": {
+            "type": "object",
+            "nullable": true
+          },
+          "posterUrl": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "failureCode",
+          "playbackUrl",
+          "posterUrl"
+        ]
+      },
       "CreateCommentDto": {
         "type": "object",
         "properties": {}
@@ -1536,6 +1771,10 @@
           },
           "durationMs": {
             "type": "number",
+            "nullable": true
+          },
+          "posterUrl": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -1787,6 +2026,57 @@
           "items"
         ]
       },
+      "CreateHomeVideoDto": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "assetId",
+          "title",
+          "description"
+        ]
+      },
+      "HomeVideoDraftDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PENDING_REVIEW",
+              "PUBLISHED",
+              "UNLISTED",
+              "ARCHIVED",
+              "REMOVED"
+            ]
+          },
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "assetId"
+        ]
+      },
       "CollectionItemDto": {
         "type": "object",
         "properties": {
@@ -1896,7 +2186,12 @@
             ]
           },
           "engagementTarget": {
-            "$ref": "#/components/schemas/EngagementTargetDto"
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTargetDto"
+              }
+            ]
           }
         },
         "required": [
@@ -1904,8 +2199,7 @@
           "seriesId",
           "episodeNumber",
           "title",
-          "synopsis",
-          "engagementTarget"
+          "synopsis"
         ]
       },
       "SeriesDto": {

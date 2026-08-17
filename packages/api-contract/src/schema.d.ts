@@ -116,6 +116,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/media/video-uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MediaController_createVideoUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/media/video-assets/{assetId}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MediaController_completeVideo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/media/video-assets/{assetId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MediaController_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/media/assets/{assetId}/hls/{file}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MediaController_hls"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/media/assets/{assetId}/complete": {
         parameters: {
             query?: never;
@@ -370,7 +434,23 @@ export interface paths {
         };
         get: operations["HomeController_list"];
         put?: never;
-        post?: never;
+        post: operations["HomeController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/home/videos/{videoId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["HomeController_publish"];
         delete?: never;
         options?: never;
         head?: never;
@@ -671,6 +751,20 @@ export interface components {
             expiresInSeconds: number;
             requiredHeaders: Record<string, never>;
         };
+        CreateVideoUploadDto: {
+            /** @enum {string} */
+            contentType: "video/mp4" | "video/quicktime" | "video/webm";
+            byteSize: number;
+        };
+        MediaAssetStatusDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "PENDING_UPLOAD" | "UPLOADED" | "PROCESSING" | "READY" | "FAILED" | "DELETED";
+            failureCode: Record<string, never> | null;
+            playbackUrl: Record<string, never> | null;
+            posterUrl: Record<string, never> | null;
+        };
         CreateCommentDto: Record<string, never>;
         /** @enum {string} */
         ReportReason: "SPAM" | "HARASSMENT" | "NUDITY" | "VIOLENCE" | "COPYRIGHT" | "OTHER";
@@ -693,6 +787,7 @@ export interface components {
             width: number;
             height: number;
             durationMs?: number | null;
+            posterUrl?: string | null;
         };
         SeriesSummaryDto: {
             id: string;
@@ -758,6 +853,20 @@ export interface components {
         HomeVideoListDto: {
             items: components["schemas"]["HomeVideoDto"][];
         };
+        CreateHomeVideoDto: {
+            /** Format: uuid */
+            assetId: string;
+            title: string;
+            description: string;
+        };
+        HomeVideoDraftDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "UNLISTED" | "ARCHIVED" | "REMOVED";
+            /** Format: uuid */
+            assetId: string;
+        };
         CollectionItemDto: {
             position: number;
             video: components["schemas"]["HomeVideoDto"];
@@ -786,7 +895,7 @@ export interface components {
             publishedAt?: string | null;
             media?: components["schemas"]["MediaSummaryDto"] | null;
             playable?: components["schemas"]["PlayableDto"] | null;
-            engagementTarget: components["schemas"]["EngagementTargetDto"];
+            engagementTarget?: components["schemas"]["EngagementTargetDto"] | null;
         };
         SeriesDto: {
             /** Format: uuid */
@@ -1025,6 +1134,89 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UploadSessionDto"];
                 };
+            };
+        };
+    };
+    MediaController_createVideoUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVideoUploadDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadSessionDto"];
+                };
+            };
+        };
+    };
+    MediaController_completeVideo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MediaController_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAssetStatusDto"];
+                };
+            };
+        };
+    };
+    MediaController_hls: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assetId: string;
+                file: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1450,6 +1642,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HomeVideoListDto"];
+                };
+            };
+        };
+    };
+    HomeController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHomeVideoDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeVideoDraftDto"];
+                };
+            };
+        };
+    };
+    HomeController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                videoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeVideoDto"];
                 };
             };
         };

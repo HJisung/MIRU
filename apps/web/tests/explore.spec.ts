@@ -47,7 +47,7 @@ test("Series is a separate primary service with episodic work detail", async ({
     page.getByRole("navigation", { name: "시리즈 분류" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "손으로 만드는 도시" }),
+    page.getByRole("link", { name: "손으로 만드는 도시" }).first(),
   ).toBeVisible();
   await page.getByRole("link", { name: "손으로 만드는 도시" }).first().click();
   await expect(page).toHaveURL(/\/series\//);
@@ -56,9 +56,13 @@ test("Series is a separate primary service with episodic work detail", async ({
   await expect(page.getByText("흙이 그릇이 되는 시간")).toBeVisible();
 });
 
-test("Shortform episode promotion uses the product episode route", async ({ page }) => {
+test("Shortform episode promotion uses the product episode route", async ({
+  page,
+}) => {
   await page.goto("/shorts");
-  const link = page.getByRole("link", { name: "본편 보기 · 흙이 그릇이 되는 시간" });
+  const link = page.getByRole("link", {
+    name: "본편 보기 · 흙이 그릇이 되는 시간",
+  });
   await expect(link).toHaveAttribute("href", /\/watch\/episode\//);
 });
 
@@ -70,7 +74,9 @@ test("Shortform renders video and a navigable image carousel from its explicit d
   await expect(page.getByText("1 / 2")).toBeVisible();
   await page.getByRole("button", { name: "다음 이미지" }).click();
   await expect(page.getByText("2 / 2")).toBeVisible();
-  await expect(page.getByRole("link", { name: "본편 보기 · 손으로 만드는 도시" })).toHaveAttribute("href", /\/series\//);
+  await expect(
+    page.getByRole("link", { name: "본편 보기 · 손으로 만드는 도시" }),
+  ).toHaveAttribute("href", /\/series\//);
 });
 
 test("Post Home and a managed Category are distinct community timelines", async ({
@@ -95,4 +101,14 @@ test("Post Home and a managed Category are distinct community timelines", async 
   await expect(
     page.getByText("The city gets softer just before everyone wakes up."),
   ).toHaveCount(0);
+});
+
+test("creation surface exposes the Home video upload flow", async ({
+  page,
+}) => {
+  await page.goto("/create?type=video");
+  await expect(
+    page.getByRole("heading", { name: "Home 영상 업로드" }),
+  ).toBeVisible();
+  await expect(page.getByText(/MP4, MOV, WebM · 최대 500MB/)).toBeVisible();
 });

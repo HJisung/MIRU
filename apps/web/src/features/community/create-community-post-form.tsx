@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -93,6 +94,12 @@ export function CreateCommunityPostForm({
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 pb-28 sm:px-8">
       <div className="mb-8">
+        <Link
+          href="/create?type=video"
+          className="float-right rounded-full border border-line px-4 py-2 text-sm font-semibold"
+        >
+          Home 영상 업로드
+        </Link>
         <p className="text-xs font-bold tracking-[0.18em] text-accent">
           CREATE
         </p>

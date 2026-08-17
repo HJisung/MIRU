@@ -19,6 +19,9 @@ export class MediaSummaryDto {
   @ApiPropertyOptional({ type: Number, nullable: true }) durationMs!:
     | number
     | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) posterUrl!:
+    | string
+    | null;
 }
 
 export class SeriesSummaryDto {

@@ -79,7 +79,10 @@ export class SeriesService {
       singleWork: singleMedia
         ? { kind: 'SERIES' as const, id: work.id, media: singleMedia }
         : null,
-      engagementTarget: { type: 'SERIES' as const, id: work.id },
+      engagementTarget:
+        work.workType === 'SINGLE_WORK'
+          ? { type: 'SERIES' as const, id: work.id }
+          : null,
       episodes: work.episodes
         .filter((episode) => episode.publishedAt)
         .map((episode) => this.mapEpisode(episode)),

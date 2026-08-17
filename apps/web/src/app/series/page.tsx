@@ -44,7 +44,7 @@ function FeaturedSeries({ work }: { work: Series }) {
     <section className="relative min-h-[calc(100vh-7rem)] overflow-hidden">
       {media && (
         <Image
-          src={mediaUrl(media.url)}
+          src={mediaUrl(media.posterUrl ?? media.url)}
           unoptimized={media.url.startsWith("/api/")}
           alt=""
           fill
@@ -108,7 +108,7 @@ function SeriesRow({ title, items }: { title: string; items: Series[] }) {
             >
               {media && (
                 <Image
-                  src={mediaUrl(media.url)}
+                  src={mediaUrl(media.posterUrl ?? media.url)}
                   unoptimized={media.url.startsWith("/api/")}
                   alt={work.title}
                   fill

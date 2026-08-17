@@ -18,8 +18,8 @@ export class SeriesEpisodeDto {
   media!: MediaSummaryDto | null;
   @ApiPropertyOptional({ type: PlayableDto, nullable: true })
   playable!: PlayableDto | null;
-  @ApiProperty({ type: EngagementTargetDto })
-  engagementTarget!: EngagementTargetDto;
+  @ApiPropertyOptional({ type: EngagementTargetDto, nullable: true })
+  engagementTarget!: EngagementTargetDto | null;
 }
 
 export class SeriesDto {

@@ -5,6 +5,7 @@ export interface ReadyPlaybackAsset {
   width: number | null;
   height: number | null;
   durationMs: number | null;
+  posterKey?: string | null;
 }
 
 export function toPlayableMedia(asset: ReadyPlaybackAsset | null) {
@@ -18,5 +19,8 @@ export function toPlayableMedia(asset: ReadyPlaybackAsset | null) {
     width: asset.width,
     height: asset.height,
     durationMs: asset.durationMs,
+    posterUrl: asset.posterKey
+      ? `/api/v1/media/assets/${asset.id}/hls/poster.jpg`
+      : null,
   };
 }

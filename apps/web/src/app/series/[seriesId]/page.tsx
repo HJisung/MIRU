@@ -24,7 +24,7 @@ export default async function SeriesDetail({ params }: SeriesDetailProps) {
       <section className="relative min-h-[28rem] overflow-hidden bg-black text-white">
         {hero && (
           <Image
-            src={mediaUrl(hero.url)}
+            src={mediaUrl(hero.posterUrl ?? hero.url)}
             unoptimized={hero.url.startsWith("/api/")}
             alt=""
             fill
@@ -79,7 +79,7 @@ export default async function SeriesDetail({ params }: SeriesDetailProps) {
                 {media && (
                   <div className="relative aspect-video overflow-hidden rounded-xl bg-black">
                     <Image
-                      src={mediaUrl(media.url)}
+                      src={mediaUrl(media.posterUrl ?? media.url)}
                       unoptimized={media.url.startsWith("/api/")}
                       alt={episode.title}
                       fill

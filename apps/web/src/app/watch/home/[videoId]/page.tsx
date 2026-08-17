@@ -1,10 +1,11 @@
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Heart, MessageCircle, Play } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle } from "lucide-react";
 import { ApiError, getHomeVideo } from "@/lib/api";
 import { mediaUrl } from "@/lib/client-api";
 import { compactNumber, duration, relativeDate } from "@/lib/format";
+import { VideoPlayer } from "@/components/video-player";
 
 export default async function HomeWatch({
   params,
@@ -28,21 +29,19 @@ export default async function HomeWatch({
         <ArrowLeft className="size-4" /> 홈으로
       </Link>
       <div className="relative aspect-video overflow-hidden rounded-2xl bg-black">
-        <Image
-          src={mediaUrl(media.url)}
-          unoptimized={media.url.startsWith("/api/")}
-          alt={video.title}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-        <button
-          aria-label="영상 재생"
-          className="absolute inset-0 m-auto grid size-16 place-items-center rounded-full bg-white/90 text-black"
-        >
-          <Play className="ml-1 size-6 fill-current" />
-        </button>
+        {media.mimeType === "application/vnd.apple.mpegurl" ? (
+          <VideoPlayer source={media.url} poster={media.posterUrl} />
+        ) : (
+          <Image
+            src={mediaUrl(media.url)}
+            unoptimized={media.url.startsWith("/api/")}
+            alt={video.title}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+        )}
         <span className="absolute bottom-4 right-4 rounded bg-black/70 px-2 py-1 text-xs text-white">
           {duration(media.durationMs ?? null)}
         </span>

@@ -52,7 +52,7 @@ export function HomeGrid({
               className="relative block aspect-video overflow-hidden rounded-xl bg-black"
             >
               <Image
-                src={mediaUrl(media.url)}
+                src={mediaUrl(media.posterUrl ?? media.url)}
                 unoptimized={media.url.startsWith("/api/")}
                 alt={title}
                 fill

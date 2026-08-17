@@ -10,11 +10,16 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import type { FastifyReply } from 'fastify';
 import type { AuthUser } from '../auth/auth.service.js';
 import { CurrentUser, SessionGuard } from '../auth/session.guard.js';
-import { CreateImageUploadDto, UploadSessionDto } from './media.dto.js';
+import {
+  CreateImageUploadDto,
+  CreateVideoUploadDto,
+  MediaAssetStatusDto,
+  UploadSessionDto,
+} from './media.dto.js';
 import { MediaService } from './media.service.js';
 
 @ApiTags('media')
@@ -30,6 +35,55 @@ export class MediaController {
     @Body() input: CreateImageUploadDto,
   ) {
     return this.media.createImageUpload(user.id, input);
+  }
+
+  @Post('video-uploads')
+  @UseGuards(SessionGuard)
+  @ApiCreatedResponse({ type: UploadSessionDto })
+  createVideoUpload(
+    @CurrentUser() user: AuthUser,
+    @Body() input: CreateVideoUploadDto,
+  ) {
+    return this.media.createVideoUpload(user.id, input);
+  }
+
+  @Post('video-assets/:assetId/complete')
+  @UseGuards(SessionGuard)
+  @HttpCode(200)
+  completeVideo(
+    @CurrentUser() user: AuthUser,
+    @Param('assetId', new ParseUUIDPipe()) assetId: string,
+  ) {
+    return this.media.completeVideo(user.id, assetId);
+  }
+
+  @Get('video-assets/:assetId/status')
+  @UseGuards(SessionGuard)
+  @ApiOkResponse({ type: MediaAssetStatusDto })
+  status(
+    @CurrentUser() user: AuthUser,
+    @Param('assetId', new ParseUUIDPipe()) assetId: string,
+  ) {
+    return this.media.status(user.id, assetId);
+  }
+
+  @Get('assets/:assetId/hls/:file')
+  async hls(
+    @Param('assetId', new ParseUUIDPipe()) assetId: string,
+    @Param('file') file: string,
+    @Res() reply: FastifyReply,
+  ) {
+    const object = await this.media.derivedContent(assetId, file);
+    reply.header(
+      'Content-Type',
+      file.endsWith('.m3u8')
+        ? 'application/vnd.apple.mpegurl'
+        : file.endsWith('.ts')
+          ? 'video/mp2t'
+          : 'image/jpeg',
+    );
+    reply.header('Cache-Control', 'public, max-age=3600');
+    return reply.send(object.Body);
   }
 
   @Post('assets/:assetId/complete')

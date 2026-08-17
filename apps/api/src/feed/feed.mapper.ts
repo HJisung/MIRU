@@ -29,6 +29,7 @@ interface FeedPostRecord {
       width: number | null;
       height: number | null;
       durationMs: number | null;
+      posterKey?: string | null;
     };
   }>;
 }
@@ -70,6 +71,9 @@ export function toFeedItem(post: FeedPostRecord): FeedItemDto {
         width: asset.width,
         height: asset.height,
         durationMs: asset.durationMs,
+        posterUrl: asset.posterKey
+          ? `/api/v1/media/assets/${asset.id}/hls/poster.jpg`
+          : null,
       };
     }),
   };

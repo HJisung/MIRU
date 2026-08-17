@@ -1,4 +1,4 @@
 # Media package
 
-Shared media states, rendition descriptors, job payload schemas, and transcoding preset definitions belong here. Executable processing remains in the worker.
-
+Contains the shared video queue contract, pipeline version, and centralized MVP
+upload/probe constraints. Executable processing remains in the worker.

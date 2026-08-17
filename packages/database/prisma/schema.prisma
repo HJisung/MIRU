@@ -175,7 +175,11 @@ model MediaAsset {
   durationMs       Int?
   blurDataUrl      String?
   failureCode      String?
+  failureMessage   String?
   pipelineVersion  Int                  @default(1)
+  hlsManifestKey   String?
+  posterKey        String?
+  processedAt      DateTime?
   postLinks        PostMedia[]
   shortFormLinks   ShortFormMedia[]
   communityLinks   CommunityPostMedia[]

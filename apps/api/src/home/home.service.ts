@@ -1,8 +1,16 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { DomainPublicationStatus, MediaStatus } from '@stream/database';
+import {
+  DomainPublicationStatus,
+  MediaPurpose,
+  MediaStatus,
+  PostFormat,
+  PostStatus,
+  PostVisibility,
+} from '@stream/database';
 import { DatabaseService } from '../database/database.service.js';
 import { toPlayableMedia } from '../playback/playback.mapper.js';
 import type { HomeVideoDto } from './home.dto.js';
+import type { CreateHomeVideoDto } from './home.dto.js';
 
 const homeInclude = {
   creator: {
@@ -34,6 +42,77 @@ export class HomeService {
       take: 24,
     });
     return { items: videos.map((video) => this.map(video)) };
+  }
+
+  async create(userId: string, input: CreateHomeVideoDto) {
+    const asset = await this.database.client.mediaAsset.findFirst({
+      where: {
+        id: input.assetId,
+        ownerId: userId,
+        kind: 'VIDEO',
+        purpose: MediaPurpose.LONG_VIDEO,
+        status: {
+          in: [MediaStatus.UPLOADED, MediaStatus.PROCESSING, MediaStatus.READY],
+        },
+        homeVideos: { none: {} },
+      },
+    });
+    if (!asset)
+      throw new NotFoundException('Processable unlinked video asset not found');
+    const created = await this.database.client.post.create({
+      data: {
+        authorId: userId,
+        format: PostFormat.LONG_VIDEO,
+        status: PostStatus.DRAFT,
+        visibility: PostVisibility.PUBLIC,
+        title: input.title.trim(),
+        caption: input.description.trim(),
+        media: { create: { assetId: asset.id, order: 0 } },
+        homeVideo: {
+          create: {
+            creatorId: userId,
+            videoAssetId: asset.id,
+            title: input.title.trim(),
+            description: input.description.trim(),
+          },
+        },
+      },
+      select: {
+        homeVideo: { select: { id: true, status: true, videoAssetId: true } },
+      },
+    });
+    if (!created.homeVideo) throw new Error('Home video creation failed');
+    return {
+      id: created.homeVideo.id,
+      status: created.homeVideo.status,
+      assetId: created.homeVideo.videoAssetId,
+    };
+  }
+
+  async publish(userId: string, id: string) {
+    const record = await this.database.client.homeVideo.findFirst({
+      where: {
+        id,
+        creatorId: userId,
+        status: DomainPublicationStatus.DRAFT,
+        videoAsset: { status: MediaStatus.READY },
+      },
+      select: { publicationId: true },
+    });
+    if (!record)
+      throw new NotFoundException('Ready Home video draft not found');
+    const publishedAt = new Date();
+    await this.database.client.$transaction([
+      this.database.client.homeVideo.update({
+        where: { id },
+        data: { status: DomainPublicationStatus.PUBLISHED, publishedAt },
+      }),
+      this.database.client.post.update({
+        where: { id: record.publicationId },
+        data: { status: PostStatus.PUBLISHED, publishedAt },
+      }),
+    ]);
+    return this.findOne(id);
   }
 
   async findOne(id: string): Promise<HomeVideoDto> {
