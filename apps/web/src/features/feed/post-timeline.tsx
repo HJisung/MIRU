@@ -56,14 +56,14 @@ export function PostTimeline({ feed }: { feed: CommunityPostList }) {
                   <a
                     href={item.linkUrl}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="mt-3 flex items-center gap-2 rounded-xl border border-line p-3 text-sm hover:bg-panel"
                   >
                     <ExternalLink className="size-4" />
-                    {item.linkUrl}
+                    {safeLinkLabel(item.linkUrl)}
                   </a>
                 )}
-                {media && (
+                {media && item.type === "IMAGE" && (
                   <Link
                     href={`/posts/${item.id}`}
                     className="relative mt-4 block aspect-[16/9] max-h-[30rem] overflow-hidden rounded-2xl border border-line bg-background"
@@ -76,6 +76,26 @@ export function PostTimeline({ feed }: { feed: CommunityPostList }) {
                       sizes="(max-width: 768px) 100vw, 680px"
                       className="object-cover"
                     />
+                  </Link>
+                )}
+                {media && item.type === "VIDEO" && (
+                  <Link
+                    href={`/posts/${item.id}`}
+                    className="relative mt-4 grid aspect-video place-items-center overflow-hidden rounded-2xl border border-line bg-black text-sm font-semibold text-white"
+                  >
+                    {media.posterUrl ? (
+                      <Image
+                        src={mediaUrl(media.posterUrl)}
+                        unoptimized={media.posterUrl.startsWith("/api/")}
+                        alt={`${item.body || "동영상 Post"} 포스터`}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 680px"
+                        className="object-cover opacity-80"
+                      />
+                    ) : null}
+                    <span className="relative rounded-full bg-black/70 px-4 py-2">
+                      동영상 보기
+                    </span>
                   </Link>
                 )}
                 <div className="mt-3 flex max-w-md items-center justify-between text-xs text-muted">
@@ -106,4 +126,12 @@ export function PostTimeline({ feed }: { feed: CommunityPostList }) {
       )}
     </div>
   );
+}
+
+function safeLinkLabel(value: string) {
+  try {
+    return new URL(value).hostname || value;
+  } catch {
+    return value;
+  }
 }

@@ -1,12 +1,15 @@
 import { Transform } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PostFormat } from '@stream/database';
 
 export class FeedQuery {
-  @ApiPropertyOptional({ enum: PostFormat, enumName: 'PostFormat' })
+  @ApiPropertyOptional({
+    enum: [PostFormat.IMAGE, PostFormat.SHORT_VIDEO, PostFormat.LONG_VIDEO],
+    enumName: 'LegacyFeedPostFormat',
+  })
   @IsOptional()
-  @IsEnum(PostFormat)
+  @IsIn([PostFormat.IMAGE, PostFormat.SHORT_VIDEO, PostFormat.LONG_VIDEO])
   format?: PostFormat;
 
   @ApiPropertyOptional({

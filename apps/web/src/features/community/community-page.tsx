@@ -58,6 +58,12 @@ export function CommunityPage({
             >
               새 포스트 작성
             </Link>
+            <Link
+              href="/posts/manage"
+              className="mt-2 block rounded-xl border border-line px-4 py-3 text-center text-sm font-semibold"
+            >
+              내 포스트 관리
+            </Link>
           </div>
         </aside>
       </div>

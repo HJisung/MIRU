@@ -36,12 +36,20 @@ export class CreateVideoUploadDto {
   byteSize!: number;
 
   @ApiProperty({
-    enum: [MediaPurpose.LONG_VIDEO, MediaPurpose.SHORT_VIDEO],
+    enum: [
+      MediaPurpose.LONG_VIDEO,
+      MediaPurpose.SHORT_VIDEO,
+      MediaPurpose.POST_VIDEO,
+    ],
     default: MediaPurpose.LONG_VIDEO,
   })
   @IsOptional()
-  @IsIn([MediaPurpose.LONG_VIDEO, MediaPurpose.SHORT_VIDEO])
-  purpose?: 'LONG_VIDEO' | 'SHORT_VIDEO';
+  @IsIn([
+    MediaPurpose.LONG_VIDEO,
+    MediaPurpose.SHORT_VIDEO,
+    MediaPurpose.POST_VIDEO,
+  ])
+  purpose?: 'LONG_VIDEO' | 'SHORT_VIDEO' | 'POST_VIDEO';
 }
 
 export class MediaAssetStatusDto {

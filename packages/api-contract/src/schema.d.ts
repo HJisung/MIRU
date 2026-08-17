@@ -939,6 +939,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/community-posts/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CommunityController_createText"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/community-posts/video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CommunityController_createVideo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/community-posts/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CommunityController_createLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/community-posts/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CommunityController_createImageExplicit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/community-posts/images": {
         parameters: {
             query?: never;
@@ -955,15 +1019,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/community-posts": {
+    "/api/v1/community-posts/mine": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Post Home or one managed Category */
-        get: operations["CommunityController_list"];
+        get: operations["CommunityController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/community-posts/{postId}/manage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CommunityController_manage"];
         put?: never;
         post?: never;
         delete?: never;
@@ -981,6 +1060,39 @@ export interface paths {
         };
         /** View one published Community Post */
         get: operations["CommunityController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["CommunityController_update"];
+        trace?: never;
+    };
+    "/api/v1/community-posts/{postId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CommunityController_archive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/community-posts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Post Home or one managed Category */
+        get: operations["CommunityController_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1127,7 +1239,7 @@ export interface components {
              * @default LONG_VIDEO
              * @enum {string}
              */
-            purpose: "LONG_VIDEO" | "SHORT_VIDEO";
+            purpose: "LONG_VIDEO" | "SHORT_VIDEO" | "POST_VIDEO";
         };
         MediaAssetStatusDto: {
             /** Format: uuid */
@@ -1165,8 +1277,10 @@ export interface components {
             reason: components["schemas"]["ReportReason"];
         };
         /** @enum {string} */
-        PostFormat: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO";
+        LegacyFeedPostFormat: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO";
         Object: Record<string, never>;
+        /** @enum {string} */
+        PostFormat: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO" | "COMMUNITY_TEXT" | "COMMUNITY_VIDEO" | "COMMUNITY_LINK";
         CreatorSummaryDto: {
             id: string;
             handle: string;
@@ -1511,10 +1625,10 @@ export interface components {
             /** @enum {string} */
             status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "UNLISTED" | "ARCHIVED" | "REMOVED";
         };
-        CreateCommunityImagePostDto: {
+        CreateCommunityTextPostDto: {
             /** Format: uuid */
-            assetId: string;
-            caption: string;
+            creationId: string;
+            body: string;
             categorySlug?: string;
         };
         CommunityCategoryDto: {
@@ -1538,6 +1652,73 @@ export interface components {
             author: components["schemas"]["CreatorSummaryDto"];
             category?: components["schemas"]["CommunityCategoryDto"] | null;
             media: components["schemas"]["MediaSummaryDto"][];
+        };
+        CreateCommunityVideoPostDto: {
+            /** Format: uuid */
+            creationId: string;
+            body: string;
+            categorySlug?: string;
+            /** Format: uuid */
+            assetId: string;
+        };
+        CreateCommunityLinkPostDto: {
+            /** Format: uuid */
+            creationId: string;
+            body: string;
+            linkUrl: string;
+            categorySlug?: string;
+        };
+        CreateCommunityImagePostDto: {
+            /** Format: uuid */
+            assetId: string;
+            caption: string;
+            categorySlug?: string;
+            /** Format: uuid */
+            creationId: string;
+        };
+        LegacyCreateCommunityImagePostDto: {
+            /** Format: uuid */
+            assetId: string;
+            caption: string;
+            categorySlug?: string;
+        };
+        LegacyCreateCommunityImagePostResponseDto: {
+            /**
+             * Format: uuid
+             * @description Community Post product ID
+             */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Temporary compatibility engagement target ID
+             */
+            engagementTargetId: string;
+            publishedAt: string;
+        };
+        ManagedCommunityPostDto: {
+            /** Format: uuid */
+            id: string;
+            engagementTarget: components["schemas"]["EngagementTargetDto"];
+            /** @enum {string} */
+            type: "TEXT" | "IMAGE" | "VIDEO" | "LINK";
+            body: string;
+            linkUrl?: string | null;
+            publishedAt?: string | null;
+            likeCount: number;
+            commentCount: number;
+            author: components["schemas"]["CreatorSummaryDto"];
+            category?: components["schemas"]["CommunityCategoryDto"] | null;
+            media: components["schemas"]["MediaSummaryDto"][];
+            /** @enum {string} */
+            status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "REMOVED";
+        };
+        ManagedCommunityPostListDto: {
+            items: components["schemas"]["ManagedCommunityPostDto"][];
+        };
+        UpdateCommunityPostDto: {
+            body?: string;
+            linkUrl?: string | null;
+            categorySlug?: string | null;
         };
         CommunityPostListDto: {
             items: components["schemas"]["CommunityPostDto"][];
@@ -2181,7 +2362,7 @@ export interface operations {
     FeedController_discover: {
         parameters: {
             query?: {
-                format?: components["schemas"]["PostFormat"];
+                format?: components["schemas"]["LegacyFeedPostFormat"];
                 /** @description Opaque cursor returned by the previous page */
                 cursor?: string;
                 limit?: components["schemas"]["Object"];
@@ -2205,7 +2386,7 @@ export interface operations {
     FeedController_following: {
         parameters: {
             query?: {
-                format?: components["schemas"]["PostFormat"];
+                format?: components["schemas"]["LegacyFeedPostFormat"];
                 /** @description Opaque cursor returned by the previous page */
                 cursor?: string;
                 limit?: components["schemas"]["Object"];
@@ -3009,7 +3190,76 @@ export interface operations {
             };
         };
     };
-    CommunityController_createImage: {
+    CommunityController_createText: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommunityTextPostDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPostDto"];
+                };
+            };
+        };
+    };
+    CommunityController_createVideo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommunityVideoPostDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPostDto"];
+                };
+            };
+        };
+    };
+    CommunityController_createLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommunityLinkPostDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPostDto"];
+                };
+            };
+        };
+    };
+    CommunityController_createImageExplicit: {
         parameters: {
             query?: never;
             header?: never;
@@ -3026,16 +3276,38 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CommunityPostDto"];
+                };
             };
         };
     };
-    CommunityController_list: {
+    CommunityController_createImage: {
         parameters: {
-            query?: {
-                /** @description Category slug. Omit for Post Home. */
-                category?: string;
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegacyCreateCommunityImagePostDto"];
             };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyCreateCommunityImagePostResponseDto"];
+                };
+            };
+        };
+    };
+    CommunityController_mine: {
+        parameters: {
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -3047,7 +3319,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommunityPostListDto"];
+                    "application/json": components["schemas"]["ManagedCommunityPostListDto"];
+                };
+            };
+        };
+    };
+    CommunityController_manage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedCommunityPostDto"];
                 };
             };
         };
@@ -3077,6 +3370,74 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    CommunityController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCommunityPostDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedCommunityPostDto"];
+                };
+            };
+        };
+    };
+    CommunityController_archive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedCommunityPostDto"];
+                };
+            };
+        };
+    };
+    CommunityController_list: {
+        parameters: {
+            query?: {
+                /** @description Category slug. Omit for Post Home. */
+                category?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPostListDto"];
+                };
             };
         };
     };

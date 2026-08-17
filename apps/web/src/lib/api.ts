@@ -83,11 +83,14 @@ export function getCommunityCategories() {
 
 export function getCommunityPosts(category?: string) {
   const query = category ? `?category=${encodeURIComponent(category)}` : "";
-  return apiFetch<CommunityPostList>(`/community-posts${query}`);
+  return apiFetch<CommunityPostList>(`/community-posts${query}`, {
+    cache: "no-store",
+  });
 }
 
 export function getCommunityPost(postId: string) {
   return apiFetch<CommunityPost>(
     `/community-posts/${encodeURIComponent(postId)}`,
+    { cache: "no-store" },
   );
 }

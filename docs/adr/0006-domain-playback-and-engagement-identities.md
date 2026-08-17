@@ -17,6 +17,10 @@ resolves that pair to the existing LegacyPublication-backed storage for likes,
 saves, comments, and reports. Compatibility `/posts/:postId/*` endpoints remain
 temporarily, but new clients use `/engagement/:targetType/:targetId/*`.
 
+Community authoring creates its product row and compatibility publication in one
+transaction. Community APIs and clients always return and use the Community Post
+ID; the compatibility ID remains internal for TEXT, IMAGE, VIDEO, and LINK.
+
 ## Why
 
 This keeps URLs and contracts readable without creating a universal playable

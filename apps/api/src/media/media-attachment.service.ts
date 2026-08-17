@@ -11,9 +11,14 @@ export class MediaAttachmentService {
     transaction: Prisma.TransactionClient,
     userId: string,
     assetId: string,
-    purpose: 'LONG_VIDEO' | 'SHORT_VIDEO',
+    purpose: 'LONG_VIDEO' | 'SHORT_VIDEO' | 'POST_VIDEO',
     statuses: MediaStatus[],
-    kind: 'HOME_VIDEO' | 'SERIES_SINGLE' | 'SERIES_EPISODE' | 'SHORTFORM',
+    kind:
+      | 'HOME_VIDEO'
+      | 'SERIES_SINGLE'
+      | 'SERIES_EPISODE'
+      | 'SHORTFORM'
+      | 'COMMUNITY_POST_VIDEO',
   ) {
     const asset = await transaction.mediaAsset.findFirst({
       where: {
@@ -26,6 +31,7 @@ export class MediaAttachmentService {
         seriesSingleWork: { none: {} },
         seriesEpisodes: { none: {} },
         shortFormLinks: { none: {} },
+        communityLinks: { none: {} },
       },
     });
     if (!asset)

@@ -61,6 +61,9 @@ foundation, then Shortform and Community Post migration.
   administrator decisions, and explicit work-type-aware publication: complete
 - Creator Studio EPISODIC Season and Episode management, atomic global
   ordering, metadata correction, and safe Episode publish/unpublish: complete
+- Community Post TEXT/IMAGE/VIDEO/LINK authoring, author-scoped retry identity,
+  shared adaptive video attachment, edit/archive management, and public
+  type-aware rendering: complete
 
 ## LegacyPublication migration status
 

@@ -210,6 +210,16 @@ export class MediaService {
               some: { shortForm: { status: 'PUBLISHED' } },
             },
           },
+          {
+            communityLinks: {
+              some: {
+                communityPost: {
+                  status: 'PUBLISHED',
+                  publishedAt: { not: null },
+                },
+              },
+            },
+          },
         ],
       },
     });
@@ -287,9 +297,30 @@ export class MediaService {
       where: {
         id: assetId,
         status: MediaStatus.READY,
-        postLinks: {
-          some: { post: { status: 'PUBLISHED', visibility: 'PUBLIC' } },
-        },
+        OR: [
+          {
+            AND: [
+              { communityLinks: { none: {} } },
+              {
+                postLinks: {
+                  some: {
+                    post: { status: 'PUBLISHED', visibility: 'PUBLIC' },
+                  },
+                },
+              },
+            ],
+          },
+          {
+            communityLinks: {
+              some: {
+                communityPost: {
+                  status: 'PUBLISHED',
+                  publishedAt: { not: null },
+                },
+              },
+            },
+          },
+        ],
       },
     });
     if (!asset) throw new NotFoundException('Media not found');

@@ -112,6 +112,26 @@ Community media is ordered through `CommunityPostMedia`. Category records are
 the source of truth for navigation. Omitting the category filter means Post Home
 and returns only records whose `categoryId` is null.
 
+Members author four explicit MVP types: `TEXT` requires meaningful plain text;
+`IMAGE` requires one owned READY `POST_IMAGE`; `VIDEO` requires one owned READY
+`POST_VIDEO`; and `LINK` requires an `http` or `https` URL. LINK authoring stores
+the submitted URL without fetching or unfurling it. Body text is plain text with
+line breaks preserved. Active managed Categories are validated inside every
+create or move transaction.
+
+Each browser creation carries an author-scoped UUID. The database unique key on
+`(authorId, creationId)` makes ambiguous and concurrent retries resolve to one
+Community Post without making identical text globally unique. Community VIDEO
+uses the shared adaptive HLS pipeline and a `COMMUNITY_POST_VIDEO`
+`MediaPlaybackClaim`; the claim, compatibility publication, product row, and
+media links are created atomically.
+
+Authors may edit body, Category, and LINK URL without changing type or replacing
+media. Archive clears product and compatibility publication timestamps and
+states in one transaction while preserving rows, engagement, media, and playback
+claims. Archived product reads and derived media are unavailable. Media
+replacement and LINK previews remain deliberately out of scope.
+
 ## Shared capabilities
 
 Like, comment, save, share, follow, report, not-interested feedback, and viewing
@@ -134,3 +154,8 @@ Product contracts expose engagement as a typed product reference, never a
 compatibility publication ID. The resolver currently maps that reference to
 legacy like/comment/save/report storage internally. Product reads and media
 traversal do not start from the compatibility aggregate.
+
+Community Post is authoritative for product fields. Its legacy publication is
+updated in the same transaction as creation, metadata edits, and archive solely
+as a temporary engagement/feed/moderation projection; its identifier and
+compatibility format are not exposed by Community APIs.

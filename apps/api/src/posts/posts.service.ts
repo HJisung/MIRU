@@ -11,7 +11,7 @@ import {
 import { DatabaseService } from '../database/database.service.js';
 import { toFeedItem } from '../feed/feed.mapper.js';
 import type { CreateImagePostDto } from './posts.dto.js';
-import type { CreateCommunityImagePostDto } from '../community/community.dto.js';
+import type { LegacyCreateCommunityImagePostDto } from '../community/community.dto.js';
 
 @Injectable()
 export class PostsService {
@@ -25,6 +25,7 @@ export class PostsService {
         id: postId,
         status: PostStatus.PUBLISHED,
         visibility: PostVisibility.PUBLIC,
+        communityPost: null,
       },
       include: {
         series: {
@@ -71,7 +72,7 @@ export class PostsService {
 
   async createCommunityImagePost(
     userId: string,
-    input: CreateCommunityImagePostDto,
+    input: LegacyCreateCommunityImagePostDto,
   ) {
     const asset = await this.database.client.mediaAsset.findFirst({
       where: {

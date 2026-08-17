@@ -1,5 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { MediaStatus, PostStatus, PostVisibility } from '@stream/database';
+import {
+  MediaStatus,
+  PostFormat,
+  PostStatus,
+  PostVisibility,
+} from '@stream/database';
 import { DatabaseService } from '../database/database.service.js';
 import { decodeFeedCursor, encodeFeedCursor } from './feed.cursor.js';
 import type { DiscoveryFeedDto } from './feed.dto.js';
@@ -30,7 +35,16 @@ export class FeedService {
         status: PostStatus.PUBLISHED,
         visibility: PostVisibility.PUBLIC,
         publishedAt: { not: null },
-        ...(query.format ? { format: query.format } : {}),
+        communityPost: null,
+        format: query.format
+          ? query.format
+          : {
+              in: [
+                PostFormat.IMAGE,
+                PostFormat.SHORT_VIDEO,
+                PostFormat.LONG_VIDEO,
+              ],
+            },
         ...(followerId
           ? {
               author: {

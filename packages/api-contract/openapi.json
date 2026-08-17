@@ -806,7 +806,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/PostFormat"
+              "$ref": "#/components/schemas/LegacyFeedPostFormat"
             }
           },
           {
@@ -854,7 +854,7 @@
             "required": false,
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/PostFormat"
+              "$ref": "#/components/schemas/LegacyFeedPostFormat"
             }
           },
           {
@@ -1988,9 +1988,102 @@
         ]
       }
     },
-    "/api/v1/community-posts/images": {
+    "/api/v1/community-posts/text": {
       "post": {
-        "operationId": "CommunityController_createImage",
+        "operationId": "CommunityController_createText",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommunityTextPostDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityPostDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community-posts/video": {
+      "post": {
+        "operationId": "CommunityController_createVideo",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommunityVideoPostDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityPostDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community-posts/link": {
+      "post": {
+        "operationId": "CommunityController_createLink",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommunityLinkPostDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityPostDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community-posts/image": {
+      "post": {
+        "operationId": "CommunityController_createImageExplicit",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2004,7 +2097,198 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityPostDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community-posts/images": {
+      "post": {
+        "operationId": "CommunityController_createImage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegacyCreateCommunityImagePostDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegacyCreateCommunityImagePostResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community-posts/mine": {
+      "get": {
+        "operationId": "CommunityController_mine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedCommunityPostListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community-posts/{postId}/manage": {
+      "get": {
+        "operationId": "CommunityController_manage",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedCommunityPostDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community-posts/{postId}": {
+      "patch": {
+        "operationId": "CommunityController_update",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommunityPostDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedCommunityPostDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      },
+      "get": {
+        "operationId": "CommunityController_findOne",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityPostDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Community Post is not published or does not exist"
+          }
+        },
+        "summary": "View one published Community Post",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community-posts/{postId}/archive": {
+      "post": {
+        "operationId": "CommunityController_archive",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedCommunityPostDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2039,40 +2323,6 @@
           }
         },
         "summary": "List Post Home or one managed Category",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community-posts/{postId}": {
-      "get": {
-        "operationId": "CommunityController_findOne",
-        "parameters": [
-          {
-            "name": "postId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CommunityPostDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Community Post is not published or does not exist"
-          }
-        },
-        "summary": "View one published Community Post",
         "tags": [
           "community"
         ]
@@ -2525,7 +2775,8 @@
             "type": "string",
             "enum": [
               "LONG_VIDEO",
-              "SHORT_VIDEO"
+              "SHORT_VIDEO",
+              "POST_VIDEO"
             ],
             "default": "LONG_VIDEO"
           }
@@ -2688,7 +2939,7 @@
           "reason"
         ]
       },
-      "PostFormat": {
+      "LegacyFeedPostFormat": {
         "type": "string",
         "enum": [
           "IMAGE",
@@ -2699,6 +2950,17 @@
       "Object": {
         "type": "object",
         "properties": {}
+      },
+      "PostFormat": {
+        "type": "string",
+        "enum": [
+          "IMAGE",
+          "SHORT_VIDEO",
+          "LONG_VIDEO",
+          "COMMUNITY_TEXT",
+          "COMMUNITY_VIDEO",
+          "COMMUNITY_LINK"
+        ]
       },
       "CreatorSummaryDto": {
         "type": "object",
@@ -4045,14 +4307,14 @@
           "status"
         ]
       },
-      "CreateCommunityImagePostDto": {
+      "CreateCommunityTextPostDto": {
         "type": "object",
         "properties": {
-          "assetId": {
+          "creationId": {
             "type": "string",
             "format": "uuid"
           },
-          "caption": {
+          "body": {
             "type": "string",
             "maxLength": 2200
           },
@@ -4061,8 +4323,8 @@
           }
         },
         "required": [
-          "assetId",
-          "caption"
+          "creationId",
+          "body"
         ]
       },
       "CommunityCategoryDto": {
@@ -4153,6 +4415,231 @@
           "author",
           "media"
         ]
+      },
+      "CreateCommunityVideoPostDto": {
+        "type": "object",
+        "properties": {
+          "creationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 2200
+          },
+          "categorySlug": {
+            "type": "string"
+          },
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "creationId",
+          "body",
+          "assetId"
+        ]
+      },
+      "CreateCommunityLinkPostDto": {
+        "type": "object",
+        "properties": {
+          "creationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 2200
+          },
+          "linkUrl": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "categorySlug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "creationId",
+          "body",
+          "linkUrl"
+        ]
+      },
+      "CreateCommunityImagePostDto": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "caption": {
+            "type": "string",
+            "maxLength": 2200
+          },
+          "categorySlug": {
+            "type": "string"
+          },
+          "creationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "assetId",
+          "caption",
+          "creationId"
+        ]
+      },
+      "LegacyCreateCommunityImagePostDto": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "caption": {
+            "type": "string",
+            "maxLength": 2200
+          },
+          "categorySlug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetId",
+          "caption"
+        ]
+      },
+      "LegacyCreateCommunityImagePostResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Community Post product ID"
+          },
+          "engagementTargetId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Temporary compatibility engagement target ID"
+          },
+          "publishedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "engagementTargetId",
+          "publishedAt"
+        ]
+      },
+      "ManagedCommunityPostDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "engagementTarget": {
+            "$ref": "#/components/schemas/EngagementTargetDto"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "TEXT",
+              "IMAGE",
+              "VIDEO",
+              "LINK"
+            ]
+          },
+          "body": {
+            "type": "string"
+          },
+          "linkUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "likeCount": {
+            "type": "number"
+          },
+          "commentCount": {
+            "type": "number"
+          },
+          "author": {
+            "$ref": "#/components/schemas/CreatorSummaryDto"
+          },
+          "category": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommunityCategoryDto"
+              }
+            ]
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaSummaryDto"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "ARCHIVED",
+              "REMOVED"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "engagementTarget",
+          "type",
+          "body",
+          "likeCount",
+          "commentCount",
+          "author",
+          "media",
+          "status"
+        ]
+      },
+      "ManagedCommunityPostListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ManagedCommunityPostDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "UpdateCommunityPostDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 2200
+          },
+          "linkUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "nullable": true
+          },
+          "categorySlug": {
+            "type": "string",
+            "nullable": true
+          }
+        }
       },
       "CommunityPostListDto": {
         "type": "object",

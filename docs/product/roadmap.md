@@ -17,6 +17,8 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
   administrator decision, media readiness, and explicit publication
 - Operate approved EPISODIC Series through optional Seasons, multiple Episode
   drafts, atomic ordering, and individual publication controls
+- Author and manage Community TEXT, IMAGE, VIDEO, and LINK Posts with active
+  Categories, retry safety, shared HLS playback, and archive semantics
 
 ## MVP
 
@@ -35,7 +37,7 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
   administration around the adaptive HLS pipeline
 - Move engagement persistence behind the now domain-aware target API from
   compatibility publication foreign keys to native target storage
-- Add Community TEXT/VIDEO/LINK authoring and richer Series artwork/analytics tools
+- Add richer Series artwork/analytics and Community media-replacement tools
 - Nested comments, notifications, richer creator tools
 - Search, hashtags/topics, captions/subtitles
 - Resumable upload UX and creator analytics

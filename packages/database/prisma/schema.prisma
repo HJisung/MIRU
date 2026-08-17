@@ -15,6 +15,7 @@ enum MediaKind {
 
 enum MediaPurpose {
   POST_IMAGE
+  POST_VIDEO
   SHORT_VIDEO
   LONG_VIDEO
   AVATAR
@@ -33,6 +34,9 @@ enum PostFormat {
   IMAGE
   SHORT_VIDEO
   LONG_VIDEO
+  COMMUNITY_TEXT
+  COMMUNITY_VIDEO
+  COMMUNITY_LINK
 }
 
 enum PostStatus {
@@ -454,26 +458,27 @@ model CommunityPost {
   type          CommunityPostType
   body          String                  @default("")
   linkUrl       String?
+  creationId    String?                 @db.Uuid
   media         CommunityPostMedia[]
   status        DomainPublicationStatus @default(DRAFT)
   publishedAt   DateTime?
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
 
+  @@unique([authorId, creationId])
   @@index([categoryId, status, publishedAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc), id(sort: Desc)])
 }
 
 model CommunityPostMedia {
   communityPostId String        @db.Uuid
-  assetId         String        @db.Uuid
+  assetId         String        @unique @db.Uuid
   position        Int
   communityPost   CommunityPost @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
   asset           MediaAsset    @relation(fields: [assetId], references: [id], onDelete: Restrict)
 
   @@id([communityPostId, assetId])
   @@unique([communityPostId, position])
-  @@index([assetId])
 }
 
 model Playlist {

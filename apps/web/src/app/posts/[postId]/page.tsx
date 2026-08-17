@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ApiError, getCommunityPost } from "@/lib/api";
 import { mediaUrl } from "@/lib/client-api";
 import { relativeDate } from "@/lib/format";
+import { VideoPlayer } from "@/components/video-player";
 
 export const dynamic = "force-dynamic";
 
@@ -37,14 +38,14 @@ export default async function CommunityPostDetailPage({
           <a
             href={post.linkUrl}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="mt-4 block rounded-xl border border-line p-4 text-sm underline"
           >
-            {post.linkUrl}
+            {safeLinkLabel(post.linkUrl)}
           </a>
         )}
         <div className="mt-5 grid gap-3">
-          {post.media.map((media) => (
+          {post.type === "IMAGE" && post.media.map((media) => (
             <div
               key={media.id}
               className="relative aspect-[16/9] overflow-hidden rounded-xl"
@@ -59,8 +60,25 @@ export default async function CommunityPostDetailPage({
               />
             </div>
           ))}
+          {post.type === "VIDEO" && post.media[0] && (
+            <div className="aspect-video overflow-hidden rounded-xl bg-black">
+              <VideoPlayer
+                source={post.media[0].url}
+                poster={post.media[0].posterUrl}
+              />
+            </div>
+          )}
         </div>
       </article>
     </main>
   );
+}
+
+function safeLinkLabel(value: string) {
+  try {
+    const url = new URL(value);
+    return `${url.hostname}${url.pathname === "/" ? "" : url.pathname}`;
+  } catch {
+    return value;
+  }
 }

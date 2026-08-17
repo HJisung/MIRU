@@ -87,8 +87,8 @@ describe('real queued video pipeline', () => {
       if (sourceKey) await storage.delete(sourceKey);
     }
     if (userId) {
-      await database.client.homeVideo.deleteMany({
-        where: { creatorId: userId },
+      await database.client.communityPost.deleteMany({
+        where: { authorId: userId },
       });
       await database.client.post.deleteMany({ where: { authorId: userId } });
       await database.client.mediaAsset.deleteMany({
@@ -100,7 +100,7 @@ describe('real queued video pipeline', () => {
     if (temporary) await rm(temporary, { recursive: true, force: true });
   });
 
-  it('uploads to MinIO, queues BullMQ, runs FFmpeg and serves published HLS', async () => {
+  it('uploads to MinIO, processes with FFmpeg, publishes a Community VIDEO, and gates HLS', async () => {
     temporary = await mkdtemp(join(tmpdir(), 'miru-pipeline-e2e-'));
     const fixture = join(temporary, 'fixture.mp4');
     await runProcess(
@@ -130,7 +130,7 @@ describe('real queued video pipeline', () => {
       payload: {
         contentType: 'video/mp4',
         byteSize: video.byteLength,
-        purpose: 'LONG_VIDEO',
+        purpose: 'POST_VIDEO',
       },
     });
     expect(session.statusCode).toBe(201);
@@ -168,37 +168,23 @@ describe('real queued video pipeline', () => {
       if (status === 'READY' || status === 'FAILED') break;
     }
     expect(status).toBe('READY');
-    const draft = await app.inject({
-      method: 'POST',
-      url: '/api/v1/home/videos',
-      headers: { cookie },
-      payload: { assetId, title: 'Real pipeline', description: 'Queue proof' },
-    });
-    const homeId = draft.json<{ id: string }>().id;
-    const draftRetry = await app.inject({
-      method: 'POST',
-      url: '/api/v1/home/videos',
-      headers: { cookie },
-      payload: { assetId, title: 'Real pipeline', description: 'Queue proof' },
-    });
-    expect(draftRetry.json<{ id: string }>().id).toBe(homeId);
     const privateManifest = await app.inject({
       method: 'GET',
       url: `/api/v1/media/assets/${assetId}/hls/master.m3u8`,
     });
     expect(privateManifest.statusCode).toBe(404);
-    const publish = await app.inject({
+    const created = await app.inject({
       method: 'POST',
-      url: `/api/v1/home/videos/${homeId}/publish`,
+      url: '/api/v1/community-posts/video',
       headers: { cookie },
+      payload: {
+        creationId: crypto.randomUUID(),
+        assetId,
+        body: 'Real Community pipeline',
+      },
     });
-    expect(publish.statusCode).toBe(201);
-    const publishRetry = await app.inject({
-      method: 'POST',
-      url: `/api/v1/home/videos/${homeId}/publish`,
-      headers: { cookie },
-    });
-    expect(publishRetry.statusCode).toBe(201);
+    expect(created.statusCode).toBe(201);
+    const postId = created.json<{ id: string }>().id;
     const manifest = await app.inject({
       method: 'GET',
       url: `/api/v1/media/assets/${assetId}/hls/master.m3u8`,
@@ -234,5 +220,16 @@ describe('real queued video pipeline', () => {
     expect(segmentResponse.statusCode).toBe(200);
     expect(segmentResponse.headers['content-type']).toBe('video/mp2t');
     expect(segmentResponse.headers['cache-control']).toContain('immutable');
+    const archived = await app.inject({
+      method: 'POST',
+      url: `/api/v1/community-posts/${postId}/archive`,
+      headers: { cookie },
+    });
+    expect(archived.statusCode).toBe(200);
+    const archivedManifest = await app.inject({
+      method: 'GET',
+      url: `/api/v1/media/assets/${assetId}/hls/master.m3u8`,
+    });
+    expect(archivedManifest.statusCode).toBe(404);
   }, 120_000);
 });

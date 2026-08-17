@@ -27,6 +27,12 @@ transaction as a Home, Series, Episode, or video Shortform attachment. This
 closes the application-check race while retaining idempotent existing-record
 retries.
 
+Community VIDEO uses the explicit `POST_VIDEO` media purpose and the same worker,
+renditions, player, and derived-media routes. Its `COMMUNITY_POST_VIDEO` claim is
+created with the Community Post and compatibility projection. Public HLS access
+requires the Community Post to remain published; archive preserves the claim and
+asset while immediately removing derived-media access.
+
 Authenticated ADMIN endpoints expose bounded BullMQ counts and safe processing
 diagnostics/retry. They never expose source object keys or credentials.
 

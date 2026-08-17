@@ -30,3 +30,7 @@ export type CommunityCategoryList =
   components["schemas"]["CommunityCategoryListDto"];
 export type CommunityPost = components["schemas"]["CommunityPostDto"];
 export type CommunityPostList = components["schemas"]["CommunityPostListDto"];
+export type ManagedCommunityPost =
+  components["schemas"]["ManagedCommunityPostDto"];
+export type ManagedCommunityPostList =
+  components["schemas"]["ManagedCommunityPostListDto"];
