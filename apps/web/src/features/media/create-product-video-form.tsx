@@ -22,7 +22,13 @@ type Pending = {
   promotedId?: string;
 };
 
-export function CreateProductVideoForm({ mode }: { mode: Mode }) {
+export function CreateProductVideoForm({
+  mode,
+  initialSeriesId,
+}: {
+  mode: Mode;
+  initialSeriesId?: string;
+}) {
   const router = useRouter();
   const key = `miru:pending-${mode}`;
   const [file, setFile] = useState<File | null>(null);
@@ -270,6 +276,7 @@ export function CreateProductVideoForm({ mode }: { mode: Mode }) {
           <input
             required
             name="seriesId"
+            defaultValue={initialSeriesId}
             placeholder="Series UUID"
             className="w-full rounded-xl border border-line bg-background p-4"
           />

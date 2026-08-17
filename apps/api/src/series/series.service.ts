@@ -12,13 +12,18 @@ import {
   PostFormat,
   PostStatus,
   PostVisibility,
+  Prisma,
   SeriesSubmissionStatus,
   SeriesWorkType,
 } from '@stream/database';
 import { DatabaseService } from '../database/database.service.js';
 import { toPlayableMedia } from '../playback/playback.mapper.js';
 import type { AuthUser } from '../auth/auth.service.js';
-import type { CreateSeriesEpisodeDto } from './series.dto.js';
+import type {
+  CreateSeriesDto,
+  CreateSeriesEpisodeDto,
+  UpdateSeriesDto,
+} from './series.dto.js';
 import { MediaAttachmentService } from '../media/media-attachment.service.js';
 
 const seriesInclude = {
@@ -36,6 +41,38 @@ const seriesInclude = {
     orderBy: { episodeNumber: 'asc' as const },
   },
 } as const;
+
+const managementInclude = {
+  singleWorkAsset: { select: { status: true } },
+  episodes: {
+    select: { id: true, videoAsset: { select: { status: true } } },
+  },
+  submissions: {
+    include: {
+      reviewedBy: {
+        select: {
+          id: true,
+          handle: true,
+          displayName: true,
+          avatarUrl: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' as const },
+  },
+} as const;
+
+type ManagedSeriesRecord = Prisma.SeriesGetPayload<{
+  include: typeof managementInclude;
+}>;
+
+type ReviewRecord = Prisma.SeriesSubmissionGetPayload<{
+  include: {
+    applicant: true;
+    reviewedBy: true;
+    series: { include: typeof managementInclude };
+  };
+}>;
 
 @Injectable()
 export class SeriesService {
@@ -74,6 +111,261 @@ export class SeriesService {
     });
     if (!episode) throw new NotFoundException('Series episode not found');
     return this.mapEpisode(episode);
+  }
+
+  async create(user: AuthUser, input: CreateSeriesDto) {
+    const series = await this.database.client.series.create({
+      data: {
+        creatorId: user.id,
+        title: input.title.trim(),
+        synopsis: input.synopsis.trim(),
+        description: input.description?.trim() ?? '',
+        workType: input.workType,
+        genres: this.cleanList(input.genres),
+        tags: this.cleanList(input.tags),
+        ageRating: input.ageRating?.trim() || null,
+        productionInfo: input.productionInfo as Prisma.InputJsonValue,
+        releaseDate: input.releaseDate ? new Date(input.releaseDate) : null,
+      },
+      include: managementInclude,
+    });
+    return this.mapManaged(series, user);
+  }
+
+  async mine(user: AuthUser) {
+    const series = await this.database.client.series.findMany({
+      where: { creatorId: user.id },
+      include: managementInclude,
+      orderBy: { updatedAt: 'desc' },
+    });
+    return { items: series.map((item) => this.mapManaged(item, user)) };
+  }
+
+  async manage(user: AuthUser, id: string) {
+    const series = await this.ownedSeries(user, id);
+    return this.mapManaged(series, user);
+  }
+
+  async update(user: AuthUser, id: string, input: UpdateSeriesDto) {
+    const series = await this.ownedSeries(user, id);
+    const latest = series.submissions[0];
+    if (series.publicationStatus !== DomainPublicationStatus.DRAFT)
+      throw new BadRequestException('Only a draft Series can be edited');
+    if (latest?.status === SeriesSubmissionStatus.APPROVED)
+      throw new BadRequestException('Approved Series metadata is locked');
+    if (
+      input.workType &&
+      input.workType !== series.workType &&
+      (series.singleWorkAsset || series.episodes.length)
+    )
+      throw new BadRequestException(
+        'Work type cannot change after playable content is attached',
+      );
+    const updated = await this.database.client.series.update({
+      where: { id },
+      data: {
+        title: input.title?.trim(),
+        synopsis: input.synopsis?.trim(),
+        description: input.description?.trim(),
+        workType: input.workType,
+        genres: input.genres ? this.cleanList(input.genres) : undefined,
+        tags: input.tags ? this.cleanList(input.tags) : undefined,
+        ageRating:
+          input.ageRating === undefined
+            ? undefined
+            : input.ageRating?.trim() || null,
+        productionInfo: input.productionInfo,
+        releaseDate:
+          input.releaseDate === undefined
+            ? undefined
+            : input.releaseDate
+              ? new Date(input.releaseDate)
+              : null,
+      },
+      include: managementInclude,
+    });
+    return this.mapManaged(updated, user);
+  }
+
+  async submit(user: AuthUser, id: string) {
+    const series = await this.ownedSeries(user, id);
+    const active = series.submissions.find(
+      (submission) => submission.status === SeriesSubmissionStatus.SUBMITTED,
+    );
+    if (active) return this.mapSubmission(active);
+    if (
+      series.submissions.some(
+        (submission) => submission.status === SeriesSubmissionStatus.APPROVED,
+      )
+    )
+      throw new BadRequestException('Series is already approved');
+    if (series.publicationStatus !== DomainPublicationStatus.DRAFT)
+      throw new BadRequestException('Series is not ready for submission');
+    if (!series.title.trim() || !series.synopsis.trim())
+      throw new BadRequestException('Title and synopsis are required');
+    try {
+      const submission = await this.database.client.$transaction(async (tx) => {
+        const created = await tx.seriesSubmission.create({
+          data: {
+            seriesId: series.id,
+            applicantId: user.id,
+            status: SeriesSubmissionStatus.SUBMITTED,
+            submittedAt: new Date(),
+          },
+          include: { reviewedBy: true },
+        });
+        await tx.series.update({
+          where: { id: series.id },
+          data: { publicationStatus: DomainPublicationStatus.PENDING_REVIEW },
+        });
+        return created;
+      });
+      return this.mapSubmission(submission);
+    } catch (error) {
+      if (this.prismaCode(error) !== 'P2002') throw error;
+      const existing = await this.database.client.seriesSubmission.findFirst({
+        where: { seriesId: id, status: SeriesSubmissionStatus.SUBMITTED },
+        include: { reviewedBy: true },
+      });
+      if (!existing) throw error;
+      return this.mapSubmission(existing);
+    }
+  }
+
+  async withdraw(user: AuthUser, seriesId: string, submissionId: string) {
+    await this.ownedSeries(user, seriesId);
+    const submission = await this.database.client.$transaction(async (tx) => {
+      const changed = await tx.seriesSubmission.updateMany({
+        where: {
+          id: submissionId,
+          seriesId,
+          applicantId: user.id,
+          status: SeriesSubmissionStatus.SUBMITTED,
+        },
+        data: { status: SeriesSubmissionStatus.WITHDRAWN },
+      });
+      if (!changed.count)
+        throw new BadRequestException(
+          'Only a submitted review can be withdrawn',
+        );
+      await tx.series.update({
+        where: { id: seriesId },
+        data: { publicationStatus: DomainPublicationStatus.DRAFT },
+      });
+      return tx.seriesSubmission.findUniqueOrThrow({
+        where: { id: submissionId },
+        include: { reviewedBy: true },
+      });
+    });
+    return this.mapSubmission(submission);
+  }
+
+  async reviewQueue(user: AuthUser) {
+    this.assertAdmin(user);
+    const submissions = await this.database.client.seriesSubmission.findMany({
+      where: { status: SeriesSubmissionStatus.SUBMITTED },
+      include: {
+        applicant: true,
+        reviewedBy: true,
+        series: { include: managementInclude },
+      },
+      orderBy: { submittedAt: 'asc' },
+    });
+    return { items: submissions.map((item) => this.mapReview(item, user)) };
+  }
+
+  async reviewDetail(user: AuthUser, submissionId: string) {
+    this.assertAdmin(user);
+    const submission = await this.database.client.seriesSubmission.findUnique({
+      where: { id: submissionId },
+      include: {
+        applicant: true,
+        reviewedBy: true,
+        series: { include: managementInclude },
+      },
+    });
+    if (!submission) throw new NotFoundException('Series submission not found');
+    return this.mapReview(submission, user);
+  }
+
+  async review(
+    user: AuthUser,
+    submissionId: string,
+    decision: 'APPROVED' | 'REJECTED',
+    reason: string,
+  ) {
+    this.assertAdmin(user);
+    const decided = await this.database.client.$transaction(async (tx) => {
+      const submission = await tx.seriesSubmission.findUnique({
+        where: { id: submissionId },
+      });
+      if (!submission)
+        throw new NotFoundException('Series submission not found');
+      const changed = await tx.seriesSubmission.updateMany({
+        where: {
+          id: submission.id,
+          status: SeriesSubmissionStatus.SUBMITTED,
+        },
+        data: {
+          status: decision,
+          reviewedById: user.id,
+          reviewedAt: new Date(),
+          decisionReason: reason.trim(),
+        },
+      });
+      if (!changed.count)
+        throw new BadRequestException(
+          'Submission is no longer awaiting review',
+        );
+      await tx.series.update({
+        where: { id: submission.seriesId },
+        data: { publicationStatus: DomainPublicationStatus.DRAFT },
+      });
+      return submission.id;
+    });
+    return this.reviewDetail(user, decided);
+  }
+
+  async publish(user: AuthUser, id: string) {
+    const series = await this.ownedSeries(user, id);
+    if (series.publicationStatus === DomainPublicationStatus.PUBLISHED)
+      return this.findOne(id);
+    const approved = series.submissions.some(
+      (submission) => submission.status === SeriesSubmissionStatus.APPROVED,
+    );
+    if (user.role !== 'ADMIN' && !approved)
+      throw new ForbiddenException('Approved Series review is required');
+    if (
+      series.workType === SeriesWorkType.SINGLE_WORK &&
+      series.singleWorkAsset?.status !== MediaStatus.READY
+    )
+      throw new BadRequestException('A ready single-work video is required');
+    if (
+      series.workType === SeriesWorkType.EPISODIC &&
+      !series.episodes.some(
+        (episode) => episode.videoAsset?.status === MediaStatus.READY,
+      )
+    )
+      throw new BadRequestException(
+        'At least one ready episode draft is required',
+      );
+    const publishedAt = new Date();
+    await this.database.client.$transaction(async (tx) => {
+      await tx.series.update({
+        where: { id },
+        data: { publicationStatus: DomainPublicationStatus.PUBLISHED },
+      });
+      if (
+        series.workType === SeriesWorkType.SINGLE_WORK &&
+        series.singleWorkPublicationId
+      ) {
+        await tx.post.update({
+          where: { id: series.singleWorkPublicationId },
+          data: { status: PostStatus.PUBLISHED, publishedAt },
+        });
+      }
+    });
+    return this.findOne(id);
   }
 
   async attachSingleWork(user: AuthUser, seriesId: string, assetId: string) {
@@ -231,6 +523,109 @@ export class SeriesService {
       }),
     ]);
     return this.findEpisode(episode.id);
+  }
+
+  private async ownedSeries(user: AuthUser, id: string) {
+    const series = await this.database.client.series.findFirst({
+      where: { id, creatorId: user.id },
+      include: managementInclude,
+    });
+    if (!series) throw new NotFoundException('Series not found');
+    return series;
+  }
+
+  private mapManaged(series: ManagedSeriesRecord, user: AuthUser) {
+    const submissions = series.submissions.map((submission) =>
+      this.mapSubmission(submission),
+    );
+    const approved = series.submissions.some(
+      (submission) => submission.status === SeriesSubmissionStatus.APPROVED,
+    );
+    const hasPlayableContent =
+      series.workType === SeriesWorkType.SINGLE_WORK
+        ? series.singleWorkAsset?.status === MediaStatus.READY
+        : series.episodes.some(
+            (episode) => episode.videoAsset?.status === MediaStatus.READY,
+          );
+    return {
+      id: series.id,
+      title: series.title,
+      synopsis: series.synopsis,
+      description: series.description,
+      workType: series.workType,
+      publicationStatus: series.publicationStatus,
+      genres: series.genres,
+      tags: series.tags,
+      ageRating: series.ageRating,
+      productionInfo: series.productionInfo,
+      releaseDate: series.releaseDate?.toISOString() ?? null,
+      hasPlayableContent,
+      canManageContent: user.role === 'ADMIN' || approved,
+      createdAt: series.createdAt.toISOString(),
+      updatedAt: series.updatedAt.toISOString(),
+      submissions,
+      latestSubmission: submissions[0] ?? null,
+    };
+  }
+
+  private mapSubmission(submission: {
+    id: string;
+    status: SeriesSubmissionStatus;
+    submittedAt: Date | null;
+    reviewedAt: Date | null;
+    decisionReason: string | null;
+    reviewedBy?: {
+      id: string;
+      handle: string;
+      displayName: string;
+      avatarUrl: string | null;
+    } | null;
+  }) {
+    return {
+      id: submission.id,
+      status: submission.status,
+      submittedAt: submission.submittedAt?.toISOString() ?? null,
+      reviewedAt: submission.reviewedAt?.toISOString() ?? null,
+      decisionReason: submission.decisionReason,
+      reviewer: submission.reviewedBy
+        ? {
+            id: submission.reviewedBy.id,
+            handle: submission.reviewedBy.handle,
+            displayName: submission.reviewedBy.displayName,
+            avatarUrl: submission.reviewedBy.avatarUrl,
+          }
+        : null,
+    };
+  }
+
+  private mapReview(submission: ReviewRecord, user: AuthUser) {
+    return {
+      ...this.mapSubmission(submission),
+      applicant: {
+        id: submission.applicant.id,
+        handle: submission.applicant.handle,
+        displayName: submission.applicant.displayName,
+        avatarUrl: submission.applicant.avatarUrl,
+      },
+      series: this.mapManaged(submission.series, user),
+    };
+  }
+
+  private assertAdmin(user: AuthUser) {
+    if (user.role !== 'ADMIN')
+      throw new ForbiddenException('Administrator role required');
+  }
+
+  private cleanList(values?: string[]) {
+    return [
+      ...new Set((values ?? []).map((value) => value.trim()).filter(Boolean)),
+    ].slice(0, 20);
+  }
+
+  private prismaCode(error: unknown) {
+    return typeof error === 'object' && error
+      ? (error as { code?: unknown }).code
+      : undefined;
   }
 
   private async manageableSeries(user: AuthUser, id: string) {

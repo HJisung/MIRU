@@ -1104,6 +1104,255 @@
         "tags": [
           "series"
         ]
+      },
+      "post": {
+        "operationId": "SeriesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSeriesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedSeriesDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/mine": {
+      "get": {
+        "operationId": "SeriesController_mine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedSeriesListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/{seriesId}/manage": {
+      "get": {
+        "operationId": "SeriesController_manage",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedSeriesDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/{seriesId}": {
+      "patch": {
+        "operationId": "SeriesController_update",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSeriesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedSeriesDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      },
+      "get": {
+        "operationId": "SeriesController_findOne",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Series is not published"
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/{seriesId}/submissions": {
+      "post": {
+        "operationId": "SeriesController_submit",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesSubmissionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/{seriesId}/submissions/{submissionId}/withdraw": {
+      "post": {
+        "operationId": "SeriesController_withdraw",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "submissionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesSubmissionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/{seriesId}/publish": {
+      "post": {
+        "operationId": "SeriesController_publish",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
       }
     },
     "/api/v1/series/{seriesId}/single-work/video": {
@@ -1249,12 +1498,33 @@
         ]
       }
     },
-    "/api/v1/series/{seriesId}": {
+    "/api/v1/admin/series-submissions": {
       "get": {
-        "operationId": "SeriesController_findOne",
+        "operationId": "SeriesAdminController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSeriesSubmissionListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-series-reviews"
+        ]
+      }
+    },
+    "/api/v1/admin/series-submissions/{submissionId}": {
+      "get": {
+        "operationId": "SeriesAdminController_find",
         "parameters": [
           {
-            "name": "seriesId",
+            "name": "submissionId",
             "required": true,
             "in": "path",
             "schema": {
@@ -1268,17 +1538,94 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SeriesDto"
+                  "$ref": "#/components/schemas/AdminSeriesSubmissionDto"
                 }
               }
             }
-          },
-          "404": {
-            "description": "Series is not published"
           }
         },
         "tags": [
-          "series"
+          "admin-series-reviews"
+        ]
+      }
+    },
+    "/api/v1/admin/series-submissions/{submissionId}/approve": {
+      "post": {
+        "operationId": "SeriesAdminController_approve",
+        "parameters": [
+          {
+            "name": "submissionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewSeriesSubmissionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSeriesSubmissionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-series-reviews"
+        ]
+      }
+    },
+    "/api/v1/admin/series-submissions/{submissionId}/reject": {
+      "post": {
+        "operationId": "SeriesAdminController_reject",
+        "parameters": [
+          {
+            "name": "submissionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewSeriesSubmissionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSeriesSubmissionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-series-reviews"
         ]
       }
     },
@@ -2684,6 +3031,268 @@
           "items"
         ]
       },
+      "CreateSeriesDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "synopsis": {
+            "type": "string",
+            "maxLength": 5000
+          },
+          "workType": {
+            "type": "string",
+            "enum": [
+              "SINGLE_WORK",
+              "EPISODIC"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ageRating": {
+            "type": "object",
+            "nullable": true,
+            "maxLength": 30
+          },
+          "productionInfo": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "releaseDate": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "title",
+          "synopsis",
+          "workType"
+        ]
+      },
+      "SeriesSubmissionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "SUBMITTED",
+              "APPROVED",
+              "REJECTED",
+              "WITHDRAWN"
+            ]
+          },
+          "submittedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "decisionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewer": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreatorSummaryDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ]
+      },
+      "ManagedSeriesDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "synopsis": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "workType": {
+            "type": "string",
+            "enum": [
+              "SINGLE_WORK",
+              "EPISODIC"
+            ]
+          },
+          "publicationStatus": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PENDING_REVIEW",
+              "PUBLISHED",
+              "UNLISTED",
+              "ARCHIVED",
+              "REMOVED"
+            ]
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ageRating": {
+            "type": "string",
+            "nullable": true
+          },
+          "productionInfo": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "releaseDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "hasPlayableContent": {
+            "type": "boolean"
+          },
+          "canManageContent": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "submissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeriesSubmissionDto"
+            }
+          },
+          "latestSubmission": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SeriesSubmissionDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "synopsis",
+          "description",
+          "workType",
+          "publicationStatus",
+          "genres",
+          "tags",
+          "hasPlayableContent",
+          "canManageContent",
+          "createdAt",
+          "updatedAt",
+          "submissions"
+        ]
+      },
+      "ManagedSeriesListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ManagedSeriesDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "UpdateSeriesDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "synopsis": {
+            "type": "string",
+            "maxLength": 5000
+          },
+          "workType": {
+            "type": "string",
+            "enum": [
+              "SINGLE_WORK",
+              "EPISODIC"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ageRating": {
+            "type": "object",
+            "nullable": true,
+            "maxLength": 30
+          },
+          "productionInfo": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "releaseDate": {
+            "type": "object",
+            "nullable": true
+          }
+        }
+      },
       "AttachSingleWorkVideoDto": {
         "type": "object",
         "properties": {
@@ -2758,6 +3367,84 @@
           "episodeNumber",
           "title",
           "synopsis"
+        ]
+      },
+      "AdminSeriesSubmissionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "SUBMITTED",
+              "APPROVED",
+              "REJECTED",
+              "WITHDRAWN"
+            ]
+          },
+          "submittedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "decisionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewer": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreatorSummaryDto"
+              }
+            ]
+          },
+          "series": {
+            "$ref": "#/components/schemas/ManagedSeriesDto"
+          },
+          "applicant": {
+            "$ref": "#/components/schemas/CreatorSummaryDto"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "series",
+          "applicant"
+        ]
+      },
+      "AdminSeriesSubmissionListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminSeriesSubmissionDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ReviewSeriesSubmissionDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "reason"
         ]
       },
       "ShortformPromotionDto": {

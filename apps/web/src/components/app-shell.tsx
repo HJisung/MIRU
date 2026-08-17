@@ -10,6 +10,7 @@ import {
   FileText,
   Home,
   Layers3,
+  LayoutDashboard,
   Menu,
   Moon,
   PlaySquare,
@@ -230,6 +231,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             })}
           </nav>
           <div className="mt-6 border-t border-line pt-5">
+            <Link
+              href="/studio/series"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              <LayoutDashboard className="size-[19px]" /> Creator Studio
+            </Link>
             <Link
               href="/create"
               onClick={() => setOpen(false)}

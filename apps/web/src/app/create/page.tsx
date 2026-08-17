@@ -5,14 +5,25 @@ import { CreateProductVideoForm } from "@/features/media/create-product-video-fo
 export default async function CreatePage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; type?: string }>;
+  searchParams: Promise<{
+    category?: string;
+    type?: string;
+    seriesId?: string;
+  }>;
 }) {
-  const { category, type } = await searchParams;
+  const { category, type, seriesId } = await searchParams;
   if (type === "video") return <CreateHomeVideoForm />;
   if (type === "series-single")
-    return <CreateProductVideoForm mode="series-single" />;
+    return (
+      <CreateProductVideoForm mode="series-single" initialSeriesId={seriesId} />
+    );
   if (type === "series-episode")
-    return <CreateProductVideoForm mode="series-episode" />;
+    return (
+      <CreateProductVideoForm
+        mode="series-episode"
+        initialSeriesId={seriesId}
+      />
+    );
   if (type === "shortform-video")
     return <CreateProductVideoForm mode="shortform" />;
   return <CreateCommunityPostForm categorySlug={category} />;

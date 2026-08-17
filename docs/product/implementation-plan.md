@@ -57,6 +57,8 @@ foundation, then Shortform and Community Post migration.
   and timeline: complete
 - Series single-work playback, explicit Home/Series/Episode playback identity,
   and domain-aware engagement API boundary: complete
+- Creator Studio Series drafts, stable submission/review history,
+  administrator decisions, and explicit work-type-aware publication: complete
 
 ## LegacyPublication migration status
 

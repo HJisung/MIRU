@@ -562,7 +562,103 @@ export interface paths {
         };
         get: operations["SeriesController_list"];
         put?: never;
+        post: operations["SeriesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SeriesController_mine"];
+        put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series/{seriesId}/manage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SeriesController_manage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series/{seriesId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SeriesController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["SeriesController_update"];
+        trace?: never;
+    };
+    "/api/v1/series/{seriesId}/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SeriesController_submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series/{seriesId}/submissions/{submissionId}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SeriesController_withdraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series/{seriesId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SeriesController_publish"];
         delete?: never;
         options?: never;
         head?: never;
@@ -633,16 +729,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/series/{seriesId}": {
+    "/api/v1/admin/series-submissions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["SeriesController_findOne"];
+        get: operations["SeriesAdminController_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/series-submissions/{submissionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SeriesAdminController_find"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/series-submissions/{submissionId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SeriesAdminController_approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/series-submissions/{submissionId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SeriesAdminController_reject"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1087,6 +1231,71 @@ export interface components {
         SeriesListDto: {
             items: components["schemas"]["SeriesDto"][];
         };
+        CreateSeriesDto: {
+            title: string;
+            synopsis: string;
+            /** @enum {string} */
+            workType: "SINGLE_WORK" | "EPISODIC";
+            description?: string;
+            genres?: string[];
+            tags?: string[];
+            ageRating?: Record<string, never> | null;
+            productionInfo?: {
+                [key: string]: unknown;
+            };
+            releaseDate?: Record<string, never> | null;
+        };
+        SeriesSubmissionDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "WITHDRAWN";
+            submittedAt?: string | null;
+            reviewedAt?: string | null;
+            decisionReason?: string | null;
+            reviewer?: components["schemas"]["CreatorSummaryDto"] | null;
+        };
+        ManagedSeriesDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            synopsis: string;
+            description: string;
+            /** @enum {string} */
+            workType: "SINGLE_WORK" | "EPISODIC";
+            /** @enum {string} */
+            publicationStatus: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "UNLISTED" | "ARCHIVED" | "REMOVED";
+            genres: string[];
+            tags: string[];
+            ageRating?: string | null;
+            productionInfo?: {
+                [key: string]: unknown;
+            } | null;
+            releaseDate?: string | null;
+            hasPlayableContent: boolean;
+            canManageContent: boolean;
+            createdAt: string;
+            updatedAt: string;
+            submissions: components["schemas"]["SeriesSubmissionDto"][];
+            latestSubmission?: components["schemas"]["SeriesSubmissionDto"] | null;
+        };
+        ManagedSeriesListDto: {
+            items: components["schemas"]["ManagedSeriesDto"][];
+        };
+        UpdateSeriesDto: {
+            title?: string;
+            synopsis?: string;
+            /** @enum {string} */
+            workType?: "SINGLE_WORK" | "EPISODIC";
+            description?: string;
+            genres?: string[];
+            tags?: string[];
+            ageRating?: Record<string, never> | null;
+            productionInfo?: {
+                [key: string]: unknown;
+            };
+            releaseDate?: Record<string, never> | null;
+        };
         AttachSingleWorkVideoDto: {
             /** Format: uuid */
             assetId: string;
@@ -1108,6 +1317,24 @@ export interface components {
             seasonEpisodeNumber?: number | null;
             title: string;
             synopsis: string;
+        };
+        AdminSeriesSubmissionDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "WITHDRAWN";
+            submittedAt?: string | null;
+            reviewedAt?: string | null;
+            decisionReason?: string | null;
+            reviewer?: components["schemas"]["CreatorSummaryDto"] | null;
+            series: components["schemas"]["ManagedSeriesDto"];
+            applicant: components["schemas"]["CreatorSummaryDto"];
+        };
+        AdminSeriesSubmissionListDto: {
+            items: components["schemas"]["AdminSeriesSubmissionDto"][];
+        };
+        ReviewSeriesSubmissionDto: {
+            reason: string;
         };
         ShortformPromotionDto: {
             /** @enum {string} */
@@ -2048,6 +2275,186 @@ export interface operations {
             };
         };
     };
+    SeriesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSeriesDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedSeriesDto"];
+                };
+            };
+        };
+    };
+    SeriesController_mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedSeriesListDto"];
+                };
+            };
+        };
+    };
+    SeriesController_manage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedSeriesDto"];
+                };
+            };
+        };
+    };
+    SeriesController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesDto"];
+                };
+            };
+            /** @description Series is not published */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SeriesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSeriesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedSeriesDto"];
+                };
+            };
+        };
+    };
+    SeriesController_submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesSubmissionDto"];
+                };
+            };
+        };
+    };
+    SeriesController_withdraw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+                submissionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesSubmissionDto"];
+                };
+            };
+        };
+    };
+    SeriesController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesDto"];
+                };
+            };
+        };
+    };
     SeriesController_attachSingleWork: {
         parameters: {
             query?: never;
@@ -2147,12 +2554,31 @@ export interface operations {
             };
         };
     };
-    SeriesController_findOne: {
+    SeriesAdminController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSeriesSubmissionListDto"];
+                };
+            };
+        };
+    };
+    SeriesAdminController_find: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                seriesId: string;
+                submissionId: string;
             };
             cookie?: never;
         };
@@ -2163,15 +2589,58 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SeriesDto"];
+                    "application/json": components["schemas"]["AdminSeriesSubmissionDto"];
                 };
             };
-            /** @description Series is not published */
-            404: {
+        };
+    };
+    SeriesAdminController_approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewSeriesSubmissionDto"];
+            };
+        };
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminSeriesSubmissionDto"];
+                };
+            };
+        };
+    };
+    SeriesAdminController_reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submissionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewSeriesSubmissionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSeriesSubmissionDto"];
+                };
             };
         };
     };

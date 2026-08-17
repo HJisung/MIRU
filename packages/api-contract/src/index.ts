@@ -12,6 +12,13 @@ export type CollectionList = components["schemas"]["CollectionListDto"];
 export type SeriesEpisode = components["schemas"]["SeriesEpisodeDto"];
 export type Series = components["schemas"]["SeriesDto"];
 export type SeriesList = components["schemas"]["SeriesListDto"];
+export type ManagedSeries = components["schemas"]["ManagedSeriesDto"];
+export type ManagedSeriesList = components["schemas"]["ManagedSeriesListDto"];
+export type SeriesSubmission = components["schemas"]["SeriesSubmissionDto"];
+export type AdminSeriesSubmission =
+  components["schemas"]["AdminSeriesSubmissionDto"];
+export type AdminSeriesSubmissionList =
+  components["schemas"]["AdminSeriesSubmissionListDto"];
 export type Shortform = components["schemas"]["ShortformDto"];
 export type ShortformList = components["schemas"]["ShortformListDto"];
 export type CommunityCategory = components["schemas"]["CommunityCategoryDto"];

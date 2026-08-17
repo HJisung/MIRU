@@ -144,10 +144,12 @@ describe('processed video product attachments', () => {
     });
     expect(retried.statusCode).toBe(200);
     expect(retried.json<{ id: string }>().id).toBe(singleSeriesId);
-    await database.client.series.update({
-      where: { id: singleSeriesId },
-      data: { publicationStatus: DomainPublicationStatus.PUBLISHED },
+    const publishSeries = await app.inject({
+      method: 'POST',
+      url: `/api/v1/series/${singleSeriesId}/publish`,
+      headers: { cookie },
     });
+    expect(publishSeries.statusCode).toBe(200);
     const detail = await app.inject({
       method: 'GET',
       url: `/api/v1/series/${singleSeriesId}`,
@@ -201,10 +203,12 @@ describe('processed video product attachments', () => {
       payload: { assetId: asset.id },
     });
     expect(crossProductAttach.statusCode).toBe(404);
-    await database.client.series.update({
-      where: { id: episodicSeriesId },
-      data: { publicationStatus: DomainPublicationStatus.PUBLISHED },
+    const publishSeries = await app.inject({
+      method: 'POST',
+      url: `/api/v1/series/${episodicSeriesId}/publish`,
+      headers: { cookie },
     });
+    expect(publishSeries.statusCode).toBe(200);
     const publish = await app.inject({
       method: 'POST',
       url: `/api/v1/series/episodes/${episodeId}/publish`,

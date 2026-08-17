@@ -57,6 +57,19 @@ rating, production information, release date, and publication status. The old
 `HIGH` proposal is retired and must not be represented as a content type,
 quality grade, or review type.
 
+Creator Series follow an explicit lifecycle. Draft metadata may be edited until
+submission. `SUBMITTED` review locks metadata; withdrawal returns the work to a
+draft, and rejection retains the decision reason before a new review attempt is
+created. Approval is durable review evidence and grants access to Series media
+management, but does not publish the work. Administrator-owned Series may use
+the explicit publication path without a creator submission.
+
+Publication readiness is work-type specific. `SINGLE_WORK` requires a READY
+direct playback asset. `EPISODIC` requires at least one READY episode draft;
+the public Series shell is created first and individual episodes are then
+published explicitly. Draft Series and draft episodes remain unavailable from
+public reads.
+
 A `SINGLE_WORK` has a direct playable media asset and zero episodes. An
 `EPISODIC` work has no single-work playable; each published Episode has its own
 playable media asset. Product playback URLs always use Series or Episode IDs.
