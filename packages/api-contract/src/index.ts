@@ -14,6 +14,10 @@ export type Series = components["schemas"]["SeriesDto"];
 export type SeriesList = components["schemas"]["SeriesListDto"];
 export type ManagedSeries = components["schemas"]["ManagedSeriesDto"];
 export type ManagedSeriesList = components["schemas"]["ManagedSeriesListDto"];
+export type ManagedSeriesSeason =
+  components["schemas"]["ManagedSeriesSeasonDto"];
+export type ManagedSeriesEpisode =
+  components["schemas"]["ManagedSeriesEpisodeDto"];
 export type SeriesSubmission = components["schemas"]["SeriesSubmissionDto"];
 export type AdminSeriesSubmission =
   components["schemas"]["AdminSeriesSubmissionDto"];

@@ -697,6 +697,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/series/{seriesId}/seasons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SeriesController_createSeason"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series/{seriesId}/seasons/{seasonId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["SeriesController_deleteSeason"];
+        options?: never;
+        head?: never;
+        patch: operations["SeriesController_updateSeason"];
+        trace?: never;
+    };
+    "/api/v1/series/{seriesId}/episodes/{episodeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["SeriesController_updateEpisode"];
+        trace?: never;
+    };
+    "/api/v1/series/{seriesId}/episodes/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["SeriesController_reorderEpisodes"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/series/episodes/{episodeId}/publish": {
         parameters: {
             query?: never;
@@ -707,6 +771,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["SeriesController_publishEpisode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/series/episodes/{episodeId}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SeriesController_unpublishEpisode"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1203,6 +1283,11 @@ export interface components {
             seriesId: string;
             episodeNumber: number;
             seasonEpisodeNumber?: number | null;
+            /** Format: uuid */
+            seasonId?: string | null;
+            seasonNumber?: number | null;
+            seasonTitle?: string | null;
+            seasonDescription?: string | null;
             title: string;
             synopsis: string;
             publishedAt?: string | null;
@@ -1255,6 +1340,27 @@ export interface components {
             decisionReason?: string | null;
             reviewer?: components["schemas"]["CreatorSummaryDto"] | null;
         };
+        ManagedSeriesSeasonDto: {
+            /** Format: uuid */
+            id: string;
+            seasonNumber: number;
+            title?: string | null;
+            description: string;
+        };
+        ManagedSeriesEpisodeDto: {
+            /** Format: uuid */
+            id: string;
+            episodeNumber: number;
+            /** Format: uuid */
+            seasonId?: string | null;
+            seasonEpisodeNumber?: number | null;
+            title: string;
+            synopsis: string;
+            /** @enum {string} */
+            mediaStatus: "PENDING_UPLOAD" | "PROCESSING" | "READY" | "FAILED";
+            publishedAt?: string | null;
+            isPublished: boolean;
+        };
         ManagedSeriesDto: {
             /** Format: uuid */
             id: string;
@@ -1278,6 +1384,8 @@ export interface components {
             updatedAt: string;
             submissions: components["schemas"]["SeriesSubmissionDto"][];
             latestSubmission?: components["schemas"]["SeriesSubmissionDto"] | null;
+            seasons: components["schemas"]["ManagedSeriesSeasonDto"][];
+            episodes: components["schemas"]["ManagedSeriesEpisodeDto"][];
         };
         ManagedSeriesListDto: {
             items: components["schemas"]["ManagedSeriesDto"][];
@@ -1317,6 +1425,27 @@ export interface components {
             seasonEpisodeNumber?: number | null;
             title: string;
             synopsis: string;
+        };
+        CreateSeriesSeasonDto: {
+            seasonNumber: number;
+            title?: Record<string, never> | null;
+            description?: string;
+        };
+        UpdateSeriesSeasonDto: {
+            seasonNumber?: number;
+            title?: Record<string, never> | null;
+            description?: string;
+        };
+        UpdateSeriesEpisodeDto: {
+            title?: string;
+            synopsis?: string;
+            episodeNumber?: number;
+            /** Format: uuid */
+            seasonId?: string | null;
+            seasonEpisodeNumber?: number | null;
+        };
+        ReorderSeriesEpisodesDto: {
+            episodeIds: string[];
         };
         AdminSeriesSubmissionDto: {
             /** Format: uuid */
@@ -2505,6 +2634,130 @@ export interface operations {
             };
         };
     };
+    SeriesController_createSeason: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSeriesSeasonDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedSeriesDto"];
+                };
+            };
+        };
+    };
+    SeriesController_deleteSeason: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+                seasonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedSeriesDto"];
+                };
+            };
+        };
+    };
+    SeriesController_updateSeason: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+                seasonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSeriesSeasonDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedSeriesDto"];
+                };
+            };
+        };
+    };
+    SeriesController_updateEpisode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+                episodeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSeriesEpisodeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedSeriesDto"];
+                };
+            };
+        };
+    };
+    SeriesController_reorderEpisodes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                seriesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderSeriesEpisodesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedSeriesDto"];
+                };
+            };
+        };
+    };
     SeriesController_publishEpisode: {
         parameters: {
             query?: never;
@@ -2522,6 +2775,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SeriesEpisodeDto"];
+                };
+            };
+        };
+    };
+    SeriesController_unpublishEpisode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episodeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedSeriesEpisodeDto"];
                 };
             };
         };

@@ -144,7 +144,7 @@ test("video creation surfaces reuse recoverable processing state", async ({
   ).toBeVisible();
 });
 
-test("Episode and Shortform resume publishing from an existing product", async ({
+test("Episode returns to Studio and Shortform resumes publishing", async ({
   page,
 }) => {
   for (const workflow of [
@@ -153,12 +153,14 @@ test("Episode and Shortform resume publishing from an existing product", async (
       pageType: "series-episode",
       productId: "50000000-0000-4000-8000-000000000001",
       publishPath: "/series/episodes/",
+      publishes: false,
     },
     {
       mode: "shortform",
       pageType: "shortform-video",
       productId: "60000000-0000-4000-8000-000000000001",
       publishPath: "/shortforms/",
+      publishes: true,
     },
   ]) {
     let createRequests = 0;
@@ -171,6 +173,7 @@ test("Episode and Shortform resume publishing from an existing product", async (
           mode: value.mode,
           phase: "PRODUCT_CREATED",
           productId: value.productId,
+          seriesId: "40000000-0000-4000-8000-000000000001",
           description: "recover me",
         }),
       );
@@ -187,8 +190,12 @@ test("Episode and Shortform resume publishing from an existing product", async (
     });
     await page.goto(`/create?type=${workflow.pageType}`);
     await page.getByRole("button", { name: "생성 작업 계속하기" }).click();
-    await expect.poll(() => publishRequests).toBe(1);
+    await expect.poll(() => publishRequests).toBe(workflow.publishes ? 1 : 0);
     expect(createRequests).toBe(0);
+    if (!workflow.publishes)
+      await expect(page).toHaveURL(
+        /\/studio\/series\/40000000-0000-4000-8000-000000000001$/,
+      );
     await page.unroute("http://localhost:4000/api/v1/**");
   }
 });
@@ -236,11 +243,16 @@ test("Shortform overlays preserve intentional player and action pointer targets"
   page,
 }) => {
   await page.goto("/shorts");
-  await expect(page.getByRole("button", { name: "공유" }).first()).toBeVisible();
-  await page.getByRole("button", { name: "공유" }).first().click();
-  const gradient = page.locator(".pointer-events-none.bg-gradient-to-t").first();
-  await expect(gradient).toHaveCSS("pointer-events", "none");
   await expect(
-    page.getByRole("link", { name: /본편 보기/ }).first(),
-  ).toHaveCSS("pointer-events", "auto");
+    page.getByRole("button", { name: "공유" }).first(),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "공유" }).first().click();
+  const gradient = page
+    .locator(".pointer-events-none.bg-gradient-to-t")
+    .first();
+  await expect(gradient).toHaveCSS("pointer-events", "none");
+  await expect(page.getByRole("link", { name: /본편 보기/ }).first()).toHaveCSS(
+    "pointer-events",
+    "auto",
+  );
 });

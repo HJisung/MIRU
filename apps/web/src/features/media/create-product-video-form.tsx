@@ -15,6 +15,8 @@ type Pending = {
   productId?: string;
   seriesId?: string;
   episodeNumber?: number;
+  seasonId?: string;
+  seasonEpisodeNumber?: number;
   title?: string;
   description: string;
   musicKey?: string;
@@ -121,6 +123,8 @@ export function CreateProductVideoForm({
               body: JSON.stringify({
                 assetId: current.assetId,
                 episodeNumber: current.episodeNumber,
+                seasonId: current.seasonId || undefined,
+                seasonEpisodeNumber: current.seasonEpisodeNumber,
                 title: current.title,
                 synopsis: current.description,
               }),
@@ -159,11 +163,8 @@ export function CreateProductVideoForm({
         throw new Error("생성된 콘텐츠 식별자를 복구하지 못했습니다.");
       }
       if (current.mode === "series-episode") {
-        await clientApi(`/series/episodes/${current.productId}/publish`, {
-          method: "POST",
-        });
         clearPending();
-        router.push(`/watch/episode/${current.productId}`);
+        router.push(`/studio/series/${current.seriesId}`);
       } else {
         await clientApi(`/shortforms/${current.productId}/publish`, {
           method: "POST",
@@ -217,6 +218,9 @@ export function CreateProductVideoForm({
         phase: "PROCESSING",
         seriesId: String(data.get("seriesId") || "") || undefined,
         episodeNumber: Number(data.get("episodeNumber")) || undefined,
+        seasonId: String(data.get("seasonId") || "") || undefined,
+        seasonEpisodeNumber:
+          Number(data.get("seasonEpisodeNumber")) || undefined,
         title: String(data.get("title") || "") || undefined,
         description: String(data.get("description") || ""),
         musicKey: String(data.get("musicKey") || "") || undefined,
@@ -282,17 +286,32 @@ export function CreateProductVideoForm({
           />
         )}
         {mode === "series-episode" && (
-          <input
-            required
-            min={1}
-            type="number"
-            name="episodeNumber"
-            placeholder="에피소드 번호"
-            className="w-full rounded-xl border border-line bg-background p-4"
-          />
+          <>
+            <input
+              required
+              min={1}
+              type="number"
+              name="episodeNumber"
+              placeholder="전체 에피소드 번호"
+              className="w-full rounded-xl border border-line bg-background p-4"
+            />
+            <input
+              name="seasonId"
+              placeholder="시즌 UUID (선택, Studio에서 나중에 지정 가능)"
+              className="w-full rounded-xl border border-line bg-background p-4"
+            />
+            <input
+              min={1}
+              type="number"
+              name="seasonEpisodeNumber"
+              placeholder="시즌 내 번호 (선택)"
+              className="w-full rounded-xl border border-line bg-background p-4"
+            />
+          </>
         )}
         {mode !== "series-single" && (
           <input
+            required={mode === "series-episode"}
             name="title"
             maxLength={160}
             placeholder="제목"

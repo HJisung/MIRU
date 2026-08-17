@@ -145,3 +145,166 @@ test("public visitor receives not found for an unpublished Series", async ({
   });
   expect(response?.status()).toBe(404);
 });
+
+test("creator manages Seasons and multiple Episodes in Studio", async ({
+  page,
+}) => {
+  const seasonId = "51000000-0000-4000-8000-000000000099";
+  const firstId = "61000000-0000-4000-8000-000000000091";
+  const secondId = "61000000-0000-4000-8000-000000000092";
+  const approved = managed("APPROVED");
+  let state = {
+    ...approved,
+    workType: "EPISODIC",
+    publicationStatus: "PUBLISHED",
+    hasPlayableContent: true,
+    seasons: [] as Array<{
+      id: string;
+      seasonNumber: number;
+      title: string | null;
+      description: string;
+    }>,
+    episodes: [
+      {
+        id: firstId,
+        episodeNumber: 1,
+        seasonId: null,
+        seasonEpisodeNumber: null,
+        title: "첫 화",
+        synopsis: "첫 줄거리",
+        mediaStatus: "READY",
+        publishedAt: "2026-08-18T02:00:00.000Z",
+        isPublished: true,
+      },
+      {
+        id: secondId,
+        episodeNumber: 2,
+        seasonId: null,
+        seasonEpisodeNumber: null,
+        title: "둘째 화",
+        synopsis: "둘째 줄거리",
+        mediaStatus: "READY",
+        publishedAt: null,
+        isPublished: false,
+      },
+    ] as Array<{
+      id: string;
+      episodeNumber: number;
+      seasonId: string | null;
+      seasonEpisodeNumber: number | null;
+      title: string;
+      synopsis: string;
+      mediaStatus: string;
+      publishedAt: string | null;
+      isPublished: boolean;
+    }>,
+  };
+  await page.route(`**/api/v1/series/${seriesId}/manage`, (route) =>
+    route.fulfill({ status: 200, json: state }),
+  );
+  await page.route(`**/api/v1/series/${seriesId}/seasons`, async (route) => {
+    state = {
+      ...state,
+      seasons: [
+        {
+          id: seasonId,
+          seasonNumber: 1,
+          title: "시작",
+          description: "첫 시즌",
+        },
+      ],
+    };
+    await route.fulfill({ status: 201, json: state });
+  });
+  await page.route(
+    `**/api/v1/series/${seriesId}/episodes/${secondId}`,
+    async (route) => {
+      const body = route.request().postDataJSON();
+      state = {
+        ...state,
+        episodes: state.episodes.map((episode) =>
+          episode.id === secondId
+            ? {
+                ...episode,
+                title: body.title,
+                synopsis: body.synopsis,
+                seasonId: body.seasonId,
+                seasonEpisodeNumber: body.seasonEpisodeNumber,
+              }
+            : episode,
+        ),
+      };
+      await route.fulfill({ status: 200, json: state });
+    },
+  );
+  await page.route(
+    `**/api/v1/series/${seriesId}/episodes/order`,
+    async (route) => {
+      const ids = route.request().postDataJSON().episodeIds as string[];
+      state = {
+        ...state,
+        episodes: ids.map((id, index) => ({
+          ...state.episodes.find((episode) => episode.id === id)!,
+          episodeNumber: index + 1,
+        })),
+      };
+      await route.fulfill({ status: 200, json: state });
+    },
+  );
+  await page.route(`**/api/v1/series/episodes/${secondId}/publish`, (route) => {
+    state = {
+      ...state,
+      episodes: state.episodes.map((episode) =>
+        episode.id === secondId
+          ? {
+              ...episode,
+              isPublished: true,
+              publishedAt: new Date().toISOString(),
+            }
+          : episode,
+      ),
+    };
+    return route.fulfill({ status: 200, json: state.episodes[1] });
+  });
+  await page.route(
+    `**/api/v1/series/episodes/${firstId}/unpublish`,
+    (route) => {
+      state = {
+        ...state,
+        episodes: state.episodes.map((episode) =>
+          episode.id === firstId
+            ? { ...episode, isPublished: false, publishedAt: null }
+            : episode,
+        ),
+      };
+      return route.fulfill({ status: 200, json: state.episodes[0] });
+    },
+  );
+
+  await page.goto(`/studio/series/${seriesId}`);
+  await expect(
+    page.getByRole("heading", { name: "에피소드 콘텐츠" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "새 에피소드" })).toHaveAttribute(
+    "href",
+    `/create?type=series-episode&seriesId=${seriesId}`,
+  );
+  await page.getByLabel("시즌 번호").fill("1");
+  await page.getByLabel("시즌 제목").fill("시작");
+  await page.getByLabel("시즌 설명").fill("첫 시즌");
+  await page.getByRole("button", { name: "시즌 추가" }).click();
+  await page.getByText("둘째 화", { exact: true }).click();
+  await page.getByLabel("둘째 화 제목").fill("수정한 둘째 화");
+  await page.getByLabel("둘째 화 시놉시스").fill("수정된 줄거리");
+  await page.getByLabel("둘째 화 시즌", { exact: true }).selectOption(seasonId);
+  await page.getByLabel("둘째 화 시즌 내 번호").fill("1");
+  await page.getByRole("button", { name: "Episode 저장" }).click();
+  await expect(page.getByText("수정한 둘째 화", { exact: true })).toBeVisible();
+  await page.getByLabel("수정한 둘째 화 전체 순서 위로").click();
+  await page.getByText("수정한 둘째 화", { exact: true }).click();
+  await page.getByRole("button", { name: "공개", exact: true }).click();
+  const firstEpisode = page.locator("details").filter({ hasText: "첫 화" });
+  await firstEpisode.getByText("첫 화", { exact: true }).click();
+  await firstEpisode.getByRole("button", { name: "공개 취소" }).click();
+  await expect(page.getByText("초안", { exact: true }).first()).toBeVisible();
+});

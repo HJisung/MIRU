@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Inject,
@@ -8,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -22,8 +24,11 @@ import {
   AttachSingleWorkVideoDto,
   CreateSeriesDto,
   CreateSeriesEpisodeDto,
+  CreateSeriesSeasonDto,
+  ManagedSeriesEpisodeDto,
   ManagedSeriesDto,
   ManagedSeriesListDto,
+  ReorderSeriesEpisodesDto,
   ReviewSeriesSubmissionDto,
   SeriesDto,
   SeriesEpisodeDto,
@@ -31,6 +36,8 @@ import {
   SeriesMediaDraftDto,
   SeriesSubmissionDto,
   UpdateSeriesDto,
+  UpdateSeriesEpisodeDto,
+  UpdateSeriesSeasonDto,
 } from './series.dto.js';
 import { SeriesService } from './series.service.js';
 import type { AuthUser } from '../auth/auth.service.js';
@@ -139,6 +146,63 @@ export class SeriesController {
     return this.series.createEpisode(user, seriesId, input);
   }
 
+  @Post(':seriesId/seasons')
+  @UseGuards(SessionGuard)
+  @ApiCreatedResponse({ type: ManagedSeriesDto })
+  createSeason(
+    @CurrentUser() user: AuthUser,
+    @Param('seriesId', new ParseUUIDPipe()) seriesId: string,
+    @Body() input: CreateSeriesSeasonDto,
+  ) {
+    return this.series.createSeason(user, seriesId, input);
+  }
+
+  @Patch(':seriesId/seasons/:seasonId')
+  @UseGuards(SessionGuard)
+  @ApiOkResponse({ type: ManagedSeriesDto })
+  updateSeason(
+    @CurrentUser() user: AuthUser,
+    @Param('seriesId', new ParseUUIDPipe()) seriesId: string,
+    @Param('seasonId', new ParseUUIDPipe()) seasonId: string,
+    @Body() input: UpdateSeriesSeasonDto,
+  ) {
+    return this.series.updateSeason(user, seriesId, seasonId, input);
+  }
+
+  @Delete(':seriesId/seasons/:seasonId')
+  @UseGuards(SessionGuard)
+  @ApiOkResponse({ type: ManagedSeriesDto })
+  deleteSeason(
+    @CurrentUser() user: AuthUser,
+    @Param('seriesId', new ParseUUIDPipe()) seriesId: string,
+    @Param('seasonId', new ParseUUIDPipe()) seasonId: string,
+  ) {
+    return this.series.deleteSeason(user, seriesId, seasonId);
+  }
+
+  @Patch(':seriesId/episodes/:episodeId')
+  @UseGuards(SessionGuard)
+  @ApiOkResponse({ type: ManagedSeriesDto })
+  updateEpisode(
+    @CurrentUser() user: AuthUser,
+    @Param('seriesId', new ParseUUIDPipe()) seriesId: string,
+    @Param('episodeId', new ParseUUIDPipe()) episodeId: string,
+    @Body() input: UpdateSeriesEpisodeDto,
+  ) {
+    return this.series.updateEpisode(user, seriesId, episodeId, input);
+  }
+
+  @Put(':seriesId/episodes/order')
+  @UseGuards(SessionGuard)
+  @ApiOkResponse({ type: ManagedSeriesDto })
+  reorderEpisodes(
+    @CurrentUser() user: AuthUser,
+    @Param('seriesId', new ParseUUIDPipe()) seriesId: string,
+    @Body() input: ReorderSeriesEpisodesDto,
+  ) {
+    return this.series.reorderEpisodes(user, seriesId, input.episodeIds);
+  }
+
   @Post('episodes/:episodeId/publish')
   @UseGuards(SessionGuard)
   @HttpCode(200)
@@ -148,6 +212,17 @@ export class SeriesController {
     @Param('episodeId', new ParseUUIDPipe()) episodeId: string,
   ) {
     return this.series.publishEpisode(user, episodeId);
+  }
+
+  @Post('episodes/:episodeId/unpublish')
+  @UseGuards(SessionGuard)
+  @HttpCode(200)
+  @ApiOkResponse({ type: ManagedSeriesEpisodeDto })
+  unpublishEpisode(
+    @CurrentUser() user: AuthUser,
+    @Param('episodeId', new ParseUUIDPipe()) episodeId: string,
+  ) {
+    return this.series.unpublishEpisode(user, episodeId);
   }
 
   @Get('episodes/:episodeId')

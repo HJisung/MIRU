@@ -127,6 +127,10 @@ export class ManagedSeriesDto {
   submissions!: SeriesSubmissionDto[];
   @ApiPropertyOptional({ type: SeriesSubmissionDto, nullable: true })
   latestSubmission!: SeriesSubmissionDto | null;
+  @ApiProperty({ type: () => [ManagedSeriesSeasonDto] })
+  seasons!: ManagedSeriesSeasonDto[];
+  @ApiProperty({ type: () => [ManagedSeriesEpisodeDto] })
+  episodes!: ManagedSeriesEpisodeDto[];
 }
 
 export class ManagedSeriesListDto {
@@ -150,11 +154,11 @@ export class AttachSingleWorkVideoDto {
 export class CreateSeriesEpisodeDto {
   @ApiProperty({ format: 'uuid' }) @IsUUID() assetId!: string;
   @ApiProperty() @IsInt() @Min(1) episodeNumber!: number;
-  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true })
   @IsOptional()
   @IsUUID()
   seasonId?: string;
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: Number, nullable: true })
   @IsOptional()
   @IsInt()
   @Min(1)
@@ -170,6 +174,76 @@ export class CreateSeriesEpisodeDto {
   synopsis!: string;
 }
 
+export class CreateSeriesSeasonDto {
+  @ApiProperty() @IsInt() @Min(1) seasonNumber!: number;
+  @ApiPropertyOptional({ maxLength: 160, nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  title?: string | null;
+  @ApiPropertyOptional({ maxLength: 5000 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  description?: string;
+}
+
+export class UpdateSeriesSeasonDto extends PartialType(CreateSeriesSeasonDto) {}
+
+export class UpdateSeriesEpisodeDto {
+  @ApiPropertyOptional({ maxLength: 160 })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(160)
+  title?: string;
+  @ApiPropertyOptional({ maxLength: 5000 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  synopsis?: string;
+  @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1) episodeNumber?: number;
+  @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true })
+  @IsOptional()
+  @IsUUID()
+  seasonId?: string | null;
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  seasonEpisodeNumber?: number | null;
+}
+
+export class ReorderSeriesEpisodesDto {
+  @ApiProperty({ type: [String], format: 'uuid' })
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  episodeIds!: string[];
+}
+
+export class ManagedSeriesSeasonDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() seasonNumber!: number;
+  @ApiPropertyOptional({ type: String, nullable: true }) title!: string | null;
+  @ApiProperty() description!: string;
+}
+
+export class ManagedSeriesEpisodeDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() episodeNumber!: number;
+  @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true })
+  seasonId!: string | null;
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  seasonEpisodeNumber!: number | null;
+  @ApiProperty() title!: string;
+  @ApiProperty() synopsis!: string;
+  @ApiProperty({ enum: ['PENDING_UPLOAD', 'PROCESSING', 'READY', 'FAILED'] })
+  mediaStatus!: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  publishedAt!: string | null;
+  @ApiProperty() isPublished!: boolean;
+}
+
 export class SeriesMediaDraftDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ format: 'uuid' }) assetId!: string;
@@ -183,6 +257,14 @@ export class SeriesEpisodeDto {
   @ApiProperty() episodeNumber!: number;
   @ApiPropertyOptional({ type: Number, nullable: true })
   seasonEpisodeNumber!: number | null;
+  @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true })
+  seasonId!: string | null;
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  seasonNumber!: number | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  seasonTitle!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  seasonDescription!: string | null;
   @ApiProperty() title!: string;
   @ApiProperty() synopsis!: string;
   @ApiPropertyOptional({ type: String, nullable: true })

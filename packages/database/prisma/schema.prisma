@@ -366,6 +366,7 @@ model SeriesEpisode {
   updatedAt           DateTime      @updatedAt
 
   @@unique([seriesId, episodeNumber])
+  @@unique([seasonId, seasonEpisodeNumber])
   @@index([seasonId, seasonEpisodeNumber])
   @@index([videoAssetId])
 }

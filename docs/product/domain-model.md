@@ -74,6 +74,24 @@ A `SINGLE_WORK` has a direct playable media asset and zero episodes. An
 `EPISODIC` work has no single-work playable; each published Episode has its own
 playable media asset. Product playback URLs always use Series or Episode IDs.
 
+Approved `EPISODIC` works are operated through Creator Studio. Seasons are
+optional and may be created, renamed, renumbered, or removed while empty.
+Removing a Season never removes Episodes; a non-empty Season must first be
+emptied by moving or unassigning its Episodes. `episodeNumber` is the canonical
+positive order across the complete Series. A non-null `seasonEpisodeNumber` is
+the positive, unique order within one Season and is cleared when an Episode is
+unassigned.
+
+Episode metadata and Season assignment may be corrected after publication
+without replacing media. Reordering is an atomic Series-wide operation and
+must include every Episode exactly once. Publishing an Episode requires a
+published parent Series and READY media. Unpublishing preserves the Episode,
+MediaAsset, and playback claim while making its public read and playback
+unavailable. A published episodic Series must retain at least one published
+Episode, so the last public Episode cannot be unpublished. Video replacement
+remains out of scope until playback-claim release/reclaim semantics are
+designed.
+
 ## Shortform
 
 Shortform supports `VIDEO` and `IMAGE_CAROUSEL`. A carousel contains one to ten

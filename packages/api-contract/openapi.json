@@ -1435,6 +1435,218 @@
         ]
       }
     },
+    "/api/v1/series/{seriesId}/seasons": {
+      "post": {
+        "operationId": "SeriesController_createSeason",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSeriesSeasonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedSeriesDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/{seriesId}/seasons/{seasonId}": {
+      "patch": {
+        "operationId": "SeriesController_updateSeason",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "seasonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSeriesSeasonDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedSeriesDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      },
+      "delete": {
+        "operationId": "SeriesController_deleteSeason",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "seasonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedSeriesDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/{seriesId}/episodes/{episodeId}": {
+      "patch": {
+        "operationId": "SeriesController_updateEpisode",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "episodeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSeriesEpisodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedSeriesDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/{seriesId}/episodes/order": {
+      "put": {
+        "operationId": "SeriesController_reorderEpisodes",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderSeriesEpisodesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedSeriesDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
     "/api/v1/series/episodes/{episodeId}/publish": {
       "post": {
         "operationId": "SeriesController_publishEpisode",
@@ -1455,6 +1667,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SeriesEpisodeDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
+    "/api/v1/series/episodes/{episodeId}/unpublish": {
+      "post": {
+        "operationId": "SeriesController_unpublishEpisode",
+        "parameters": [
+          {
+            "name": "episodeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedSeriesEpisodeDto"
                 }
               }
             }
@@ -2889,6 +3131,23 @@
             "type": "number",
             "nullable": true
           },
+          "seasonId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "seasonNumber": {
+            "type": "number",
+            "nullable": true
+          },
+          "seasonTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "seasonDescription": {
+            "type": "string",
+            "nullable": true
+          },
           "title": {
             "type": "string"
           },
@@ -3128,6 +3387,81 @@
           "status"
         ]
       },
+      "ManagedSeriesSeasonDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "seasonNumber": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "seasonNumber",
+          "description"
+        ]
+      },
+      "ManagedSeriesEpisodeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "episodeNumber": {
+            "type": "number"
+          },
+          "seasonId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "seasonEpisodeNumber": {
+            "type": "number",
+            "nullable": true
+          },
+          "title": {
+            "type": "string"
+          },
+          "synopsis": {
+            "type": "string"
+          },
+          "mediaStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING_UPLOAD",
+              "PROCESSING",
+              "READY",
+              "FAILED"
+            ]
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPublished": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "episodeNumber",
+          "title",
+          "synopsis",
+          "mediaStatus",
+          "isPublished"
+        ]
+      },
       "ManagedSeriesDto": {
         "type": "object",
         "properties": {
@@ -3212,6 +3546,18 @@
                 "$ref": "#/components/schemas/SeriesSubmissionDto"
               }
             ]
+          },
+          "seasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ManagedSeriesSeasonDto"
+            }
+          },
+          "episodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ManagedSeriesEpisodeDto"
+            }
           }
         },
         "required": [
@@ -3227,7 +3573,9 @@
           "canManageContent",
           "createdAt",
           "updatedAt",
-          "submissions"
+          "submissions",
+          "seasons",
+          "episodes"
         ]
       },
       "ManagedSeriesListDto": {
@@ -3367,6 +3715,83 @@
           "episodeNumber",
           "title",
           "synopsis"
+        ]
+      },
+      "CreateSeriesSeasonDto": {
+        "type": "object",
+        "properties": {
+          "seasonNumber": {
+            "type": "number"
+          },
+          "title": {
+            "type": "object",
+            "maxLength": 160,
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "seasonNumber"
+        ]
+      },
+      "UpdateSeriesSeasonDto": {
+        "type": "object",
+        "properties": {
+          "seasonNumber": {
+            "type": "number"
+          },
+          "title": {
+            "type": "object",
+            "maxLength": 160,
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 5000
+          }
+        }
+      },
+      "UpdateSeriesEpisodeDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "synopsis": {
+            "type": "string",
+            "maxLength": 5000
+          },
+          "episodeNumber": {
+            "type": "number"
+          },
+          "seasonId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "seasonEpisodeNumber": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "ReorderSeriesEpisodesDto": {
+        "type": "object",
+        "properties": {
+          "episodeIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "episodeIds"
         ]
       },
       "AdminSeriesSubmissionDto": {

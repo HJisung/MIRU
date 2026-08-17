@@ -59,6 +59,8 @@ foundation, then Shortform and Community Post migration.
   and domain-aware engagement API boundary: complete
 - Creator Studio Series drafts, stable submission/review history,
   administrator decisions, and explicit work-type-aware publication: complete
+- Creator Studio EPISODIC Season and Episode management, atomic global
+  ordering, metadata correction, and safe Episode publish/unpublish: complete
 
 ## LegacyPublication migration status
 

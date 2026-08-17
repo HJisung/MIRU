@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { clientApi } from "@/lib/client-api";
 import { Decision, nextAction, StatusBadge } from "./series-status";
+import { EpisodicContentManager } from "./episodic-content-manager";
 
 export function NewSeriesForm() {
   const router = useRouter();
@@ -147,14 +148,16 @@ export function SeriesEditor({ seriesId }: { seriesId: string }) {
           <p className="mt-2 text-sm text-muted">{nextAction(series)}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {series.canManageContent && !series.hasPlayableContent && (
-            <Link
-              href={`/create?type=${series.workType === "SINGLE_WORK" ? "series-single" : "series-episode"}&seriesId=${series.id}`}
-              className="rounded-full border border-line px-4 py-2 text-sm font-semibold"
-            >
-              영상 연결
-            </Link>
-          )}
+          {series.canManageContent &&
+            series.workType === "SINGLE_WORK" &&
+            !series.hasPlayableContent && (
+              <Link
+                href={`/create?type=${series.workType === "SINGLE_WORK" ? "series-single" : "series-episode"}&seriesId=${series.id}`}
+                className="rounded-full border border-line px-4 py-2 text-sm font-semibold"
+              >
+                영상 연결
+              </Link>
+            )}
           {!series.latestSubmission && (
             <Action
               disabled={pending}
@@ -184,7 +187,7 @@ export function SeriesEditor({ seriesId }: { seriesId: string }) {
               심사 철회
             </Action>
           )}
-          {approved &&
+          {series.canManageContent &&
             series.hasPlayableContent &&
             series.publicationStatus !== "PUBLISHED" && (
               <Action
@@ -283,6 +286,9 @@ export function SeriesEditor({ seriesId }: { seriesId: string }) {
           </button>
         )}
       </form>
+      {series.workType === "EPISODIC" && (
+        <EpisodicContentManager series={series} reload={load} />
+      )}
     </div>
   );
 }

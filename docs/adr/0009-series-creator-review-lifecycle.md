@@ -30,6 +30,20 @@ The Series shell is then published first, after which existing episode publish
 operations can make individual episodes public. This removes the previous
 parent/episode circular dependency without exposing draft episodes.
 
+After approval, EPISODIC content management remains inside the Series domain.
+Seasons are optional. Global `episodeNumber` is unique and canonical across the
+Series; non-null `seasonEpisodeNumber` is unique within a Season. Series-wide
+reorder takes a transaction-scoped Series lock and moves every Episode through
+collision-free temporary positive numbers before assigning the final sequence.
+Published Episode metadata corrections update the compatibility publication
+projection in the same transaction.
+
+Episode unpublish clears both domain and compatibility publication timestamps
+and status without deleting the Episode, media, or playback claim. It is
+rejected when it would leave a published EPISODIC Series with no published
+Episodes. Video replacement is intentionally deferred until claim release and
+reclaim behavior is designed.
+
 ## Consequences
 
 - Public Series reads continue to filter strictly to `PUBLISHED`.

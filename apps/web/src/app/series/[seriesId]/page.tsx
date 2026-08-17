@@ -5,6 +5,7 @@ import { ArrowLeft, Play } from "lucide-react";
 import { ApiError, getSeries } from "@/lib/api";
 import { mediaUrl } from "@/lib/client-api";
 import { duration } from "@/lib/format";
+import type { SeriesEpisode } from "@stream/api-contract";
 
 interface SeriesDetailProps {
   params: Promise<{ seriesId: string }>;
@@ -19,6 +20,8 @@ export default async function SeriesDetail({ params }: SeriesDetailProps) {
     throw error;
   }
   const hero = work.singleWork?.media ?? work.episodes[0]?.media;
+  const episodeGroups =
+    work.workType === "EPISODIC" ? groupEpisodes(work.episodes) : [];
   return (
     <div className="pb-20">
       <section className="relative min-h-[28rem] overflow-hidden bg-black text-white">
@@ -67,47 +70,97 @@ export default async function SeriesDetail({ params }: SeriesDetailProps) {
         {work.workType === "EPISODIC" && (
           <h2 className="text-xl font-semibold">에피소드</h2>
         )}
-        <div className="mt-5 space-y-4">
-          {work.episodes.map((episode) => {
-            const media = episode.media;
-            return (
-              <Link
-                key={episode.id}
-                href={`/watch/episode/${episode.id}`}
-                className="grid gap-4 rounded-2xl border border-line p-3 transition hover:bg-panel sm:grid-cols-[18rem_1fr]"
-              >
-                {media && (
-                  <div className="relative aspect-video overflow-hidden rounded-xl bg-black">
-                    <Image
-                      src={mediaUrl(media.posterUrl ?? media.url)}
-                      unoptimized={media.url.startsWith("/api/")}
-                      alt={episode.title}
-                      fill
-                      sizes="288px"
-                      className="object-cover"
-                    />
-                    <span className="absolute bottom-2 right-2 rounded bg-black/70 px-2 py-1 text-[11px] text-white">
-                      <Play className="mr-1 inline size-3 fill-current" />
-                      {duration(media.durationMs ?? null)}
-                    </span>
-                  </div>
-                )}
-                <div className="py-2">
-                  <p className="text-xs font-semibold text-muted">
-                    EP.{episode.episodeNumber}
-                  </p>
-                  <h3 className="mt-1 text-lg font-semibold">
-                    {episode.title}
-                  </h3>
-                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">
-                    {episode.synopsis}
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
+        <div className="mt-5 space-y-8">
+          {episodeGroups.map((group) => (
+            <section key={group.key}>
+              <h3 className="text-lg font-semibold">{group.label}</h3>
+              {group.description && (
+                <p className="mt-1 text-sm text-muted">{group.description}</p>
+              )}
+              <div className="mt-3 space-y-4">
+                {group.episodes.map((episode) => {
+                  const media = episode.media;
+                  return (
+                    <Link
+                      key={episode.id}
+                      href={`/watch/episode/${episode.id}`}
+                      className="grid gap-4 rounded-2xl border border-line p-3 transition hover:bg-panel sm:grid-cols-[18rem_1fr]"
+                    >
+                      {media && (
+                        <div className="relative aspect-video overflow-hidden rounded-xl bg-black">
+                          <Image
+                            src={mediaUrl(media.posterUrl ?? media.url)}
+                            unoptimized={media.url.startsWith("/api/")}
+                            alt={episode.title}
+                            fill
+                            sizes="288px"
+                            className="object-cover"
+                          />
+                          <span className="absolute bottom-2 right-2 rounded bg-black/70 px-2 py-1 text-[11px] text-white">
+                            <Play className="mr-1 inline size-3 fill-current" />
+                            {duration(media.durationMs ?? null)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="py-2">
+                        <p className="text-xs font-semibold text-muted">
+                          EP.{episode.episodeNumber}
+                          {episode.seasonEpisodeNumber
+                            ? ` · 시즌 EP.${episode.seasonEpisodeNumber}`
+                            : ""}
+                        </p>
+                        <h3 className="mt-1 text-lg font-semibold">
+                          {episode.title}
+                        </h3>
+                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">
+                          {episode.synopsis}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </div>
       </section>
     </div>
   );
+}
+
+function groupEpisodes(episodes: SeriesEpisode[]) {
+  const groups = new Map<
+    string,
+    {
+      key: string;
+      label: string;
+      description: string | null;
+      order: number;
+      episodes: SeriesEpisode[];
+    }
+  >();
+  for (const episode of episodes) {
+    const key = episode.seasonId ?? "unseasoned";
+    const group = groups.get(key) ?? {
+      key,
+      label: episode.seasonId
+        ? `Season ${episode.seasonNumber}${episode.seasonTitle ? ` · ${episode.seasonTitle}` : ""}`
+        : "시즌 없음",
+      description: episode.seasonDescription ?? null,
+      order: episode.seasonNumber ?? Number.MAX_SAFE_INTEGER,
+      episodes: [],
+    };
+    group.episodes.push(episode);
+    groups.set(key, group);
+  }
+  return [...groups.values()]
+    .sort((a, b) => a.order - b.order)
+    .map((group) => ({
+      ...group,
+      episodes: group.episodes.sort(
+        (a, b) =>
+          (a.seasonEpisodeNumber ?? a.episodeNumber) -
+          (b.seasonEpisodeNumber ?? b.episodeNumber),
+      ),
+    }));
 }

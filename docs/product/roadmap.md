@@ -15,6 +15,8 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
   carousel media and Category-backed Post navigation
 - Provide a Creator Studio Series workflow from creator draft and review through
   administrator decision, media readiness, and explicit publication
+- Operate approved EPISODIC Series through optional Seasons, multiple Episode
+  drafts, atomic ordering, and individual publication controls
 
 ## MVP
 
@@ -33,7 +35,7 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
   administration around the adaptive HLS pipeline
 - Move engagement persistence behind the now domain-aware target API from
   compatibility publication foreign keys to native target storage
-- Add Community TEXT/VIDEO/LINK authoring and Series season/episode metadata tools
+- Add Community TEXT/VIDEO/LINK authoring and richer Series artwork/analytics tools
 - Nested comments, notifications, richer creator tools
 - Search, hashtags/topics, captions/subtitles
 - Resumable upload UX and creator analytics
