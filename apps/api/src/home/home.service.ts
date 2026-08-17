@@ -45,6 +45,17 @@ export class HomeService {
   }
 
   async create(userId: string, input: CreateHomeVideoDto) {
+    const existing = await this.database.client.homeVideo.findFirst({
+      where: { creatorId: userId, videoAssetId: input.assetId },
+      select: { id: true, status: true, videoAssetId: true },
+    });
+    if (existing) {
+      return {
+        id: existing.id,
+        status: existing.status,
+        assetId: existing.videoAssetId!,
+      };
+    }
     const asset = await this.database.client.mediaAsset.findFirst({
       where: {
         id: input.assetId,
@@ -94,12 +105,17 @@ export class HomeService {
       where: {
         id,
         creatorId: userId,
-        status: DomainPublicationStatus.DRAFT,
-        videoAsset: { status: MediaStatus.READY },
       },
-      select: { publicationId: true },
+      select: {
+        status: true,
+        publicationId: true,
+        videoAsset: { select: { status: true } },
+      },
     });
-    if (!record)
+    if (!record) throw new NotFoundException('Home video draft not found');
+    if (record.status === DomainPublicationStatus.PUBLISHED)
+      return this.findOne(id);
+    if (record.videoAsset?.status !== MediaStatus.READY)
       throw new NotFoundException('Ready Home video draft not found');
     const publishedAt = new Date();
     await this.database.client.$transaction([

@@ -7,9 +7,12 @@ import { clientApi } from "@/lib/client-api";
 import { waitForVideoProcessing } from "./processing-status";
 
 type Mode = "series-single" | "series-episode" | "shortform";
+type WorkflowPhase = "PROCESSING" | "MEDIA_READY" | "PRODUCT_CREATED";
 type Pending = {
   assetId: string;
   mode: Mode;
+  phase: WorkflowPhase;
+  productId?: string;
   seriesId?: string;
   episodeNumber?: number;
   title?: string;
@@ -30,71 +33,138 @@ export function CreateProductVideoForm({ mode }: { mode: Mode }) {
   useEffect(() => {
     const value = localStorage.getItem(key);
     if (!value) return;
-    const timeout = window.setTimeout(
-      () => setPending(JSON.parse(value) as Pending),
-      0,
-    );
+    const timeout = window.setTimeout(() => {
+      try {
+        const workflow = JSON.parse(value) as Pending;
+        if (workflow.assetId && workflow.mode === mode) {
+          const recovered = workflow.phase
+            ? workflow
+            : { ...workflow, phase: "PROCESSING" as const };
+          localStorage.setItem(key, JSON.stringify(recovered));
+          setPending(recovered);
+        } else localStorage.removeItem(key);
+      } catch {
+        localStorage.removeItem(key);
+      }
+    }, 0);
     return () => window.clearTimeout(timeout);
-  }, [key]);
+  }, [key, mode]);
+
+  function persist(workflow: Pending) {
+    localStorage.setItem(key, JSON.stringify(workflow));
+    setPending(workflow);
+    return workflow;
+  }
+
+  function clearPending() {
+    localStorage.removeItem(key);
+    setPending(null);
+  }
 
   async function finish(workflow: Pending) {
     setBusy(true);
     setMessage("영상 처리 상태를 확인하고 있습니다.");
     try {
-      const result = await waitForVideoProcessing(workflow.assetId);
-      if (result.status === "FAILED")
-        throw new Error(
-          `영상 처리 실패: ${result.failureCode ?? "알 수 없음"}`,
-        );
-      if (result.status === "TIMEOUT") {
-        setMessage("아직 처리 중입니다. 잠시 후 다시 확인할 수 있습니다.");
-        return;
+      let current = workflow;
+      if (current.phase === "PROCESSING") {
+        const result = await waitForVideoProcessing(current.assetId);
+        if (result.status === "FAILED") {
+          clearPending();
+          throw new Error(
+            `영상 처리 실패: ${result.failureCode ?? "알 수 없음"}`,
+          );
+        }
+        if (result.status === "TIMEOUT") {
+          setMessage("아직 처리 중입니다. 잠시 후 다시 확인할 수 있습니다.");
+          return;
+        }
+        current = persist({ ...current, phase: "MEDIA_READY" });
       }
-      if (workflow.mode === "series-single") {
-        await clientApi(`/series/${workflow.seriesId}/single-work/video`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ assetId: workflow.assetId }),
-        });
-        localStorage.removeItem(key);
-        router.push(`/watch/series/${workflow.seriesId}`);
-      } else if (workflow.mode === "series-episode") {
-        const draft = await clientApi<{ id: string }>(
-          `/series/${workflow.seriesId}/episodes`,
+      if (current.mode === "series-single") {
+        const attached = await clientApi<{ id: string; status: string }>(
+          `/series/${current.seriesId}/single-work/video`,
           {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              assetId: workflow.assetId,
-              episodeNumber: workflow.episodeNumber,
-              title: workflow.title,
-              synopsis: workflow.description,
-            }),
+            body: JSON.stringify({ assetId: current.assetId }),
           },
         );
-        await clientApi(`/series/episodes/${draft.id}/publish`, {
+        persist({
+          ...current,
+          phase: "PRODUCT_CREATED",
+          productId: attached.id,
+        });
+        clearPending();
+        if (attached.status === "PUBLISHED") {
+          router.push(`/watch/series/${attached.id}`);
+          router.refresh();
+        } else {
+          setMessage(
+            "영상 연결이 완료되었습니다. Series가 공개되기 전까지 이 화면에 유지됩니다.",
+          );
+        }
+        return;
+      }
+      if (current.phase === "MEDIA_READY") {
+        if (current.mode === "series-episode") {
+          const draft = await clientApi<{ id: string; status: string }>(
+            `/series/${current.seriesId}/episodes`,
+            {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                assetId: current.assetId,
+                episodeNumber: current.episodeNumber,
+                title: current.title,
+                synopsis: current.description,
+              }),
+            },
+          );
+          current = persist({
+            ...current,
+            phase: "PRODUCT_CREATED",
+            productId: draft.id,
+          });
+        } else {
+          const draft = await clientApi<{ id: string; status: string }>(
+            `/shortforms/videos`,
+            {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                assetId: current.assetId,
+                title: current.title,
+                description: current.description,
+                musicKey: current.musicKey || undefined,
+                promotedKind: current.promotedKind || undefined,
+                promotedId: current.promotedId || undefined,
+              }),
+            },
+          );
+          current = persist({
+            ...current,
+            phase: "PRODUCT_CREATED",
+            productId: draft.id,
+          });
+        }
+      }
+      if (!current.productId) {
+        clearPending();
+        throw new Error("생성된 콘텐츠 식별자를 복구하지 못했습니다.");
+      }
+      if (current.mode === "series-episode") {
+        await clientApi(`/series/episodes/${current.productId}/publish`, {
           method: "POST",
         });
-        localStorage.removeItem(key);
-        router.push(`/watch/episode/${draft.id}`);
+        clearPending();
+        router.push(`/watch/episode/${current.productId}`);
       } else {
-        const draft = await clientApi<{ id: string }>(`/shortforms/videos`, {
+        await clientApi(`/shortforms/${current.productId}/publish`, {
           method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            assetId: workflow.assetId,
-            title: workflow.title,
-            description: workflow.description,
-            musicKey: workflow.musicKey || undefined,
-            promotedKind: workflow.promotedKind || undefined,
-            promotedId: workflow.promotedId || undefined,
-          }),
         });
-        await clientApi(`/shortforms/${draft.id}/publish`, { method: "POST" });
-        localStorage.removeItem(key);
+        clearPending();
         router.push(`/shorts`);
       }
-      setPending(null);
       router.refresh();
     } catch (error) {
       setMessage(
@@ -138,6 +208,7 @@ export function CreateProductVideoForm({ mode }: { mode: Mode }) {
       const workflow: Pending = {
         assetId: session.assetId,
         mode,
+        phase: "PROCESSING",
         seriesId: String(data.get("seriesId") || "") || undefined,
         episodeNumber: Number(data.get("episodeNumber")) || undefined,
         title: String(data.get("title") || "") || undefined,
@@ -146,9 +217,7 @@ export function CreateProductVideoForm({ mode }: { mode: Mode }) {
         promotedKind: String(data.get("promotedKind") || "") || undefined,
         promotedId: String(data.get("promotedId") || "") || undefined,
       };
-      localStorage.setItem(key, JSON.stringify(workflow));
-      setPending(workflow);
-      await finish(workflow);
+      await finish(persist(workflow));
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "업로드에 실패했습니다.",
@@ -176,7 +245,7 @@ export function CreateProductVideoForm({ mode }: { mode: Mode }) {
           onClick={() => void finish(pending)}
           className="mt-5 rounded-full border border-line px-4 py-2 text-sm font-semibold"
         >
-          처리 상태 다시 확인
+          생성 작업 계속하기
         </button>
       )}
       <form

@@ -175,11 +175,25 @@ describe('real queued video pipeline', () => {
       payload: { assetId, title: 'Real pipeline', description: 'Queue proof' },
     });
     const homeId = draft.json<{ id: string }>().id;
-    await app.inject({
+    const draftRetry = await app.inject({
+      method: 'POST',
+      url: '/api/v1/home/videos',
+      headers: { cookie },
+      payload: { assetId, title: 'Real pipeline', description: 'Queue proof' },
+    });
+    expect(draftRetry.json<{ id: string }>().id).toBe(homeId);
+    const publish = await app.inject({
       method: 'POST',
       url: `/api/v1/home/videos/${homeId}/publish`,
       headers: { cookie },
     });
+    expect(publish.statusCode).toBe(201);
+    const publishRetry = await app.inject({
+      method: 'POST',
+      url: `/api/v1/home/videos/${homeId}/publish`,
+      headers: { cookie },
+    });
+    expect(publishRetry.statusCode).toBe(201);
     const manifest = await app.inject({
       method: 'GET',
       url: `/api/v1/media/assets/${assetId}/hls/index.m3u8`,

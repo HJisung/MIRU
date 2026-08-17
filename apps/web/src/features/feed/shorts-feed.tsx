@@ -56,7 +56,7 @@ function ShortformSlide({ item }: { item: ShortformList["items"][number] }) {
             sizes="544px"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/10" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/10" />
         {!isCarousel && media.mimeType !== "application/vnd.apple.mpegurl" && (
           <button
             aria-label="재생"
@@ -88,7 +88,7 @@ function ShortformSlide({ item }: { item: ShortformList["items"][number] }) {
             </span>
           </>
         )}
-        <div className="absolute inset-x-0 bottom-0 p-5 pr-20 text-white">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-5 pr-20 text-white">
           {item.title && <h1 className="font-semibold">{item.title}</h1>}
           <p className="mt-1 text-sm leading-6 text-white/90">
             {item.description}
@@ -100,13 +100,13 @@ function ShortformSlide({ item }: { item: ShortformList["items"][number] }) {
           {promotionHref && item.promotedContent && (
             <Link
               href={promotionHref}
-              className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-black"
+              className="pointer-events-auto mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-black"
             >
               본편 보기 · {item.promotedContent.title}
             </Link>
           )}
         </div>
-        <div className="absolute bottom-5 right-4 flex flex-col gap-5 text-white">
+        <div className="absolute bottom-5 right-4 z-20 flex flex-col gap-5 text-white">
           <Action label={compactNumber(item.likeCount)}>
             <Heart className="size-6" />
           </Action>

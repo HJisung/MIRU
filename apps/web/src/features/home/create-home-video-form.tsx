@@ -8,7 +8,7 @@ import { clientApi } from "@/lib/client-api";
 import { waitForVideoProcessing } from "@/features/media/processing-status";
 
 const pendingKey = "miru:pending-home-video";
-type Pending = { assetId: string; draftId: string };
+type Pending = { assetId: string; draftId: string; mediaReady: boolean };
 
 type Stage =
   | "idle"
@@ -28,36 +28,49 @@ export function CreateHomeVideoForm() {
   useEffect(() => {
     const stored = localStorage.getItem(pendingKey);
     if (!stored) return;
-    const timeout = window.setTimeout(
-      () => setPending(JSON.parse(stored) as Pending),
-      0,
-    );
+    const timeout = window.setTimeout(() => {
+      try {
+        const workflow = JSON.parse(stored) as Pending;
+        if (workflow.assetId && workflow.draftId) setPending(workflow);
+        else localStorage.removeItem(pendingKey);
+      } catch {
+        localStorage.removeItem(pendingKey);
+      }
+    }, 0);
     return () => window.clearTimeout(timeout);
   }, []);
 
   async function finish(current: Pending) {
     setStage("processing");
     setError("");
-    const result = await waitForVideoProcessing(current.assetId);
-    if (result.status === "FAILED") {
-      throw new Error(
-        `영상 처리 실패: ${result.failureCode ?? "알 수 없는 오류"}`,
-      );
-    }
-    if (result.status === "TIMEOUT") {
-      setStage("idle");
-      setError(
-        "아직 처리 중입니다. 잠시 후 ‘처리 상태 다시 확인’을 눌러주세요.",
-      );
-      return;
+    let workflow = current;
+    if (!workflow.mediaReady) {
+      const result = await waitForVideoProcessing(workflow.assetId);
+      if (result.status === "FAILED") {
+        localStorage.removeItem(pendingKey);
+        setPending(null);
+        throw new Error(
+          `영상 처리 실패: ${result.failureCode ?? "알 수 없는 오류"}`,
+        );
+      }
+      if (result.status === "TIMEOUT") {
+        setStage("idle");
+        setError(
+          "아직 처리 중입니다. 잠시 후 ‘처리 상태 다시 확인’을 눌러주세요.",
+        );
+        return;
+      }
+      workflow = { ...workflow, mediaReady: true };
+      localStorage.setItem(pendingKey, JSON.stringify(workflow));
+      setPending(workflow);
     }
     setStage("publishing");
-    await clientApi(`/home/videos/${current.draftId}/publish`, {
+    await clientApi(`/home/videos/${workflow.draftId}/publish`, {
       method: "POST",
     });
     localStorage.removeItem(pendingKey);
     setPending(null);
-    router.push(`/watch/home/${current.draftId}`);
+    router.push(`/watch/home/${workflow.draftId}`);
     router.refresh();
   }
 
@@ -101,7 +114,11 @@ export function CreateHomeVideoForm() {
           description: String(data.get("description") ?? ""),
         }),
       });
-      const current = { assetId: session.assetId, draftId: draft.id };
+      const current = {
+        assetId: session.assetId,
+        draftId: draft.id,
+        mediaReady: false,
+      };
       localStorage.setItem(pendingKey, JSON.stringify(current));
       setPending(current);
       await finish(current);

@@ -143,3 +143,104 @@ test("video creation surfaces reuse recoverable processing state", async ({
     page.getByRole("heading", { name: "Shortform VIDEO 업로드" }),
   ).toBeVisible();
 });
+
+test("Episode and Shortform resume publishing from an existing product", async ({
+  page,
+}) => {
+  for (const workflow of [
+    {
+      mode: "series-episode",
+      pageType: "series-episode",
+      productId: "50000000-0000-4000-8000-000000000001",
+      publishPath: "/series/episodes/",
+    },
+    {
+      mode: "shortform",
+      pageType: "shortform-video",
+      productId: "60000000-0000-4000-8000-000000000001",
+      publishPath: "/shortforms/",
+    },
+  ]) {
+    let createRequests = 0;
+    let publishRequests = 0;
+    await page.addInitScript((value) => {
+      localStorage.setItem(
+        `miru:pending-${value.mode}`,
+        JSON.stringify({
+          assetId: "70000000-0000-4000-8000-000000000001",
+          mode: value.mode,
+          phase: "PRODUCT_CREATED",
+          productId: value.productId,
+          description: "recover me",
+        }),
+      );
+    }, workflow);
+    await page.route("http://localhost:4000/api/v1/**", async (route) => {
+      const url = route.request().url();
+      if (url.includes(workflow.publishPath + workflow.productId)) {
+        publishRequests += 1;
+        await route.fulfill({ status: 200, json: {} });
+      } else {
+        createRequests += 1;
+        await route.fulfill({ status: 500, json: {} });
+      }
+    });
+    await page.goto(`/create?type=${workflow.pageType}`);
+    await page.getByRole("button", { name: "생성 작업 계속하기" }).click();
+    await expect.poll(() => publishRequests).toBe(1);
+    expect(createRequests).toBe(0);
+    await page.unroute("http://localhost:4000/api/v1/**");
+  }
+});
+
+test("SINGLE_WORK only opens watch when the Series is public", async ({
+  page,
+}) => {
+  const seriesId = "40000000-0000-4000-8000-000000000099";
+  async function prepare(status: "DRAFT" | "PUBLISHED") {
+    await page.addInitScript(
+      ({ seriesId }) => {
+        localStorage.setItem(
+          "miru:pending-series-single",
+          JSON.stringify({
+            assetId: "70000000-0000-4000-8000-000000000099",
+            mode: "series-single",
+            phase: "MEDIA_READY",
+            seriesId,
+            description: "",
+          }),
+        );
+      },
+      { seriesId, status },
+    );
+    await page.route(
+      `http://localhost:4000/api/v1/series/${seriesId}/single-work/video`,
+      (route) => route.fulfill({ status: 200, json: { id: seriesId, status } }),
+    );
+  }
+
+  await prepare("DRAFT");
+  await page.goto("/create?type=series-single");
+  await page.getByRole("button", { name: "생성 작업 계속하기" }).click();
+  await expect(page).toHaveURL(/type=series-single/);
+  await expect(page.getByText(/Series가 공개되기 전까지/)).toBeVisible();
+
+  await page.unrouteAll({ behavior: "wait" });
+  await prepare("PUBLISHED");
+  await page.goto("/create?type=series-single");
+  await page.getByRole("button", { name: "생성 작업 계속하기" }).click();
+  await expect(page).toHaveURL(new RegExp(`/watch/series/${seriesId}`));
+});
+
+test("Shortform overlays preserve intentional player and action pointer targets", async ({
+  page,
+}) => {
+  await page.goto("/shorts");
+  await expect(page.getByRole("button", { name: "공유" }).first()).toBeVisible();
+  await page.getByRole("button", { name: "공유" }).first().click();
+  const gradient = page.locator(".pointer-events-none.bg-gradient-to-t").first();
+  await expect(gradient).toHaveCSS("pointer-events", "none");
+  await expect(
+    page.getByRole("link", { name: /본편 보기/ }).first(),
+  ).toHaveCSS("pointer-events", "auto");
+});

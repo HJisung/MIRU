@@ -117,6 +117,8 @@ SINGLE_WORK, Series Episode, and Shortform VIDEO.
 - Accessible HLS player for processed Home Singles
 - Bounded recoverable processing polling, deterministic derived cleanup, and a
   real API → MinIO → BullMQ → worker → FFmpeg → HLS integration test
+- Recoverable product workflow checkpoints prevent duplicate drafts after a
+  create response succeeds but a later publish or navigation step fails
 - Full ABR ladder and dead-letter administration remain pending
 
 ## Slice 5: Social and engagement

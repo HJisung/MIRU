@@ -75,6 +75,21 @@ export class ShortformsService {
       throw new BadRequestException(
         'promotedKind and promotedId must be provided together',
       );
+    const existing = await this.database.client.shortForm.findFirst({
+      where: {
+        creatorId: userId,
+        type: ShortFormType.VIDEO,
+        media: { some: { assetId: input.assetId } },
+      },
+      select: { id: true, status: true },
+    });
+    if (existing) {
+      return {
+        id: existing.id,
+        assetId: input.assetId,
+        status: existing.status,
+      };
+    }
     const asset = await this.mediaAttachments.readyUnlinkedOwnedVideo(
       userId,
       input.assetId,
@@ -120,16 +135,23 @@ export class ShortformsService {
       where: {
         id,
         creatorId: userId,
-        status: DomainPublicationStatus.DRAFT,
-        media: {
-          some: {
-            asset: { kind: 'VIDEO', status: MediaStatus.READY },
-          },
-        },
       },
-      select: { publicationId: true },
+      select: {
+        status: true,
+        publicationId: true,
+        media: { select: { asset: { select: { kind: true, status: true } } } },
+      },
     });
-    if (!record) throw new NotFoundException('Ready Shortform draft not found');
+    if (!record) throw new NotFoundException('Shortform draft not found');
+    if (record.status === DomainPublicationStatus.PUBLISHED)
+      return this.findOne(id);
+    if (
+      !record.media.some(
+        ({ asset }) =>
+          asset.kind === 'VIDEO' && asset.status === MediaStatus.READY,
+      )
+    )
+      throw new NotFoundException('Ready Shortform draft not found');
     const publishedAt = new Date();
     await this.database.client.$transaction([
       this.database.client.shortForm.update({

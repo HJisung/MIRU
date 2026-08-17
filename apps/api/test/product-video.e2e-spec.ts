@@ -133,6 +133,14 @@ describe('processed video product attachments', () => {
       payload: { assetId: asset.id },
     });
     expect(attached.statusCode).toBe(200);
+    const retried = await app.inject({
+      method: 'POST',
+      url: `/api/v1/series/${singleSeriesId}/single-work/video`,
+      headers: { cookie },
+      payload: { assetId: asset.id },
+    });
+    expect(retried.statusCode).toBe(200);
+    expect(retried.json<{ id: string }>().id).toBe(singleSeriesId);
     await database.client.series.update({
       where: { id: singleSeriesId },
       data: { publicationStatus: DomainPublicationStatus.PUBLISHED },
@@ -162,6 +170,30 @@ describe('processed video product attachments', () => {
     });
     expect(created.statusCode).toBe(201);
     const episodeId = created.json<{ id: string }>().id;
+    const retried = await app.inject({
+      method: 'POST',
+      url: `/api/v1/series/${episodicSeriesId}/episodes`,
+      headers: { cookie },
+      payload: {
+        assetId: asset.id,
+        episodeNumber: 1,
+        title: 'Real episode',
+        synopsis: 'Created from the shared pipeline.',
+      },
+    });
+    expect(retried.json<{ id: string }>().id).toBe(episodeId);
+    expect(
+      await database.client.seriesEpisode.count({
+        where: { videoAssetId: asset.id },
+      }),
+    ).toBe(1);
+    const crossProductAttach = await app.inject({
+      method: 'POST',
+      url: `/api/v1/series/${singleSeriesId}/single-work/video`,
+      headers: { cookie },
+      payload: { assetId: asset.id },
+    });
+    expect(crossProductAttach.statusCode).toBe(404);
     await database.client.series.update({
       where: { id: episodicSeriesId },
       data: { publicationStatus: DomainPublicationStatus.PUBLISHED },
@@ -173,6 +205,12 @@ describe('processed video product attachments', () => {
     });
     expect(publish.statusCode).toBe(200);
     expect(publish.json<{ media: { id: string } }>().media.id).toBe(asset.id);
+    const publishRetry = await app.inject({
+      method: 'POST',
+      url: `/api/v1/series/episodes/${episodeId}/publish`,
+      headers: { cookie },
+    });
+    expect(publishRetry.statusCode).toBe(200);
   });
 
   it('creates a VIDEO Shortform while preserving promotion identity', async () => {
@@ -191,6 +229,25 @@ describe('processed video product attachments', () => {
       },
     });
     const shortformId = created.json<{ id: string }>().id;
+    const retried = await app.inject({
+      method: 'POST',
+      url: '/api/v1/shortforms/videos',
+      headers: { cookie },
+      payload: {
+        assetId: asset.id,
+        title: 'Real short',
+        description: 'A processed vertical video.',
+        musicKey: 'catalog:test-track',
+        promotedKind: 'SERIES',
+        promotedId: episodicSeriesId,
+      },
+    });
+    expect(retried.json<{ id: string }>().id).toBe(shortformId);
+    expect(
+      await database.client.shortForm.count({
+        where: { media: { some: { assetId: asset.id } } },
+      }),
+    ).toBe(1);
     const publish = await app.inject({
       method: 'POST',
       url: `/api/v1/shortforms/${shortformId}/publish`,
@@ -207,5 +264,11 @@ describe('processed video product attachments', () => {
       id: episodicSeriesId,
       title: 'Real episodic work',
     });
+    const publishRetry = await app.inject({
+      method: 'POST',
+      url: `/api/v1/shortforms/${shortformId}/publish`,
+      headers: { cookie },
+    });
+    expect(publishRetry.statusCode).toBe(200);
   });
 });

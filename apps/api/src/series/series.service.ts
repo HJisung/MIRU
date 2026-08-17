@@ -80,6 +80,13 @@ export class SeriesService {
     const series = await this.manageableSeries(user, seriesId);
     if (series.workType !== SeriesWorkType.SINGLE_WORK)
       throw new BadRequestException('Series is not a SINGLE_WORK');
+    if (series.singleWorkAssetId === assetId) {
+      return {
+        id: series.id,
+        assetId,
+        status: series.publicationStatus,
+      };
+    }
     await this.mediaAttachments.readyUnlinkedOwnedVideo(
       user.id,
       assetId,
@@ -137,6 +144,19 @@ export class SeriesService {
     const series = await this.manageableSeries(user, seriesId);
     if (series.workType !== SeriesWorkType.EPISODIC)
       throw new BadRequestException('Series is not EPISODIC');
+    const existing = await this.database.client.seriesEpisode.findFirst({
+      where: { seriesId, videoAssetId: input.assetId },
+      select: { id: true, videoAssetId: true, publishedAt: true },
+    });
+    if (existing) {
+      return {
+        id: existing.id,
+        assetId: existing.videoAssetId!,
+        status: existing.publishedAt
+          ? DomainPublicationStatus.PUBLISHED
+          : DomainPublicationStatus.DRAFT,
+      };
+    }
     await this.mediaAttachments.readyUnlinkedOwnedVideo(
       user.id,
       input.assetId,
@@ -187,6 +207,7 @@ export class SeriesService {
     });
     if (!episode) throw new NotFoundException('Series episode not found');
     this.assertSeriesManager(user, episode.series);
+    if (episode.publishedAt) return this.findEpisode(episode.id);
     if (episode.series.publicationStatus !== DomainPublicationStatus.PUBLISHED)
       throw new BadRequestException('Series must be published first');
     if (episode.videoAsset?.status !== MediaStatus.READY)
