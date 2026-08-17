@@ -1,17 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { DomainPublicationStatus } from '@stream/database';
-import { CreatorSummaryDto, FeedItemDto } from '../feed/feed.dto.js';
+import { EngagementTargetDto } from '../engagement/engagement.dto.js';
+import { CreatorSummaryDto, MediaSummaryDto } from '../feed/feed.dto.js';
+import { PlayableDto } from '../playback/playback.dto.js';
 
 export class HomeVideoDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
-  @ApiProperty({ format: 'uuid' }) publicationId!: string;
   @ApiProperty() title!: string;
   @ApiProperty() description!: string;
   @ApiProperty({ enum: DomainPublicationStatus })
   status!: DomainPublicationStatus;
   @ApiProperty() publishedAt!: string;
   @ApiProperty({ type: CreatorSummaryDto }) creator!: CreatorSummaryDto;
-  @ApiProperty({ type: FeedItemDto }) publication!: FeedItemDto;
+  @ApiProperty({ type: MediaSummaryDto }) media!: MediaSummaryDto;
+  @ApiProperty({ type: PlayableDto }) playable!: PlayableDto;
+  @ApiProperty({ type: EngagementTargetDto })
+  engagementTarget!: EngagementTargetDto;
+  @ApiProperty() likeCount!: number;
+  @ApiProperty() commentCount!: number;
 }
 
 export class HomeVideoListDto {

@@ -182,6 +182,9 @@ model MediaAsset {
   collectionCovers Collection[]         @relation("CollectionCover")
   seriesPosters    Series[]             @relation("SeriesPoster")
   seriesBackdrops  Series[]             @relation("SeriesBackdrop")
+  homeVideos       HomeVideo[]          @relation("HomeVideoPlayback")
+  seriesSingleWork Series[]             @relation("SeriesSingleWorkPlayback")
+  seriesEpisodes   SeriesEpisode[]      @relation("SeriesEpisodePlayback")
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 
@@ -245,6 +248,8 @@ model Series {
   releaseDate             DateTime?
   singleWorkPublicationId String?                 @unique @db.Uuid
   singleWorkPublication   Post?                   @relation("SeriesSingleWork", fields: [singleWorkPublicationId], references: [id], onDelete: SetNull)
+  singleWorkAssetId       String?                 @db.Uuid
+  singleWorkAsset         MediaAsset?             @relation("SeriesSingleWorkPlayback", fields: [singleWorkAssetId], references: [id], onDelete: SetNull)
   seasons                 SeriesSeason[]
   episodes                SeriesEpisode[]
   submissions             SeriesSubmission[]
@@ -254,6 +259,7 @@ model Series {
 
   @@index([creatorId, createdAt(sort: Desc)])
   @@index([publicationStatus, releaseDate(sort: Desc)])
+  @@index([singleWorkAssetId])
 }
 
 /// MIRU Home's ordinary, self-contained video. `publicationId` bridges the
@@ -264,6 +270,8 @@ model HomeVideo {
   creator         User                    @relation(fields: [creatorId], references: [id], onDelete: Restrict)
   publicationId   String                  @unique @db.Uuid
   publication     Post                    @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  videoAssetId    String?                 @db.Uuid
+  videoAsset      MediaAsset?             @relation("HomeVideoPlayback", fields: [videoAssetId], references: [id], onDelete: SetNull)
   title           String
   description     String                  @default("")
   status          DomainPublicationStatus @default(DRAFT)
@@ -275,6 +283,7 @@ model HomeVideo {
 
   @@index([status, publishedAt(sort: Desc), id(sort: Desc)])
   @@index([creatorId, createdAt(sort: Desc)])
+  @@index([videoAssetId])
 }
 
 model Collection {
@@ -330,6 +339,8 @@ model SeriesEpisode {
   season              SeriesSeason? @relation(fields: [seasonId], references: [id], onDelete: SetNull)
   publicationId       String        @unique @db.Uuid
   publication         Post          @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  videoAssetId        String?       @db.Uuid
+  videoAsset          MediaAsset?   @relation("SeriesEpisodePlayback", fields: [videoAssetId], references: [id], onDelete: SetNull)
   promotedBy          ShortForm[]   @relation("PromotedSeriesEpisode")
   episodeNumber       Int
   seasonEpisodeNumber Int?
@@ -341,6 +352,7 @@ model SeriesEpisode {
 
   @@unique([seriesId, episodeNumber])
   @@index([seasonId, seasonEpisodeNumber])
+  @@index([videoAssetId])
 }
 
 model SeriesSubmission {

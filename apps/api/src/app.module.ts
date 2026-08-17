@@ -15,6 +15,7 @@ import { HomeModule } from './home/home.module.js';
 import { SeriesModule } from './series/series.module.js';
 import { ShortformsModule } from './shortforms/shortforms.module.js';
 import { CommunityModule } from './community/community.module.js';
+import { EngagementModule } from './engagement/engagement.module.js';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { CommunityModule } from './community/community.module.js';
     SeriesModule,
     ShortformsModule,
     CommunityModule,
+    EngagementModule,
   ],
 })
 export class AppModule {}

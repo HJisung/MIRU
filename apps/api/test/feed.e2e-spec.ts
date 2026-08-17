@@ -102,10 +102,14 @@ describe('public discovery flow (PostgreSQL integration)', () => {
     });
     expect(home.statusCode).toBe(200);
     const homeItems = home.json<{
-      items: Array<{ id: string; publication: { series: unknown } }>;
+      items: Array<{
+        id: string;
+        playable: { kind: string; id: string };
+        media: unknown;
+      }>;
     }>().items;
     expect(homeItems.length).toBeGreaterThan(0);
-    expect(homeItems.every((item) => item.publication.series === null)).toBe(
+    expect(homeItems.every((item) => item.playable.kind === 'HOME_VIDEO')).toBe(
       true,
     );
 
@@ -122,11 +126,26 @@ describe('public discovery flow (PostgreSQL integration)', () => {
     const series = await app.inject({ method: 'GET', url: '/api/v1/series' });
     expect(series.statusCode).toBe(200);
     const works = series.json<{
-      items: Array<{ workType: string; episodes: Array<{ id: string }> }>;
+      items: Array<{
+        id: string;
+        workType: string;
+        singleWork: null | { id: string };
+        episodes: Array<{ id: string; playable: unknown }>;
+      }>;
     }>().items;
     const episodic = works.find((work) => work.workType === 'EPISODIC');
     expect(episodic).toBeDefined();
     expect(episodic?.episodes.length).toBeGreaterThan(0);
+    const single = works.find((work) => work.workType === 'SINGLE_WORK');
+    expect(single?.episodes).toHaveLength(0);
+    expect(single?.singleWork?.id).toBe(single?.id);
+
+    const episode = await app.inject({
+      method: 'GET',
+      url: `/api/v1/series/episodes/${episodic?.episodes[0]?.id}`,
+    });
+    expect(episode.statusCode).toBe(200);
+    expect(episode.json<{ playable: unknown }>().playable).toBeTruthy();
   });
 
   it('serves published VIDEO and ordered IMAGE_CAROUSEL Shortforms with promotions', async () => {
@@ -153,6 +172,9 @@ describe('public discovery flow (PostgreSQL integration)', () => {
     expect(
       items.some((item) => item.promotedContent?.kind === 'HOME_VIDEO'),
     ).toBe(true);
+    expect(
+      items.some((item) => item.promotedContent?.kind === 'SERIES_EPISODE'),
+    ).toBe(true);
     expect(items.some((item) => item.media.length === 0)).toBe(false);
     const detail = await app.inject({
       method: 'GET',
@@ -160,6 +182,17 @@ describe('public discovery flow (PostgreSQL integration)', () => {
     });
     expect(detail.statusCode).toBe(200);
     expect(detail.json<{ type: string }>().type).toBe('IMAGE_CAROUSEL');
+
+    const comments = await app.inject({
+      method: 'GET',
+      url: `/api/v1/engagement/SHORTFORM/${carousel?.id}/comments`,
+    });
+    expect(comments.statusCode).toBe(200);
+    const wrongType = await app.inject({
+      method: 'GET',
+      url: `/api/v1/engagement/HOME_VIDEO/${carousel?.id}/comments`,
+    });
+    expect(wrongType.statusCode).toBe(404);
   });
 
   it('keeps Post Home separate from managed Community Categories', async () => {

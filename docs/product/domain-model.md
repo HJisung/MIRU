@@ -57,6 +57,10 @@ rating, production information, release date, and publication status. The old
 `HIGH` proposal is retired and must not be represented as a content type,
 quality grade, or review type.
 
+A `SINGLE_WORK` has a direct playable media asset and zero episodes. An
+`EPISODIC` work has no single-work playable; each published Episode has its own
+playable media asset. Product playback URLs always use Series or Episode IDs.
+
 ## Shortform
 
 Shortform supports `VIDEO` and `IMAGE_CAROUSEL`. A carousel contains one to ten
@@ -95,6 +99,7 @@ and moderation remain operational while each product service receives an
 explicit model and API. The migration is complete only when `Post` unambiguously
 means Community Post in product-facing code.
 
-The compatibility ID is currently exposed as `engagementTargetId` only where
-the existing like/comment/save/report implementation still requires it. Product
-reads and media traversal do not start from the compatibility aggregate.
+Product contracts expose engagement as a typed product reference, never a
+compatibility publication ID. The resolver currently maps that reference to
+legacy like/comment/save/report storage internally. Product reads and media
+traversal do not start from the compatibility aggregate.

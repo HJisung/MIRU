@@ -159,6 +159,9 @@ const demoPosts = [
 const craftSeriesId = "40000000-0000-4000-8000-000000000001";
 const craftEpisodeAssetId = "20000000-0000-4000-8000-000000000007";
 const craftEpisodePostId = "30000000-0000-4000-8000-000000000007";
+const singleWorkSeriesId = "40000000-0000-4000-8000-000000000002";
+const singleWorkAssetId = "20000000-0000-4000-8000-000000000013";
+const singleWorkPublicationId = "30000000-0000-4000-8000-000000000013";
 
 async function seed() {
   await prisma.$transaction([
@@ -199,6 +202,53 @@ async function seed() {
       ageRating: "ALL",
       productionInfo: { studio: "Field Notes", country: "KR" },
       releaseDate: new Date("2026-08-11T12:00:00.000Z"),
+    },
+  });
+
+  await prisma.mediaAsset.create({
+    data: {
+      id: singleWorkAssetId,
+      ownerId: demoUsers[2].id,
+      kind: MediaKind.VIDEO,
+      purpose: MediaPurpose.LONG_VIDEO,
+      status: MediaStatus.READY,
+      sourceKey: `demo/${singleWorkAssetId}/source`,
+      publicUrl: "/demo/letterpress.png",
+      mimeType: "image/png",
+      width: 1600,
+      height: 900,
+      durationMs: 5_820_000,
+      byteSize: BigInt(0),
+    },
+  });
+  await prisma.post.create({
+    data: {
+      id: singleWorkPublicationId,
+      authorId: demoUsers[2].id,
+      format: PostFormat.LONG_VIDEO,
+      status: PostStatus.PUBLISHED,
+      visibility: PostVisibility.PUBLIC,
+      title: "활자와 도시",
+      caption: "한 편으로 완결되는 장편 다큐멘터리",
+      publishedAt: new Date("2026-08-16T12:00:00.000Z"),
+      media: { create: { assetId: singleWorkAssetId, order: 0 } },
+    },
+  });
+  await prisma.series.create({
+    data: {
+      id: singleWorkSeriesId,
+      creatorId: demoUsers[2].id,
+      title: "활자와 도시",
+      description: "사라지는 인쇄 기술을 기록한 한 편의 영화",
+      synopsis: "도시의 오래된 인쇄소와 그곳을 지키는 사람들을 따라갑니다.",
+      workType: SeriesWorkType.SINGLE_WORK,
+      publicationStatus: DomainPublicationStatus.PUBLISHED,
+      genres: ["영화", "다큐멘터리"],
+      tags: ["인쇄", "도시", "기록"],
+      ageRating: "ALL",
+      releaseDate: new Date("2026-08-16T12:00:00.000Z"),
+      singleWorkPublicationId,
+      singleWorkAssetId,
     },
   });
 
@@ -285,6 +335,7 @@ async function seed() {
       id: "50000000-0000-4000-8000-000000000001",
       creatorId: standalone.authorId,
       publicationId: standalone.id,
+      videoAssetId: standalone.assetId,
       title: standalone.title,
       description: standalone.caption,
       status: DomainPublicationStatus.PUBLISHED,
@@ -310,6 +361,7 @@ async function seed() {
         id: "70000000-0000-4000-8000-000000000001",
         seriesId: craftSeriesId,
         publicationId: "30000000-0000-4000-8000-000000000003",
+        videoAssetId: "20000000-0000-4000-8000-000000000003",
         episodeNumber: 1,
         title: "서울의 마지막 활판 인쇄공",
         synopsis: "잉크와 활자, 사십 년의 손기억을 기록합니다.",
@@ -319,6 +371,7 @@ async function seed() {
         id: "70000000-0000-4000-8000-000000000002",
         seriesId: craftSeriesId,
         publicationId: craftEpisodePostId,
+        videoAssetId: craftEpisodeAssetId,
         episodeNumber: 2,
         title: "흙이 그릇이 되는 시간",
         synopsis: "흙과 불, 그리고 도예가의 손을 따라갑니다.",
@@ -352,6 +405,9 @@ async function seed() {
         description: post.caption,
         musicKey: post.id.endsWith("2") ? "demo:morning-trail" : null,
         promotedHomeVideoId: post.id.endsWith("2") ? homeVideo.id : null,
+        promotedEpisodeId: post.id.endsWith("6")
+          ? "70000000-0000-4000-8000-000000000002"
+          : null,
         status: DomainPublicationStatus.PUBLISHED,
         publishedAt: post.publishedAt,
         media: { create: { assetId: post.assetId, position: 0 } },

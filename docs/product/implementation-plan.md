@@ -55,6 +55,8 @@ foundation, then Shortform and Community Post migration.
   web feed: complete
 - Community Post Home, managed Category filtering, detail, image publishing,
   and timeline: complete
+- Series single-work playback, explicit Home/Series/Episode playback identity,
+  and domain-aware engagement API boundary: complete
 
 ## LegacyPublication migration status
 
@@ -63,15 +65,14 @@ format filters. The compatibility aggregate remains for:
 
 - the proven engagement target used by likes, saves, comments, and reports
 - existing feed/following ranking and moderation services
-- Home and Series playback metadata while their media/player slice still uses
-  the compatibility publication
+- engagement rows and counters behind the domain-aware resolver
 - the direct-upload publish transaction, which creates both a Community Post
   and its compatibility engagement target atomically
 
-Removal is safe only after engagement has a domain-aware target boundary,
-moderation and comments accept those targets, and Home/Series playback no
-longer requires the legacy publication DTO. No new product read should query
-the compatibility table directly.
+Home and Series playback now read MediaAsset directly. Removal is safe after
+engagement rows/counters, discovery/following, moderation queue projections,
+and the upload transaction move off the compatibility table. No new product
+read should query the compatibility table directly.
 
 ## Existing implementation history
 

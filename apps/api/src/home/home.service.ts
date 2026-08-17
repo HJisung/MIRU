@@ -1,18 +1,11 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { DomainPublicationStatus, MediaStatus } from '@stream/database';
 import { DatabaseService } from '../database/database.service.js';
-import { toFeedItem } from '../feed/feed.mapper.js';
+import { toPlayableMedia } from '../playback/playback.mapper.js';
 import type { HomeVideoDto } from './home.dto.js';
 
-const publicationInclude = {
-  series: {
-    select: {
-      id: true,
-      title: true,
-      _count: { select: { posts: true } },
-    },
-  },
-  author: {
+const homeInclude = {
+  creator: {
     select: {
       id: true,
       handle: true,
@@ -20,11 +13,8 @@ const publicationInclude = {
       avatarUrl: true,
     },
   },
-  media: {
-    where: { asset: { status: MediaStatus.READY } },
-    orderBy: { order: 'asc' as const },
-    include: { asset: true },
-  },
+  videoAsset: true,
+  publication: { select: { likeCount: true, commentCount: true } },
 } as const;
 
 @Injectable()
@@ -39,7 +29,7 @@ export class HomeService {
         status: DomainPublicationStatus.PUBLISHED,
         publishedAt: { not: null },
       },
-      include: { publication: { include: publicationInclude } },
+      include: homeInclude,
       orderBy: [{ publishedAt: 'desc' }, { id: 'desc' }],
       take: 24,
     });
@@ -49,7 +39,7 @@ export class HomeService {
   async findOne(id: string): Promise<HomeVideoDto> {
     const video = await this.database.client.homeVideo.findFirst({
       where: { id, status: DomainPublicationStatus.PUBLISHED },
-      include: { publication: { include: publicationInclude } },
+      include: homeInclude,
     });
     if (!video) throw new NotFoundException('Home video not found');
     return this.map(video);
@@ -73,7 +63,7 @@ export class HomeService {
         items: {
           include: {
             homeVideo: {
-              include: { publication: { include: publicationInclude } },
+              include: homeInclude,
             },
           },
           orderBy: { position: 'asc' },
@@ -107,22 +97,29 @@ export class HomeService {
     if (!video.publishedAt) {
       throw new Error(`Published Home video ${video.id} has no publishedAt`);
     }
-    const publication = toFeedItem(video.publication);
+    const media = toPlayableMedia(
+      video.videoAsset?.status === MediaStatus.READY ? video.videoAsset : null,
+    );
+    if (!media)
+      throw new Error(`Published Home video ${video.id} is not playable`);
     return {
       id: video.id,
-      publicationId: video.publicationId,
       title: video.title,
       description: video.description,
       status: video.status,
       publishedAt: video.publishedAt.toISOString(),
-      creator: publication.author,
-      publication,
+      creator: video.creator,
+      media,
+      playable: { kind: 'HOME_VIDEO' as const, id: video.id, media },
+      engagementTarget: { type: 'HOME_VIDEO' as const, id: video.id },
+      likeCount: video.publication.likeCount,
+      commentCount: video.publication.commentCount,
     };
   }
 
   private findRecord() {
     return this.database.client.homeVideo.findFirstOrThrow({
-      include: { publication: { include: publicationInclude } },
+      include: homeInclude,
     });
   }
 }

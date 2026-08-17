@@ -1,23 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ShortFormType } from '@stream/database';
 import { CreatorSummaryDto, MediaSummaryDto } from '../feed/feed.dto.js';
+import { EngagementTargetDto } from '../engagement/engagement.dto.js';
 
 export class ShortformPromotionDto {
   @ApiProperty({ enum: ['HOME_VIDEO', 'SERIES', 'SERIES_EPISODE'] })
   kind!: 'HOME_VIDEO' | 'SERIES' | 'SERIES_EPISODE';
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() title!: string;
-  @ApiPropertyOptional({ format: 'uuid', nullable: true })
-  publicationId!: string | null;
 }
 
 export class ShortformDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
-  @ApiProperty({
-    format: 'uuid',
-    description: 'Compatibility engagement target',
-  })
-  engagementTargetId!: string;
+  @ApiProperty({ type: EngagementTargetDto })
+  engagementTarget!: EngagementTargetDto;
   @ApiProperty({ enum: ShortFormType }) type!: ShortFormType;
   @ApiPropertyOptional({ type: String, nullable: true }) title!: string | null;
   @ApiProperty() description!: string;

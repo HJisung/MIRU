@@ -7,5 +7,6 @@ import { SocialService } from './social.service.js';
   imports: [AuthModule],
   controllers: [SocialController],
   providers: [SocialService],
+  exports: [SocialService],
 })
 export class SocialModule {}

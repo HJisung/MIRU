@@ -18,7 +18,7 @@ export default async function SeriesDetail({ params }: SeriesDetailProps) {
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
   }
-  const hero = work.episodes[0]?.publication.media[0];
+  const hero = work.singleWork?.media ?? work.episodes[0]?.media;
   return (
     <div className="pb-20">
       <section className="relative min-h-[28rem] overflow-hidden bg-black text-white">
@@ -56,14 +56,24 @@ export default async function SeriesDetail({ params }: SeriesDetailProps) {
         </div>
       </section>
       <section className="mx-auto max-w-[112rem] px-4 pt-9 sm:px-6 lg:px-10">
-        <h2 className="text-xl font-semibold">에피소드</h2>
+        {work.singleWork && (
+          <Link
+            href={`/watch/series/${work.id}`}
+            className="inline-flex items-center gap-2 rounded-md bg-ink px-5 py-3 text-sm font-bold text-background"
+          >
+            <Play className="size-5 fill-current" /> 작품 재생
+          </Link>
+        )}
+        {work.workType === "EPISODIC" && (
+          <h2 className="text-xl font-semibold">에피소드</h2>
+        )}
         <div className="mt-5 space-y-4">
           {work.episodes.map((episode) => {
-            const media = episode.publication.media[0];
+            const media = episode.media;
             return (
               <Link
                 key={episode.id}
-                href={`/post/${episode.publication.id}`}
+                href={`/watch/episode/${episode.id}`}
                 className="grid gap-4 rounded-2xl border border-line p-3 transition hover:bg-panel sm:grid-cols-[18rem_1fr]"
               >
                 {media && (

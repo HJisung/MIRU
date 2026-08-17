@@ -8,6 +8,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { CreatorSummaryDto, MediaSummaryDto } from '../feed/feed.dto.js';
+import { EngagementTargetDto } from '../engagement/engagement.dto.js';
 
 export class CommunityCategoryDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
@@ -43,11 +44,8 @@ export class CreateCommunityImagePostDto {
 
 export class CommunityPostDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
-  @ApiProperty({
-    format: 'uuid',
-    description: 'Compatibility engagement target',
-  })
-  engagementTargetId!: string;
+  @ApiProperty({ type: EngagementTargetDto })
+  engagementTarget!: EngagementTargetDto;
   @ApiProperty({ enum: CommunityPostType }) type!: CommunityPostType;
   @ApiProperty() body!: string;
   @ApiPropertyOptional({ type: String, nullable: true }) linkUrl!:

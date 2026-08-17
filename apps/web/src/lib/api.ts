@@ -4,6 +4,7 @@ import type {
   HomeVideoList,
   CollectionList,
   Series,
+  SeriesEpisode,
   SeriesList,
   Shortform,
   ShortformList,
@@ -60,6 +61,12 @@ export function getSeriesList() {
 
 export function getSeries(seriesId: string) {
   return apiFetch<Series>(`/series/${encodeURIComponent(seriesId)}`);
+}
+
+export function getSeriesEpisode(episodeId: string) {
+  return apiFetch<SeriesEpisode>(
+    `/series/episodes/${encodeURIComponent(episodeId)}`,
+  );
 }
 
 export function getShortforms() {

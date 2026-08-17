@@ -38,8 +38,8 @@ export default async function SeriesPage() {
 }
 
 function FeaturedSeries({ work }: { work: Series }) {
-  const publication = work.episodes[0]?.publication;
-  const media = publication?.media[0];
+  const playable = work.singleWork ?? work.episodes[0]?.playable;
+  const media = playable?.media;
   return (
     <section className="relative min-h-[calc(100vh-7rem)] overflow-hidden">
       {media && (
@@ -66,9 +66,13 @@ function FeaturedSeries({ work }: { work: Series }) {
           {work.synopsis}
         </p>
         <div className="mt-7 flex gap-3">
-          {publication && (
+          {playable && (
             <Link
-              href={`/post/${publication.id}`}
+              href={
+                work.workType === "SINGLE_WORK"
+                  ? `/watch/series/${work.id}`
+                  : `/watch/episode/${playable.id}`
+              }
               className="inline-flex items-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-bold text-black"
             >
               <Play className="size-5 fill-current" />
@@ -94,7 +98,7 @@ function SeriesRow({ title, items }: { title: string; items: Series[] }) {
       <h2 className="mb-3 text-lg font-semibold sm:text-xl">{title}</h2>
       <div className="flex gap-2.5 overflow-x-auto pb-3">
         {items.map((work) => {
-          const media = work.episodes[0]?.publication.media[0];
+          const media = work.singleWork?.media ?? work.episodes[0]?.media;
           return (
             <Link
               key={`${title}-${work.id}`}

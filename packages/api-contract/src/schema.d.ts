@@ -425,6 +425,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/series/episodes/{episodeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SeriesController_findEpisode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/series/{seriesId}": {
         parameters: {
             query?: never;
@@ -542,6 +558,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/engagement/{targetType}/{targetId}/like": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["EngagementController_like"];
+        post?: never;
+        delete: operations["EngagementController_unlike"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/engagement/{targetType}/{targetId}/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["EngagementController_save"];
+        post?: never;
+        delete: operations["EngagementController_unsave"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/engagement/{targetType}/{targetId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["EngagementController_listComments"];
+        put?: never;
+        post: operations["EngagementController_comment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/engagement/{targetType}/{targetId}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["EngagementController_report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -641,18 +721,39 @@ export interface components {
             assetId: string;
             caption: string;
         };
+        PlayableDto: {
+            /** @enum {string} */
+            kind: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE";
+            /**
+             * Format: uuid
+             * @description Product-domain playable ID
+             */
+            id: string;
+            media: components["schemas"]["MediaSummaryDto"];
+        };
+        EngagementTargetDto: {
+            /** @enum {string} */
+            type: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE" | "SHORTFORM" | "COMMUNITY_POST";
+            /**
+             * Format: uuid
+             * @description Product-domain entity ID
+             */
+            id: string;
+        };
         HomeVideoDto: {
             /** Format: uuid */
             id: string;
-            /** Format: uuid */
-            publicationId: string;
             title: string;
             description: string;
             /** @enum {string} */
             status: "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "UNLISTED" | "ARCHIVED" | "REMOVED";
             publishedAt: string;
             creator: components["schemas"]["CreatorSummaryDto"];
-            publication: components["schemas"]["FeedItemDto"];
+            media: components["schemas"]["MediaSummaryDto"];
+            playable: components["schemas"]["PlayableDto"];
+            engagementTarget: components["schemas"]["EngagementTargetDto"];
+            likeCount: number;
+            commentCount: number;
         };
         HomeVideoListDto: {
             items: components["schemas"]["HomeVideoDto"][];
@@ -676,12 +777,16 @@ export interface components {
         SeriesEpisodeDto: {
             /** Format: uuid */
             id: string;
+            /** Format: uuid */
+            seriesId: string;
             episodeNumber: number;
             seasonEpisodeNumber?: number | null;
             title: string;
             synopsis: string;
             publishedAt?: string | null;
-            publication: components["schemas"]["FeedItemDto"];
+            media?: components["schemas"]["MediaSummaryDto"] | null;
+            playable?: components["schemas"]["PlayableDto"] | null;
+            engagementTarget: components["schemas"]["EngagementTargetDto"];
         };
         SeriesDto: {
             /** Format: uuid */
@@ -697,6 +802,8 @@ export interface components {
             ageRating?: string | null;
             releaseDate?: string | null;
             creator: components["schemas"]["CreatorSummaryDto"];
+            singleWork?: components["schemas"]["PlayableDto"] | null;
+            engagementTarget: components["schemas"]["EngagementTargetDto"];
             episodes: components["schemas"]["SeriesEpisodeDto"][];
         };
         SeriesListDto: {
@@ -708,17 +815,11 @@ export interface components {
             /** Format: uuid */
             id: string;
             title: string;
-            /** Format: uuid */
-            publicationId?: Record<string, never> | null;
         };
         ShortformDto: {
             /** Format: uuid */
             id: string;
-            /**
-             * Format: uuid
-             * @description Compatibility engagement target
-             */
-            engagementTargetId: string;
+            engagementTarget: components["schemas"]["EngagementTargetDto"];
             /** @enum {string} */
             type: "VIDEO" | "IMAGE_CAROUSEL";
             title?: string | null;
@@ -751,11 +852,7 @@ export interface components {
         CommunityPostDto: {
             /** Format: uuid */
             id: string;
-            /**
-             * Format: uuid
-             * @description Compatibility engagement target
-             */
-            engagementTargetId: string;
+            engagementTarget: components["schemas"]["EngagementTargetDto"];
             /** @enum {string} */
             type: "TEXT" | "IMAGE" | "VIDEO" | "LINK";
             body: string;
@@ -1423,6 +1520,34 @@ export interface operations {
             };
         };
     };
+    SeriesController_findEpisode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episodeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesEpisodeDto"];
+                };
+            };
+            /** @description Episode is not published */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     SeriesController_findOne: {
         parameters: {
             query?: never;
@@ -1585,6 +1710,154 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CommunityCategoryListDto"];
                 };
+            };
+        };
+    };
+    EngagementController_like: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                targetType: string;
+                targetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EngagementController_unlike: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                targetType: string;
+                targetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EngagementController_save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                targetType: string;
+                targetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EngagementController_unsave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                targetType: string;
+                targetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EngagementController_listComments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                targetType: string;
+                targetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EngagementController_comment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                targetType: string;
+                targetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EngagementController_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                targetType: string;
+                targetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReportDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

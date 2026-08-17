@@ -37,7 +37,7 @@ export function HomeGrid({
       className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,19rem),1fr))] gap-x-4 gap-y-9"
     >
       {cards.map((card) => {
-        const media = card.video.publication.media[0];
+        const media = card.video.media;
         if (!media) return null;
         const title =
           card.kind === "collection" ? card.collection.title : card.video.title;
@@ -48,7 +48,7 @@ export function HomeGrid({
         return (
           <article key={`${card.kind}-${card.id}`} className="group min-w-0">
             <Link
-              href={`/watch/${card.video.id}`}
+              href={`/watch/home/${card.video.id}`}
               className="relative block aspect-video overflow-hidden rounded-xl bg-black"
             >
               <Image
@@ -76,7 +76,7 @@ export function HomeGrid({
               </div>
               <div className="min-w-0">
                 <Link
-                  href={`/watch/${card.video.id}`}
+                  href={`/watch/home/${card.video.id}`}
                   className="line-clamp-2 font-semibold leading-5 hover:underline"
                 >
                   {title}

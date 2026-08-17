@@ -22,13 +22,21 @@ test("a visitor opens a Home Single from the Home service", async ({
     .last();
   await expect(video).toBeVisible();
   await video.click();
-  await expect(page).toHaveURL(/\/watch\//);
+  await expect(page).toHaveURL(/\/watch\/home\//);
   await expect(page.getByText("HOME · SINGLE", { exact: true })).toBeVisible();
   await expect(
     page.getByText("Wind, volcanic roads, and one very long afternoon.", {
       exact: true,
     }),
   ).toBeVisible();
+});
+
+test("a SINGLE_WORK Series plays without a fake episode", async ({ page }) => {
+  await page.goto("/series/40000000-0000-4000-8000-000000000002");
+  await expect(page.getByText("SINGLE WORK", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "작품 재생" }).click();
+  await expect(page).toHaveURL(/\/watch\/series\//);
+  await expect(page.getByText("SERIES · SINGLE WORK")).toBeVisible();
 });
 
 test("Series is a separate primary service with episodic work detail", async ({
@@ -46,6 +54,12 @@ test("Series is a separate primary service with episodic work detail", async ({
   await expect(page.getByRole("heading", { name: "에피소드" })).toBeVisible();
   await expect(page.getByText("서울의 마지막 활판 인쇄공")).toBeVisible();
   await expect(page.getByText("흙이 그릇이 되는 시간")).toBeVisible();
+});
+
+test("Shortform episode promotion uses the product episode route", async ({ page }) => {
+  await page.goto("/shorts");
+  const link = page.getByRole("link", { name: "본편 보기 · 흙이 그릇이 되는 시간" });
+  await expect(link).toHaveAttribute("href", /\/watch\/episode\//);
 });
 
 test("Shortform renders video and a navigable image carousel from its explicit domain", async ({

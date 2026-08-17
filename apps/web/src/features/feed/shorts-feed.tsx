@@ -32,11 +32,11 @@ function ShortformSlide({ item }: { item: ShortformList["items"][number] }) {
   const isCarousel = item.type === "IMAGE_CAROUSEL";
   const promotionHref =
     item.promotedContent?.kind === "HOME_VIDEO"
-      ? `/watch/${item.promotedContent.id}`
+      ? `/watch/home/${item.promotedContent.id}`
       : item.promotedContent?.kind === "SERIES"
         ? `/series/${item.promotedContent.id}`
         : item.promotedContent?.kind === "SERIES_EPISODE"
-          ? `/watch/${item.promotedContent.publicationId}`
+          ? `/watch/episode/${item.promotedContent.id}`
           : null;
 
   return (

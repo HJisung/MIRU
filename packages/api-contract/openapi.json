@@ -812,6 +812,39 @@
         ]
       }
     },
+    "/api/v1/series/episodes/{episodeId}": {
+      "get": {
+        "operationId": "SeriesController_findEpisode",
+        "parameters": [
+          {
+            "name": "episodeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesEpisodeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Episode is not published"
+          }
+        },
+        "tags": [
+          "series"
+        ]
+      }
+    },
     "/api/v1/series/{seriesId}": {
       "get": {
         "operationId": "SeriesController_findOne",
@@ -1010,6 +1043,237 @@
         "summary": "List active Community Categories",
         "tags": [
           "community"
+        ]
+      }
+    },
+    "/api/v1/engagement/{targetType}/{targetId}/like": {
+      "put": {
+        "operationId": "EngagementController_like",
+        "parameters": [
+          {
+            "name": "targetType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "engagement"
+        ]
+      },
+      "delete": {
+        "operationId": "EngagementController_unlike",
+        "parameters": [
+          {
+            "name": "targetType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "engagement"
+        ]
+      }
+    },
+    "/api/v1/engagement/{targetType}/{targetId}/save": {
+      "put": {
+        "operationId": "EngagementController_save",
+        "parameters": [
+          {
+            "name": "targetType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "engagement"
+        ]
+      },
+      "delete": {
+        "operationId": "EngagementController_unsave",
+        "parameters": [
+          {
+            "name": "targetType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "engagement"
+        ]
+      }
+    },
+    "/api/v1/engagement/{targetType}/{targetId}/comments": {
+      "get": {
+        "operationId": "EngagementController_listComments",
+        "parameters": [
+          {
+            "name": "targetType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "engagement"
+        ]
+      },
+      "post": {
+        "operationId": "EngagementController_comment",
+        "parameters": [
+          {
+            "name": "targetType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "engagement"
+        ]
+      }
+    },
+    "/api/v1/engagement/{targetType}/{targetId}/reports": {
+      "post": {
+        "operationId": "EngagementController_report",
+        "parameters": [
+          {
+            "name": "targetType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "engagement"
         ]
       }
     }
@@ -1399,14 +1663,60 @@
           "caption"
         ]
       },
+      "PlayableDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "HOME_VIDEO",
+              "SERIES",
+              "SERIES_EPISODE"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Product-domain playable ID"
+          },
+          "media": {
+            "$ref": "#/components/schemas/MediaSummaryDto"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "media"
+        ]
+      },
+      "EngagementTargetDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "HOME_VIDEO",
+              "SERIES",
+              "SERIES_EPISODE",
+              "SHORTFORM",
+              "COMMUNITY_POST"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Product-domain entity ID"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ]
+      },
       "HomeVideoDto": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "publicationId": {
             "type": "string",
             "format": "uuid"
           },
@@ -1433,19 +1743,34 @@
           "creator": {
             "$ref": "#/components/schemas/CreatorSummaryDto"
           },
-          "publication": {
-            "$ref": "#/components/schemas/FeedItemDto"
+          "media": {
+            "$ref": "#/components/schemas/MediaSummaryDto"
+          },
+          "playable": {
+            "$ref": "#/components/schemas/PlayableDto"
+          },
+          "engagementTarget": {
+            "$ref": "#/components/schemas/EngagementTargetDto"
+          },
+          "likeCount": {
+            "type": "number"
+          },
+          "commentCount": {
+            "type": "number"
           }
         },
         "required": [
           "id",
-          "publicationId",
           "title",
           "description",
           "status",
           "publishedAt",
           "creator",
-          "publication"
+          "media",
+          "playable",
+          "engagementTarget",
+          "likeCount",
+          "commentCount"
         ]
       },
       "HomeVideoListDto": {
@@ -1533,6 +1858,10 @@
             "type": "string",
             "format": "uuid"
           },
+          "seriesId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "episodeNumber": {
             "type": "number"
           },
@@ -1550,16 +1879,33 @@
             "type": "string",
             "nullable": true
           },
-          "publication": {
-            "$ref": "#/components/schemas/FeedItemDto"
+          "media": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaSummaryDto"
+              }
+            ]
+          },
+          "playable": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlayableDto"
+              }
+            ]
+          },
+          "engagementTarget": {
+            "$ref": "#/components/schemas/EngagementTargetDto"
           }
         },
         "required": [
           "id",
+          "seriesId",
           "episodeNumber",
           "title",
           "synopsis",
-          "publication"
+          "engagementTarget"
         ]
       },
       "SeriesDto": {
@@ -1616,6 +1962,17 @@
           "creator": {
             "$ref": "#/components/schemas/CreatorSummaryDto"
           },
+          "singleWork": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlayableDto"
+              }
+            ]
+          },
+          "engagementTarget": {
+            "$ref": "#/components/schemas/EngagementTargetDto"
+          },
           "episodes": {
             "type": "array",
             "items": {
@@ -1632,6 +1989,7 @@
           "genres",
           "tags",
           "creator",
+          "engagementTarget",
           "episodes"
         ]
       },
@@ -1666,11 +2024,6 @@
           },
           "title": {
             "type": "string"
-          },
-          "publicationId": {
-            "type": "object",
-            "format": "uuid",
-            "nullable": true
           }
         },
         "required": [
@@ -1686,10 +2039,8 @@
             "type": "string",
             "format": "uuid"
           },
-          "engagementTargetId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Compatibility engagement target"
+          "engagementTarget": {
+            "$ref": "#/components/schemas/EngagementTargetDto"
           },
           "type": {
             "type": "string",
@@ -1739,7 +2090,7 @@
         },
         "required": [
           "id",
-          "engagementTargetId",
+          "engagementTarget",
           "type",
           "description",
           "publishedAt",
@@ -1814,10 +2165,8 @@
             "type": "string",
             "format": "uuid"
           },
-          "engagementTargetId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Compatibility engagement target"
+          "engagementTarget": {
+            "$ref": "#/components/schemas/EngagementTargetDto"
           },
           "type": {
             "type": "string",
@@ -1864,7 +2213,7 @@
         },
         "required": [
           "id",
-          "engagementTargetId",
+          "engagementTarget",
           "type",
           "body",
           "publishedAt",

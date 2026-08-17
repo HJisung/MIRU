@@ -1,9 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DomainPublicationStatus, SeriesWorkType } from '@stream/database';
-import { CreatorSummaryDto, FeedItemDto } from '../feed/feed.dto.js';
+import { EngagementTargetDto } from '../engagement/engagement.dto.js';
+import { CreatorSummaryDto, MediaSummaryDto } from '../feed/feed.dto.js';
+import { PlayableDto } from '../playback/playback.dto.js';
 
 export class SeriesEpisodeDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ format: 'uuid' }) seriesId!: string;
   @ApiProperty() episodeNumber!: number;
   @ApiPropertyOptional({ type: Number, nullable: true })
   seasonEpisodeNumber!: number | null;
@@ -11,7 +14,12 @@ export class SeriesEpisodeDto {
   @ApiProperty() synopsis!: string;
   @ApiPropertyOptional({ type: String, nullable: true })
   publishedAt!: string | null;
-  @ApiProperty({ type: FeedItemDto }) publication!: FeedItemDto;
+  @ApiPropertyOptional({ type: MediaSummaryDto, nullable: true })
+  media!: MediaSummaryDto | null;
+  @ApiPropertyOptional({ type: PlayableDto, nullable: true })
+  playable!: PlayableDto | null;
+  @ApiProperty({ type: EngagementTargetDto })
+  engagementTarget!: EngagementTargetDto;
 }
 
 export class SeriesDto {
@@ -28,6 +36,10 @@ export class SeriesDto {
   @ApiPropertyOptional({ type: String, nullable: true })
   releaseDate!: string | null;
   @ApiProperty({ type: CreatorSummaryDto }) creator!: CreatorSummaryDto;
+  @ApiPropertyOptional({ type: PlayableDto, nullable: true })
+  singleWork!: PlayableDto | null;
+  @ApiProperty({ type: EngagementTargetDto })
+  engagementTarget!: EngagementTargetDto;
   @ApiProperty({ type: [SeriesEpisodeDto] }) episodes!: SeriesEpisodeDto[];
 }
 

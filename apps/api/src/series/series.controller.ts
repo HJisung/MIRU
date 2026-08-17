@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { SeriesDto, SeriesListDto } from './series.dto.js';
+import { SeriesDto, SeriesEpisodeDto, SeriesListDto } from './series.dto.js';
 import { SeriesService } from './series.service.js';
 
 @ApiTags('series')
@@ -12,6 +12,13 @@ export class SeriesController {
   @ApiOkResponse({ type: SeriesListDto })
   list() {
     return this.series.list();
+  }
+
+  @Get('episodes/:episodeId')
+  @ApiOkResponse({ type: SeriesEpisodeDto })
+  @ApiNotFoundResponse({ description: 'Episode is not published' })
+  findEpisode(@Param('episodeId', new ParseUUIDPipe()) episodeId: string) {
+    return this.series.findEpisode(episodeId);
   }
 
   @Get(':seriesId')

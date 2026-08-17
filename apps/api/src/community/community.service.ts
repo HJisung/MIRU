@@ -69,7 +69,7 @@ export class CommunityService {
       );
     return {
       id: record.id,
-      engagementTargetId: record.publicationId,
+      engagementTarget: { type: 'COMMUNITY_POST' as const, id: record.id },
       type: record.type,
       body: record.body,
       linkUrl: record.linkUrl,

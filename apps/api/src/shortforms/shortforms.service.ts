@@ -13,9 +13,9 @@ const include = {
     orderBy: { position: 'asc' as const },
     include: { asset: true },
   },
-  promotedHomeVideo: { select: { id: true, title: true, publicationId: true } },
+  promotedHomeVideo: { select: { id: true, title: true } },
   promotedSeries: { select: { id: true, title: true } },
-  promotedEpisode: { select: { id: true, title: true, publicationId: true } },
+  promotedEpisode: { select: { id: true, title: true } },
 } as const;
 
 type ShortformRecord = Prisma.ShortFormGetPayload<{ include: typeof include }>;
@@ -57,7 +57,7 @@ export class ShortformsService {
       throw new Error(`Published Shortform ${record.id} has no publishedAt`);
     return {
       id: record.id,
-      engagementTargetId: record.publicationId,
+      engagementTarget: { type: 'SHORTFORM' as const, id: record.id },
       type: record.type,
       title: record.title,
       description: record.description,
@@ -89,11 +89,7 @@ export class ShortformsService {
       promotedContent: record.promotedHomeVideo
         ? { kind: 'HOME_VIDEO' as const, ...record.promotedHomeVideo }
         : record.promotedSeries
-          ? {
-              kind: 'SERIES' as const,
-              ...record.promotedSeries,
-              publicationId: null,
-            }
+          ? { kind: 'SERIES' as const, ...record.promotedSeries }
           : record.promotedEpisode
             ? { kind: 'SERIES_EPISODE' as const, ...record.promotedEpisode }
             : null,

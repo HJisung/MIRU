@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bookmark,
   ChevronDown,
   Clapperboard,
   FileText,
@@ -17,7 +16,6 @@ import {
   Search,
   Sun,
   Upload,
-  Users,
   X,
 } from "lucide-react";
 import { BrandMark } from "./brand-mark";
@@ -41,18 +39,6 @@ const navigation = [
     description: "사진과 이야기",
     href: "/posts",
     icon: FileText,
-  },
-  {
-    label: "팔로잉",
-    description: "구독한 채널",
-    href: "/following",
-    icon: Users,
-  },
-  {
-    label: "보관함",
-    description: "저장한 콘텐츠",
-    href: "/saved",
-    icon: Bookmark,
   },
 ] as const;
 

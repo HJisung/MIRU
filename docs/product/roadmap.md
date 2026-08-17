@@ -27,8 +27,8 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
 
 ## Next
 
-- Migrate shared engagement and moderation from compatibility publication IDs
-  to an explicit domain-target boundary
+- Move engagement persistence behind the now domain-aware target API from
+  compatibility publication foreign keys to native target storage
 - Add authenticated Shortform creation and Community TEXT/VIDEO/LINK authoring
 - Nested comments, notifications, richer creator tools
 - Search, hashtags/topics, captions/subtitles

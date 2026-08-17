@@ -7,5 +7,6 @@ import { CommentsService } from './comments.service.js';
   imports: [AuthModule],
   controllers: [CommentsController],
   providers: [CommentsService],
+  exports: [CommentsService],
 })
 export class CommentsModule {}
