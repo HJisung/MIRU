@@ -169,14 +169,14 @@ export class MediaService {
 
   async retryProcessing(user: AuthUser, assetId: string) {
     this.assertOperator(user);
-    const changed = await this.database.client.mediaAsset.updateMany({
+    const asset = await this.database.client.mediaAsset.findFirst({
       where: { id: assetId, kind: MediaKind.VIDEO, status: MediaStatus.FAILED },
-      data: { status: MediaStatus.UPLOADED },
+      select: { id: true },
     });
-    if (!changed.count)
+    if (!asset)
       throw new BadRequestException('Only FAILED video assets can be retried');
-    await this.videoQueue.enqueue(assetId);
-    return this.processingOperation(user, assetId);
+    await this.videoQueue.enqueue(asset.id);
+    return this.processingOperation(user, asset.id);
   }
 
   async derivedContent(assetId: string, file: string) {

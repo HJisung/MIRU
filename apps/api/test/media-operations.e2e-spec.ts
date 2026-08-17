@@ -9,9 +9,10 @@ import {
 import { MediaKind, MediaPurpose, MediaStatus } from '@stream/database';
 import { VIDEO_PIPELINE_VERSION, VIDEO_PROCESSING_QUEUE } from '@stream/media';
 import { Queue } from 'bullmq';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../src/app.module.js';
 import { DatabaseService } from '../src/database/database.service.js';
+import { VideoQueueService } from '../src/media/video-queue.service.js';
 
 describe('video processing operations', () => {
   let app: NestFastifyApplication;
@@ -129,6 +130,28 @@ describe('video processing operations', () => {
     expect(counts.json()).toHaveProperty('waiting');
   });
 
+  it('keeps a failed asset retryable when queue enqueue fails', async () => {
+    const queue = app.get(VideoQueueService);
+    const enqueue = vi
+      .spyOn(queue, 'enqueue')
+      .mockRejectedValueOnce(new Error('Redis unavailable'));
+    const retry = await app.inject({
+      method: 'POST',
+      url: `/api/v1/media/operations/video-assets/${assetId}/retry`,
+      headers: { cookie: adminCookie },
+    });
+    enqueue.mockRestore();
+
+    expect(retry.statusCode).toBe(500);
+    expect(
+      (
+        await database.client.mediaAsset.findUniqueOrThrow({
+          where: { id: assetId },
+        })
+      ).status,
+    ).toBe(MediaStatus.FAILED);
+  });
+
   it('retries the same failed MediaAsset with deterministic job identity', async () => {
     const before = await database.client.mediaAsset.count({
       where: { ownerId: memberId },
@@ -148,30 +171,11 @@ describe('video processing operations', () => {
       where: { id: assetId },
     });
     expect(sameAsset.id).toBe(assetId);
-    expect([MediaStatus.UPLOADED, MediaStatus.PROCESSING]).toContain(
+    expect([MediaStatus.FAILED, MediaStatus.PROCESSING]).toContain(
       sameAsset.status,
     );
     expect(retry.json<{ jobState: string }>().jobState).toMatch(
       /waiting|active|delayed/,
     );
-    let status: MediaStatus = MediaStatus.UPLOADED;
-    for (let attempt = 0; attempt < 300; attempt += 1) {
-      status = (
-        await database.client.mediaAsset.findUniqueOrThrow({
-          where: { id: assetId },
-        })
-      ).status;
-      if (status === MediaStatus.FAILED) break;
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    expect(status).toBe(MediaStatus.FAILED);
-    const inspected = await app.inject({
-      method: 'GET',
-      url: `/api/v1/media/operations/video-assets/${assetId}`,
-      headers: { cookie: adminCookie },
-    });
-    expect(
-      inspected.json<{ failureCode: string | null }>().failureCode,
-    ).toBeTruthy();
-  }, 40_000);
+  });
 });

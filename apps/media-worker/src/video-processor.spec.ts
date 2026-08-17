@@ -28,7 +28,7 @@ function harness(source: string, output: string) {
     ownerId: "10000000-0000-4000-8000-000000000001",
     kind: MediaKind.VIDEO,
     purpose: MediaPurpose.LONG_VIDEO,
-    status: MediaStatus.UPLOADED,
+    status: MediaStatus.UPLOADED as MediaStatus,
     sourceKey: "source",
     publicUrl: null,
     mimeType: "video/mp4",
@@ -48,12 +48,15 @@ function harness(source: string, output: string) {
   };
   let uploads = 0;
   let clears = 0;
+  const statuses: MediaStatus[] = [];
   const artifacts = new Map<string, Buffer>();
   const database = {
     mediaAsset: {
       findUnique: async () => asset,
-      update: async ({ data }: { data: Record<string, unknown> }) =>
-        Object.assign(asset, data),
+      update: async ({ data }: { data: Record<string, unknown> }) => {
+        if (data.status) statuses.push(data.status as MediaStatus);
+        return Object.assign(asset, data);
+      },
     },
   } as unknown as DatabaseClient;
   const storage = {
@@ -74,6 +77,7 @@ function harness(source: string, output: string) {
     storage,
     uploads: () => uploads,
     clears: () => clears,
+    statuses: () => statuses,
     artifacts,
   };
 }
@@ -159,10 +163,15 @@ describe("real video processor", () => {
     const source = join(dir, "invalid.mp4");
     await writeFile(source, "not a video");
     const test = harness(source, dir);
+    test.asset.status = MediaStatus.FAILED;
     await expect(
       processVideo(test.database, test.storage, test.asset.id),
     ).rejects.toThrow();
     expect(test.asset.status).toBe(MediaStatus.FAILED);
+    expect(test.statuses()).toEqual([
+      MediaStatus.PROCESSING,
+      MediaStatus.FAILED,
+    ]);
     expect(test.asset.failureCode).toBeTruthy();
     expect(test.clears()).toBe(1);
     await expect(
