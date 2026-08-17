@@ -109,17 +109,18 @@ Status: implemented for the synchronous image MVP path. Normalized renditions an
 
 ## Slice 4: Short and long video
 
-Status: shared single-rendition pipeline implemented for Home, Series
+Status: shared source-bounded adaptive pipeline implemented for Home, Series
 SINGLE_WORK, Series Episode, and Shortform VIDEO.
 
-- Direct video upload, real ffprobe validation, poster and single-rendition HLS
+- Direct video upload, real ffprobe validation, poster and 360p/720p/1080p
+  source-bounded adaptive HLS
 - Resource-bounded FFmpeg worker with deterministic job/output identity and retries
 - Accessible HLS player for processed Home Singles
 - Bounded recoverable processing polling, deterministic derived cleanup, and a
   real API → MinIO → BullMQ → worker → FFmpeg → HLS integration test
 - Recoverable product workflow checkpoints prevent duplicate drafts after a
   create response succeeds but a later publish or navigation step fails
-- Full ABR ladder and dead-letter administration remain pending
+- Database-enforced exclusive playback claims and ADMIN queue diagnostics/retry
 
 ## Slice 5: Social and engagement
 

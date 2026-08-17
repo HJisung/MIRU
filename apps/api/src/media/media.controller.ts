@@ -19,6 +19,8 @@ import {
   CreateVideoUploadDto,
   MediaAssetStatusDto,
   UploadSessionDto,
+  VideoProcessingOperationDto,
+  VideoQueueCountsDto,
 } from './media.dto.js';
 import { MediaService } from './media.service.js';
 
@@ -67,6 +69,34 @@ export class MediaController {
     return this.media.status(user.id, assetId);
   }
 
+  @Get('operations/video-queue')
+  @UseGuards(SessionGuard)
+  @ApiOkResponse({ type: VideoQueueCountsDto })
+  queueOperations(@CurrentUser() user: AuthUser) {
+    return this.media.queueOperations(user);
+  }
+
+  @Get('operations/video-assets/:assetId')
+  @UseGuards(SessionGuard)
+  @ApiOkResponse({ type: VideoProcessingOperationDto })
+  processingOperation(
+    @CurrentUser() user: AuthUser,
+    @Param('assetId', new ParseUUIDPipe()) assetId: string,
+  ) {
+    return this.media.processingOperation(user, assetId);
+  }
+
+  @Post('operations/video-assets/:assetId/retry')
+  @UseGuards(SessionGuard)
+  @HttpCode(200)
+  @ApiOkResponse({ type: VideoProcessingOperationDto })
+  retryProcessing(
+    @CurrentUser() user: AuthUser,
+    @Param('assetId', new ParseUUIDPipe()) assetId: string,
+  ) {
+    return this.media.retryProcessing(user, assetId);
+  }
+
   @Get('assets/:assetId/hls/:file')
   async hls(
     @Param('assetId', new ParseUUIDPipe()) assetId: string,
@@ -82,7 +112,36 @@ export class MediaController {
           ? 'video/mp2t'
           : 'image/jpeg',
     );
-    reply.header('Cache-Control', 'public, max-age=3600');
+    reply.header(
+      'Cache-Control',
+      file.endsWith('.m3u8')
+        ? 'public, max-age=30'
+        : 'public, max-age=31536000, immutable',
+    );
+    return reply.send(object.Body);
+  }
+
+  @Get('assets/:assetId/hls/:rendition/:file')
+  async hlsVariant(
+    @Param('assetId', new ParseUUIDPipe()) assetId: string,
+    @Param('rendition') rendition: string,
+    @Param('file') file: string,
+    @Res() reply: FastifyReply,
+  ) {
+    const object = await this.media.derivedContent(
+      assetId,
+      `${rendition}/${file}`,
+    );
+    reply.header(
+      'Content-Type',
+      file.endsWith('.m3u8') ? 'application/vnd.apple.mpegurl' : 'video/mp2t',
+    );
+    reply.header(
+      'Cache-Control',
+      file.endsWith('.m3u8')
+        ? 'public, max-age=30'
+        : 'public, max-age=31536000, immutable',
+    );
     return reply.send(object.Body);
   }
 

@@ -50,6 +50,34 @@ export class VideoQueueService implements OnModuleDestroy {
     );
   }
 
+  async counts() {
+    this.used = true;
+    return this.queue.getJobCounts(
+      'waiting',
+      'active',
+      'completed',
+      'failed',
+      'delayed',
+      'waiting-children',
+    );
+  }
+
+  async job(assetId: string) {
+    this.used = true;
+    const job = await this.queue.getJob(
+      `${assetId}-v${VIDEO_PIPELINE_VERSION}`,
+    );
+    if (!job) return null;
+    return {
+      id: job.id ?? null,
+      state: await job.getState(),
+      attemptsMade: job.attemptsMade,
+      failedReason: job.failedReason || null,
+      processedOn: job.processedOn ? new Date(job.processedOn) : null,
+      finishedOn: job.finishedOn ? new Date(job.finishedOn) : null,
+    };
+  }
+
   async onModuleDestroy() {
     if (this.used) await this.queue.close();
     else await this.queue.disconnect();

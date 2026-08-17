@@ -8,6 +8,7 @@ import {
   PostVisibility,
 } from '@stream/database';
 import { DatabaseService } from '../database/database.service.js';
+import { MediaAttachmentService } from '../media/media-attachment.service.js';
 import { toPlayableMedia } from '../playback/playback.mapper.js';
 import type { HomeVideoDto } from './home.dto.js';
 import type { CreateHomeVideoDto } from './home.dto.js';
@@ -29,6 +30,8 @@ const homeInclude = {
 export class HomeService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(MediaAttachmentService)
+    private readonly mediaAttachments: MediaAttachmentService,
   ) {}
 
   async list(): Promise<{ items: HomeVideoDto[] }> {
@@ -56,41 +59,37 @@ export class HomeService {
         assetId: existing.videoAssetId!,
       };
     }
-    const asset = await this.database.client.mediaAsset.findFirst({
-      where: {
-        id: input.assetId,
-        ownerId: userId,
-        kind: 'VIDEO',
-        purpose: MediaPurpose.LONG_VIDEO,
-        status: {
-          in: [MediaStatus.UPLOADED, MediaStatus.PROCESSING, MediaStatus.READY],
-        },
-        homeVideos: { none: {} },
-      },
-    });
-    if (!asset)
-      throw new NotFoundException('Processable unlinked video asset not found');
-    const created = await this.database.client.post.create({
-      data: {
-        authorId: userId,
-        format: PostFormat.LONG_VIDEO,
-        status: PostStatus.DRAFT,
-        visibility: PostVisibility.PUBLIC,
-        title: input.title.trim(),
-        caption: input.description.trim(),
-        media: { create: { assetId: asset.id, order: 0 } },
-        homeVideo: {
-          create: {
-            creatorId: userId,
-            videoAssetId: asset.id,
-            title: input.title.trim(),
-            description: input.description.trim(),
+    const created = await this.database.client.$transaction(async (tx) => {
+      const asset = await this.mediaAttachments.claimOwnedVideo(
+        tx,
+        userId,
+        input.assetId,
+        MediaPurpose.LONG_VIDEO,
+        [MediaStatus.UPLOADED, MediaStatus.PROCESSING, MediaStatus.READY],
+        'HOME_VIDEO',
+      );
+      return tx.post.create({
+        data: {
+          authorId: userId,
+          format: PostFormat.LONG_VIDEO,
+          status: PostStatus.DRAFT,
+          visibility: PostVisibility.PUBLIC,
+          title: input.title.trim(),
+          caption: input.description.trim(),
+          media: { create: { assetId: asset.id, order: 0 } },
+          homeVideo: {
+            create: {
+              creatorId: userId,
+              videoAssetId: asset.id,
+              title: input.title.trim(),
+              description: input.description.trim(),
+            },
           },
         },
-      },
-      select: {
-        homeVideo: { select: { id: true, status: true, videoAssetId: true } },
-      },
+        select: {
+          homeVideo: { select: { id: true, status: true, videoAssetId: true } },
+        },
+      });
     });
     if (!created.homeVideo) throw new Error('Home video creation failed');
     return {

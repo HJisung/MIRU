@@ -48,6 +48,7 @@ function harness(source: string, output: string) {
   };
   let uploads = 0;
   let clears = 0;
+  const artifacts = new Map<string, Buffer>();
   const database = {
     mediaAsset: {
       findUnique: async () => asset,
@@ -60,6 +61,7 @@ function harness(source: string, output: string) {
       copyFile(source, destination),
     upload: async (key: string, file: string) => {
       uploads += 1;
+      artifacts.set(key, await readFile(file));
       await copyFile(file, join(output, key.replaceAll("/", "-")));
     },
     clearPrefix: async () => {
@@ -72,49 +74,84 @@ function harness(source: string, output: string) {
     storage,
     uploads: () => uploads,
     clears: () => clears,
+    artifacts,
   };
 }
 
 describe("real video processor", () => {
-  it("creates HLS and poster with real FFmpeg and is idempotent once READY", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "miru-worker-test-"));
-    temporary.push(dir);
-    const source = join(dir, "fixture.mp4");
-    await runProcess(
-      "ffmpeg",
-      [
-        "-nostdin",
-        "-y",
-        "-f",
-        "lavfi",
-        "-i",
-        "testsrc=size=320x180:rate=24",
-        "-f",
-        "lavfi",
-        "-i",
-        "sine=frequency=1000",
-        "-t",
-        "1.5",
-        "-c:v",
-        "libx264",
-        "-pix_fmt",
-        "yuv420p",
-        "-c:a",
-        "aac",
-        source,
-      ],
-      60_000,
-    );
-    const test = harness(source, dir);
-    await processVideo(test.database, test.storage, test.asset.id);
-    expect(test.asset.status).toBe(MediaStatus.READY);
-    expect(test.asset.hlsManifestKey).toMatch(/index\.m3u8$/);
-    expect(test.asset.posterKey).toMatch(/poster\.jpg$/);
-    expect(test.clears()).toBe(1);
-    const uploaded = test.uploads();
-    await processVideo(test.database, test.storage, test.asset.id);
-    expect(test.uploads()).toBe(uploaded);
-  }, 120_000);
+  it.each([
+    { size: "1920x1080", expected: ["360p", "720p", "1080p"] },
+    { size: "1280x720", expected: ["360p", "720p"] },
+    { size: "320x180", expected: ["180p"] },
+  ])(
+    "creates source-bounded aligned ABR for $size",
+    async ({ size, expected }) => {
+      const dir = await mkdtemp(join(tmpdir(), "miru-worker-test-"));
+      temporary.push(dir);
+      const source = join(dir, "fixture.mp4");
+      await runProcess(
+        "ffmpeg",
+        [
+          "-nostdin",
+          "-y",
+          "-f",
+          "lavfi",
+          "-i",
+          `testsrc=size=${size}:rate=24`,
+          "-f",
+          "lavfi",
+          "-i",
+          "sine=frequency=1000",
+          "-t",
+          "0.8",
+          "-c:v",
+          "libx264",
+          "-pix_fmt",
+          "yuv420p",
+          "-c:a",
+          "aac",
+          source,
+        ],
+        60_000,
+      );
+      const test = harness(source, dir);
+      await processVideo(test.database, test.storage, test.asset.id, {
+        ffmpegThreads: 1,
+      });
+      expect(test.asset.status).toBe(MediaStatus.READY);
+      expect(test.asset.hlsManifestKey).toMatch(/master\.m3u8$/);
+      expect(test.asset.posterKey).toMatch(/poster\.jpg$/);
+      const manifest = [...test.artifacts.entries()].find(([key]) =>
+        key.endsWith("master.m3u8"),
+      )?.[1];
+      expect(manifest).toBeDefined();
+      const text = manifest!.toString("utf8");
+      const variants = text
+        .split("\n")
+        .filter((line) => line && !line.startsWith("#"));
+      expect(variants).toEqual(expected.map((name) => `${name}/index.m3u8`));
+      expect(text).toContain('CODECS="');
+      for (const name of expected) {
+        expect(text).toMatch(new RegExp("BANDWIDTH=\\d+"));
+        expect(text).toContain("RESOLUTION=");
+        expect(
+          [...test.artifacts.keys()].some((key) =>
+            key.endsWith(`${name}/index.m3u8`),
+          ),
+        ).toBe(true);
+        expect(
+          [...test.artifacts.keys()].some((key) =>
+            key.includes(`${name}/segment-`),
+          ),
+        ).toBe(true);
+      }
+      expect(test.clears()).toBe(1);
+      const uploaded = test.uploads();
+      await processVideo(test.database, test.storage, test.asset.id);
+      expect(test.uploads()).toBe(uploaded);
+    },
+    120_000,
+  );
 
   it("marks an invalid source FAILED with a durable reason", async () => {
     const dir = await mkdtemp(join(tmpdir(), "miru-worker-fail-"));

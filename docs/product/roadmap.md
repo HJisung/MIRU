@@ -27,7 +27,8 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
 
 ## Next
 
-- Expand the shared single-rendition pipeline into an ABR ladder
+- Add media lifecycle retention, stale-v1 reprocessing tools, and dead-letter
+  administration around the adaptive HLS pipeline
 - Move engagement persistence behind the now domain-aware target API from
   compatibility publication foreign keys to native target storage
 - Add Community TEXT/VIDEO/LINK authoring and richer Series creator review UI

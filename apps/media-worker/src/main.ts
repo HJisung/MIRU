@@ -2,6 +2,8 @@ import { createDatabaseClient } from "@stream/database";
 import {
   VIDEO_PROCESSING_QUEUE,
   VIDEO_PROCESS_JOB,
+  VIDEO_PIPELINE_VERSION,
+  videoProcessingDefaults,
   type ProcessVideoJob,
 } from "@stream/media";
 import { Worker } from "bullmq";
@@ -19,9 +21,23 @@ const worker = new Worker<ProcessVideoJob>(
   VIDEO_PROCESSING_QUEUE,
   async (job) => {
     if (job.name !== VIDEO_PROCESS_JOB) throw new Error("UNKNOWN_MEDIA_JOB");
+    if (job.data.pipelineVersion !== VIDEO_PIPELINE_VERSION)
+      throw new Error("STALE_VIDEO_PIPELINE_JOB");
     const attempts = job.opts.attempts ?? 1;
     await processVideo(database, storage, job.data.assetId, {
       finalAttempt: job.attemptsMade + 1 >= attempts,
+      ffmpegTimeoutMs: integer(
+        "FFMPEG_TIMEOUT_MS",
+        videoProcessingDefaults.ffmpegTimeoutMs,
+      ),
+      ffmpegThreads: integer(
+        "FFMPEG_THREADS",
+        videoProcessingDefaults.ffmpegThreads,
+      ),
+      maxRenditionHeight: integer(
+        "VIDEO_MAX_RENDITION_HEIGHT",
+        videoProcessingDefaults.maxRenditionHeight,
+      ),
     });
   },
   {
@@ -31,7 +47,10 @@ const worker = new Worker<ProcessVideoJob>(
       username: redis.username || undefined,
       password: redis.password || undefined,
     },
-    concurrency: 1,
+    concurrency: integer(
+      "VIDEO_WORKER_CONCURRENCY",
+      videoProcessingDefaults.workerConcurrency,
+    ),
     lockDuration: 30 * 60_000,
   },
 );
@@ -59,5 +78,12 @@ process.on("SIGTERM", () => void shutdown());
 function required(name: string) {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is required`);
+  return value;
+}
+
+function integer(name: string, fallback: number) {
+  const value = Number(process.env[name] ?? fallback);
+  if (!Number.isInteger(value) || value <= 0)
+    throw new Error(`${name} invalid`);
   return value;
 }

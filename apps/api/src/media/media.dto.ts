@@ -51,3 +51,23 @@ export class MediaAssetStatusDto {
   @ApiProperty({ nullable: true }) playbackUrl!: string | null;
   @ApiProperty({ nullable: true }) posterUrl!: string | null;
 }
+
+export class VideoQueueCountsDto {
+  @ApiProperty() waiting!: number;
+  @ApiProperty() active!: number;
+  @ApiProperty() completed!: number;
+  @ApiProperty() failed!: number;
+  @ApiProperty() delayed!: number;
+  @ApiProperty() waitingChildren!: number;
+}
+
+export class VideoProcessingOperationDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ enum: MediaStatus }) status!: MediaStatus;
+  @ApiProperty() pipelineVersion!: number;
+  @ApiProperty({ nullable: true }) failureCode!: string | null;
+  @ApiProperty({ nullable: true }) failureMessage!: string | null;
+  @ApiProperty({ nullable: true }) processedAt!: string | null;
+  @ApiProperty({ nullable: true }) jobState!: string | null;
+  @ApiProperty() attemptsMade!: number;
+}

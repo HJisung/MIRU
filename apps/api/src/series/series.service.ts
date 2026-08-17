@@ -87,13 +87,15 @@ export class SeriesService {
         status: series.publicationStatus,
       };
     }
-    await this.mediaAttachments.readyUnlinkedOwnedVideo(
-      user.id,
-      assetId,
-      MediaPurpose.LONG_VIDEO,
-    );
-
     await this.database.client.$transaction(async (tx) => {
+      await this.mediaAttachments.claimOwnedVideo(
+        tx,
+        user.id,
+        assetId,
+        MediaPurpose.LONG_VIDEO,
+        [MediaStatus.READY],
+        'SERIES_SINGLE',
+      );
       let publicationId = series.singleWorkPublicationId;
       if (!publicationId) {
         const publication = await tx.post.create({
@@ -157,11 +159,6 @@ export class SeriesService {
           : DomainPublicationStatus.DRAFT,
       };
     }
-    await this.mediaAttachments.readyUnlinkedOwnedVideo(
-      user.id,
-      input.assetId,
-      MediaPurpose.LONG_VIDEO,
-    );
     if (input.seasonId) {
       const season = await this.database.client.seriesSeason.findFirst({
         where: { id: input.seasonId, seriesId },
@@ -169,28 +166,38 @@ export class SeriesService {
       if (!season)
         throw new BadRequestException('Season does not belong to Series');
     }
-    const episode = await this.database.client.post.create({
-      data: {
-        authorId: user.id,
-        format: PostFormat.LONG_VIDEO,
-        status: PostStatus.DRAFT,
-        visibility: PostVisibility.PUBLIC,
-        title: input.title.trim(),
-        caption: input.synopsis.trim(),
-        media: { create: { assetId: input.assetId, order: 0 } },
-        seriesEpisode: {
-          create: {
-            seriesId,
-            seasonId: input.seasonId,
-            videoAssetId: input.assetId,
-            episodeNumber: input.episodeNumber,
-            seasonEpisodeNumber: input.seasonEpisodeNumber,
-            title: input.title.trim(),
-            synopsis: input.synopsis.trim(),
+    const episode = await this.database.client.$transaction(async (tx) => {
+      await this.mediaAttachments.claimOwnedVideo(
+        tx,
+        user.id,
+        input.assetId,
+        MediaPurpose.LONG_VIDEO,
+        [MediaStatus.READY],
+        'SERIES_EPISODE',
+      );
+      return tx.post.create({
+        data: {
+          authorId: user.id,
+          format: PostFormat.LONG_VIDEO,
+          status: PostStatus.DRAFT,
+          visibility: PostVisibility.PUBLIC,
+          title: input.title.trim(),
+          caption: input.synopsis.trim(),
+          media: { create: { assetId: input.assetId, order: 0 } },
+          seriesEpisode: {
+            create: {
+              seriesId,
+              seasonId: input.seasonId,
+              videoAssetId: input.assetId,
+              episodeNumber: input.episodeNumber,
+              seasonEpisodeNumber: input.seasonEpisodeNumber,
+              title: input.title.trim(),
+              synopsis: input.synopsis.trim(),
+            },
           },
         },
-      },
-      select: { seriesEpisode: { select: { id: true, videoAssetId: true } } },
+        select: { seriesEpisode: { select: { id: true, videoAssetId: true } } },
+      });
     });
     if (!episode.seriesEpisode) throw new Error('Episode creation failed');
     return {

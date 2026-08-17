@@ -1,7 +1,12 @@
 import type { DatabaseClient } from "@stream/database";
 import { MediaKind, MediaStatus } from "@stream/database";
-import { VIDEO_PIPELINE_VERSION, videoUploadPolicy } from "@stream/media";
-import { mkdtemp, readdir, rm } from "node:fs/promises";
+import {
+  VIDEO_PIPELINE_VERSION,
+  selectVideoRenditions,
+  videoProcessingDefaults,
+  videoUploadPolicy,
+} from "@stream/media";
+import { mkdir, mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runProcess } from "./process-runner.js";
@@ -21,7 +26,12 @@ export async function processVideo(
   database: DatabaseClient,
   storage: WorkerStorage,
   assetId: string,
-  options: { finalAttempt?: boolean } = {},
+  options: {
+    finalAttempt?: boolean;
+    ffmpegTimeoutMs?: number;
+    ffmpegThreads?: number;
+    maxRenditionHeight?: number;
+  } = {},
 ) {
   const asset = await database.mediaAsset.findUnique({
     where: { id: assetId },
@@ -52,7 +62,6 @@ export async function processVideo(
 
   const workDir = await mkdtemp(join(tmpdir(), `miru-${assetId}-`));
   const source = join(workDir, "source");
-  const manifest = join(workDir, "index.m3u8");
   const poster = join(workDir, "poster.jpg");
   try {
     await storage.download(asset.sourceKey, source);
@@ -98,6 +107,52 @@ export async function processVideo(
     )
       throw new Error("VIDEO_RESOLUTION_NOT_ALLOWED");
 
+    const renditions = selectVideoRenditions(
+      video.width,
+      video.height,
+      options.maxRenditionHeight ??
+        envInteger(
+          "VIDEO_MAX_RENDITION_HEIGHT",
+          videoProcessingDefaults.maxRenditionHeight,
+        ),
+    );
+    await Promise.all(
+      renditions.map(({ name }) =>
+        mkdir(join(workDir, name), { recursive: true }),
+      ),
+    );
+    const hasAudio = probe.streams?.some(
+      (stream) => stream.codec_type === "audio",
+    );
+    const split = renditions.map((_, index) => `[split${index}]`).join("");
+    const filters = [
+      `[0:v:0]split=${renditions.length}${split}`,
+      ...renditions.map(
+        (rendition, index) =>
+          `[split${index}]scale=w=${rendition.width}:h=${rendition.height}[v${index}]`,
+      ),
+    ].join(";");
+    const maps = renditions.flatMap((_, index) => [
+      "-map",
+      `[v${index}]`,
+      ...(hasAudio ? ["-map", "0:a:0"] : []),
+    ]);
+    const rates = renditions.flatMap((rendition, index) => [
+      `-b:v:${index}`,
+      `${rendition.videoBitrateKbps}k`,
+      `-maxrate:v:${index}`,
+      `${Math.round(rendition.videoBitrateKbps * 1.07)}k`,
+      `-bufsize:v:${index}`,
+      `${rendition.videoBitrateKbps * 2}k`,
+      ...(hasAudio ? [`-b:a:${index}`, `${rendition.audioBitrateKbps}k`] : []),
+    ]);
+    const streamMap = renditions
+      .map((rendition, index) =>
+        hasAudio
+          ? `v:${index},a:${index},name:${rendition.name}`
+          : `v:${index},name:${rendition.name}`,
+      )
+      .join(" ");
     await runProcess(
       process.env.FFMPEG_PATH ?? "ffmpeg",
       [
@@ -105,31 +160,45 @@ export async function processVideo(
         "-y",
         "-i",
         source,
-        "-map",
-        "0:v:0",
-        "-map",
-        "0:a:0?",
-        "-vf",
-        "scale='min(1280,iw)':-2",
+        "-filter_complex",
+        filters,
+        ...maps,
         "-c:v",
         "libx264",
         "-preset",
         "veryfast",
-        "-crf",
-        "23",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "128k",
+        "-pix_fmt",
+        "yuv420p",
+        "-threads",
+        String(
+          options.ffmpegThreads ??
+            envInteger("FFMPEG_THREADS", videoProcessingDefaults.ffmpegThreads),
+        ),
+        ...rates,
+        ...(hasAudio ? ["-c:a", "aac"] : []),
+        "-force_key_frames",
+        `expr:gte(t,n_forced*${videoProcessingDefaults.segmentSeconds})`,
+        "-sc_threshold",
+        "0",
         "-hls_time",
-        "6",
+        String(videoProcessingDefaults.segmentSeconds),
         "-hls_playlist_type",
         "vod",
+        "-hls_flags",
+        "independent_segments",
+        "-master_pl_name",
+        "master.m3u8",
+        "-var_stream_map",
+        streamMap,
         "-hls_segment_filename",
-        join(workDir, "segment-%05d.ts"),
-        manifest,
+        ffmpegPath(workDir, "%v", "segment-%05d.ts"),
+        ffmpegPath(workDir, "%v", "index.m3u8"),
       ],
-      30 * 60_000,
+      options.ffmpegTimeoutMs ??
+        envInteger(
+          "FFMPEG_TIMEOUT_MS",
+          videoProcessingDefaults.ffmpegTimeoutMs,
+        ),
     );
     await runProcess(
       process.env.FFMPEG_PATH ?? "ffmpeg",
@@ -149,20 +218,20 @@ export async function processVideo(
       120_000,
     );
 
-    const files = await readdir(workDir);
-    for (const file of files.filter((name) => name.endsWith(".ts"))) {
+    const files = await readdir(workDir, { recursive: true });
+    for (const file of files.filter((name) => /\.(ts|m3u8|jpg)$/.test(name))) {
+      const objectName = file.replaceAll("\\", "/");
+      const contentType = objectName.endsWith(".m3u8")
+        ? "application/vnd.apple.mpegurl"
+        : objectName.endsWith(".ts")
+          ? "video/mp2t"
+          : "image/jpeg";
       await storage.upload(
-        `${prefix}/${file}`,
+        `${prefix}/${objectName}`,
         join(workDir, file),
-        "video/mp2t",
+        contentType,
       );
     }
-    await storage.upload(
-      `${prefix}/index.m3u8`,
-      manifest,
-      "application/vnd.apple.mpegurl",
-    );
-    await storage.upload(`${prefix}/poster.jpg`, poster, "image/jpeg");
     await database.mediaAsset.update({
       where: { id: assetId },
       data: {
@@ -171,11 +240,12 @@ export async function processVideo(
         height: video.height,
         durationMs: Math.round(durationSeconds * 1000),
         pipelineVersion: VIDEO_PIPELINE_VERSION,
-        hlsManifestKey: `${prefix}/index.m3u8`,
+        hlsManifestKey: `${prefix}/master.m3u8`,
         posterKey: `${prefix}/poster.jpg`,
-        publicUrl: `/api/v1/media/assets/${assetId}/hls/index.m3u8`,
+        publicUrl: `/api/v1/media/assets/${assetId}/hls/master.m3u8`,
         mimeType: "application/vnd.apple.mpegurl",
         processedAt: new Date(),
+        videoRenditions: renditions.map((rendition) => ({ ...rendition })),
       },
     });
   } catch (error) {
@@ -196,4 +266,15 @@ export async function processVideo(
   } finally {
     await rm(workDir, { recursive: true, force: true });
   }
+}
+
+function envInteger(name: string, fallback: number) {
+  const value = Number(process.env[name] ?? fallback);
+  if (!Number.isInteger(value) || value <= 0)
+    throw new Error(`${name}_INVALID`);
+  return value;
+}
+
+function ffmpegPath(...parts: string[]) {
+  return join(...parts).replaceAll("\\", "/");
 }

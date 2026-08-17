@@ -164,6 +164,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/media/operations/video-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MediaController_queueOperations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/media/operations/video-assets/{assetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MediaController_processingOperation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/media/operations/video-assets/{assetId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MediaController_retryProcessing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/media/assets/{assetId}/hls/{file}": {
         parameters: {
             query?: never;
@@ -172,6 +220,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["MediaController_hls"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/media/assets/{assetId}/hls/{rendition}/{file}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MediaController_hlsVariant"];
         put?: never;
         post?: never;
         delete?: never;
@@ -850,6 +914,26 @@ export interface components {
             playbackUrl: Record<string, never> | null;
             posterUrl: Record<string, never> | null;
         };
+        VideoQueueCountsDto: {
+            waiting: number;
+            active: number;
+            completed: number;
+            failed: number;
+            delayed: number;
+            waitingChildren: number;
+        };
+        VideoProcessingOperationDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "PENDING_UPLOAD" | "UPLOADED" | "PROCESSING" | "READY" | "FAILED" | "DELETED";
+            pipelineVersion: number;
+            failureCode: Record<string, never> | null;
+            failureMessage: Record<string, never> | null;
+            processedAt: Record<string, never> | null;
+            jobState: Record<string, never> | null;
+            attemptsMade: number;
+        };
         CreateCommentDto: Record<string, never>;
         /** @enum {string} */
         ReportReason: "SPAM" | "HARASSMENT" | "NUDITY" | "VIOLENCE" | "COPYRIGHT" | "OTHER";
@@ -1326,12 +1410,94 @@ export interface operations {
             };
         };
     };
+    MediaController_queueOperations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoQueueCountsDto"];
+                };
+            };
+        };
+    };
+    MediaController_processingOperation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoProcessingOperationDto"];
+                };
+            };
+        };
+    };
+    MediaController_retryProcessing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoProcessingOperationDto"];
+                };
+            };
+        };
+    };
     MediaController_hls: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 assetId: string;
+                file: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MediaController_hlsVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assetId: string;
+                rendition: string;
                 file: string;
             };
             cookie?: never;

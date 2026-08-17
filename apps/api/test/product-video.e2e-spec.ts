@@ -95,6 +95,9 @@ describe('processed video product attachments', () => {
       await database.client.shortForm.deleteMany({
         where: { creatorId: userId },
       });
+      await database.client.homeVideo.deleteMany({
+        where: { creatorId: userId },
+      });
       await database.client.series.deleteMany({ where: { creatorId: userId } });
       await database.client.post.deleteMany({ where: { authorId: userId } });
       await database.client.mediaAsset.deleteMany({
@@ -113,12 +116,12 @@ describe('processed video product attachments', () => {
         purpose,
         status: MediaStatus.READY,
         sourceKey: `test/${crypto.randomUUID()}`,
-        publicUrl: `/api/v1/media/assets/${crypto.randomUUID()}/hls/index.m3u8`,
+        publicUrl: `/api/v1/media/assets/${crypto.randomUUID()}/hls/master.m3u8`,
         mimeType: 'application/vnd.apple.mpegurl',
         width: 320,
         height: 180,
         durationMs: 2_000,
-        hlsManifestKey: `test/${crypto.randomUUID()}/index.m3u8`,
+        hlsManifestKey: `test/${crypto.randomUUID()}/master.m3u8`,
         posterKey: `test/${crypto.randomUUID()}/poster.jpg`,
       },
     });
@@ -150,9 +153,13 @@ describe('processed video product attachments', () => {
       url: `/api/v1/series/${singleSeriesId}`,
     });
     expect(
-      detail.json<{ singleWork: { media: { id: string } } }>().singleWork.media
-        .id,
+      detail.json<{ singleWork: { media: { id: string; url: string } } }>()
+        .singleWork.media.id,
     ).toBe(asset.id);
+    expect(
+      detail.json<{ singleWork: { media: { url: string } } }>().singleWork.media
+        .url,
+    ).toContain('/master.m3u8');
   });
 
   it('creates and explicitly publishes a READY episodic video', async () => {
@@ -204,7 +211,11 @@ describe('processed video product attachments', () => {
       headers: { cookie },
     });
     expect(publish.statusCode).toBe(200);
-    expect(publish.json<{ media: { id: string } }>().media.id).toBe(asset.id);
+    const publishedEpisode = publish.json<{
+      media: { id: string; url: string };
+    }>().media;
+    expect(publishedEpisode.id).toBe(asset.id);
+    expect(publishedEpisode.url).toContain('/master.m3u8');
     const publishRetry = await app.inject({
       method: 'POST',
       url: `/api/v1/series/episodes/${episodeId}/publish`,
@@ -255,10 +266,11 @@ describe('processed video product attachments', () => {
     });
     expect(publish.statusCode).toBe(200);
     const body = publish.json<{
-      media: Array<{ id: string }>;
+      media: Array<{ id: string; url: string }>;
       promotedContent: { kind: string; id: string };
     }>();
     expect(body.media[0]?.id).toBe(asset.id);
+    expect(body.media[0]?.url).toContain('/master.m3u8');
     expect(body.promotedContent).toEqual({
       kind: 'SERIES',
       id: episodicSeriesId,
@@ -270,5 +282,46 @@ describe('processed video product attachments', () => {
       headers: { cookie },
     });
     expect(publishRetry.statusCode).toBe(200);
+  });
+
+  it('allows at most one incompatible attachment under real concurrency', async () => {
+    const asset = await readyAsset(MediaPurpose.LONG_VIDEO);
+    const [home, episode] = await Promise.all([
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/home/videos',
+        headers: { cookie },
+        payload: {
+          assetId: asset.id,
+          title: 'Concurrent Home',
+          description: 'One winner only.',
+        },
+      }),
+      app.inject({
+        method: 'POST',
+        url: `/api/v1/series/${episodicSeriesId}/episodes`,
+        headers: { cookie },
+        payload: {
+          assetId: asset.id,
+          episodeNumber: 99,
+          title: 'Concurrent Episode',
+          synopsis: 'One winner only.',
+        },
+      }),
+    ]);
+    expect(
+      [home.statusCode, episode.statusCode].filter((code) => code < 300),
+    ).toHaveLength(1);
+    const attachments = await Promise.all([
+      database.client.homeVideo.count({ where: { videoAssetId: asset.id } }),
+      database.client.seriesEpisode.count({
+        where: { videoAssetId: asset.id },
+      }),
+      database.client.mediaPlaybackClaim.count({
+        where: { assetId: asset.id },
+      }),
+    ]);
+    expect(attachments[0] + attachments[1]).toBe(1);
+    expect(attachments[2]).toBe(1);
   });
 });

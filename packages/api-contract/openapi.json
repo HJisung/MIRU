@@ -274,12 +274,132 @@
         ]
       }
     },
+    "/api/v1/media/operations/video-queue": {
+      "get": {
+        "operationId": "MediaController_queueOperations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoQueueCountsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/media/operations/video-assets/{assetId}": {
+      "get": {
+        "operationId": "MediaController_processingOperation",
+        "parameters": [
+          {
+            "name": "assetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoProcessingOperationDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/media/operations/video-assets/{assetId}/retry": {
+      "post": {
+        "operationId": "MediaController_retryProcessing",
+        "parameters": [
+          {
+            "name": "assetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoProcessingOperationDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "media"
+        ]
+      }
+    },
     "/api/v1/media/assets/{assetId}/hls/{file}": {
       "get": {
         "operationId": "MediaController_hls",
         "parameters": [
           {
             "name": "assetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "file",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/media/assets/{assetId}/hls/{rendition}/{file}": {
+      "get": {
+        "operationId": "MediaController_hlsVariant",
+        "parameters": [
+          {
+            "name": "assetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rendition",
             "required": true,
             "in": "path",
             "schema": {
@@ -1864,6 +1984,89 @@
           "failureCode",
           "playbackUrl",
           "posterUrl"
+        ]
+      },
+      "VideoQueueCountsDto": {
+        "type": "object",
+        "properties": {
+          "waiting": {
+            "type": "number"
+          },
+          "active": {
+            "type": "number"
+          },
+          "completed": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          },
+          "delayed": {
+            "type": "number"
+          },
+          "waitingChildren": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "waiting",
+          "active",
+          "completed",
+          "failed",
+          "delayed",
+          "waitingChildren"
+        ]
+      },
+      "VideoProcessingOperationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING_UPLOAD",
+              "UPLOADED",
+              "PROCESSING",
+              "READY",
+              "FAILED",
+              "DELETED"
+            ]
+          },
+          "pipelineVersion": {
+            "type": "number"
+          },
+          "failureCode": {
+            "type": "object",
+            "nullable": true
+          },
+          "failureMessage": {
+            "type": "object",
+            "nullable": true
+          },
+          "processedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "jobState": {
+            "type": "object",
+            "nullable": true
+          },
+          "attemptsMade": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "pipelineVersion",
+          "failureCode",
+          "failureMessage",
+          "processedAt",
+          "jobState",
+          "attemptsMade"
         ]
       },
       "CreateCommentDto": {

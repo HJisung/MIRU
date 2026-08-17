@@ -1,25 +1,27 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { MediaStatus } from '@stream/database';
-import { DatabaseService } from '../database/database.service.js';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { MediaStatus, type Prisma } from '@stream/database';
 
 @Injectable()
 export class MediaAttachmentService {
-  constructor(
-    @Inject(DatabaseService) private readonly database: DatabaseService,
-  ) {}
-
-  async readyUnlinkedOwnedVideo(
+  async claimOwnedVideo(
+    transaction: Prisma.TransactionClient,
     userId: string,
     assetId: string,
     purpose: 'LONG_VIDEO' | 'SHORT_VIDEO',
+    statuses: MediaStatus[],
+    kind: 'HOME_VIDEO' | 'SERIES_SINGLE' | 'SERIES_EPISODE' | 'SHORTFORM',
   ) {
-    const asset = await this.database.client.mediaAsset.findFirst({
+    const asset = await transaction.mediaAsset.findFirst({
       where: {
         id: assetId,
         ownerId: userId,
         kind: 'VIDEO',
         purpose,
-        status: MediaStatus.READY,
+        status: { in: statuses },
         homeVideos: { none: {} },
         seriesSingleWork: { none: {} },
         seriesEpisodes: { none: {} },
@@ -28,6 +30,17 @@ export class MediaAttachmentService {
     });
     if (!asset)
       throw new NotFoundException('Ready unlinked owned video asset not found');
+    try {
+      await transaction.mediaPlaybackClaim.create({ data: { assetId, kind } });
+    } catch (error) {
+      const code =
+        typeof error === 'object' && error
+          ? (error as { code?: unknown }).code
+          : undefined;
+      if (code === 'P2002')
+        throw new ConflictException('Video asset is already attached');
+      throw error;
+    }
     return asset;
   }
 }

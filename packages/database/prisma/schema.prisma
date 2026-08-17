@@ -180,6 +180,8 @@ model MediaAsset {
   hlsManifestKey   String?
   posterKey        String?
   processedAt      DateTime?
+  videoRenditions  Json?
+  playbackClaim    MediaPlaybackClaim?
   postLinks        PostMedia[]
   shortFormLinks   ShortFormMedia[]
   communityLinks   CommunityPostMedia[]
@@ -194,6 +196,15 @@ model MediaAsset {
 
   @@index([ownerId, createdAt])
   @@index([status])
+}
+
+/// Exclusive claim for video assets attached to one product playback owner.
+/// The asset primary key is the database-enforced concurrency boundary.
+model MediaPlaybackClaim {
+  assetId   String     @id @db.Uuid
+  asset     MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  kind      String
+  createdAt DateTime   @default(now())
 }
 
 model Post {

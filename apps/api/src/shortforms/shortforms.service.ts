@@ -90,42 +90,47 @@ export class ShortformsService {
         status: existing.status,
       };
     }
-    const asset = await this.mediaAttachments.readyUnlinkedOwnedVideo(
-      userId,
-      input.assetId,
-      MediaPurpose.SHORT_VIDEO,
-    );
     const promotion = await this.promotion(
       input.promotedKind,
       input.promotedId,
     );
-    const created = await this.database.client.post.create({
-      data: {
-        authorId: userId,
-        format: PostFormat.SHORT_VIDEO,
-        status: PostStatus.DRAFT,
-        visibility: PostVisibility.PUBLIC,
-        title: input.title?.trim() || null,
-        caption: input.description.trim(),
-        media: { create: { assetId: asset.id, order: 0 } },
-        shortForm: {
-          create: {
-            creatorId: userId,
-            type: ShortFormType.VIDEO,
-            title: input.title?.trim() || null,
-            description: input.description.trim(),
-            musicKey: input.musicKey?.trim() || null,
-            ...promotion,
-            media: { create: { assetId: asset.id, position: 0 } },
+    const created = await this.database.client.$transaction(async (tx) => {
+      const asset = await this.mediaAttachments.claimOwnedVideo(
+        tx,
+        userId,
+        input.assetId,
+        MediaPurpose.SHORT_VIDEO,
+        [MediaStatus.READY],
+        'SHORTFORM',
+      );
+      return tx.post.create({
+        data: {
+          authorId: userId,
+          format: PostFormat.SHORT_VIDEO,
+          status: PostStatus.DRAFT,
+          visibility: PostVisibility.PUBLIC,
+          title: input.title?.trim() || null,
+          caption: input.description.trim(),
+          media: { create: { assetId: asset.id, order: 0 } },
+          shortForm: {
+            create: {
+              creatorId: userId,
+              type: ShortFormType.VIDEO,
+              title: input.title?.trim() || null,
+              description: input.description.trim(),
+              musicKey: input.musicKey?.trim() || null,
+              ...promotion,
+              media: { create: { assetId: asset.id, position: 0 } },
+            },
           },
         },
-      },
-      select: { shortForm: { select: { id: true } } },
+        select: { shortForm: { select: { id: true } } },
+      });
     });
     if (!created.shortForm) throw new Error('Shortform creation failed');
     return {
       id: created.shortForm.id,
-      assetId: asset.id,
+      assetId: input.assetId,
       status: DomainPublicationStatus.DRAFT,
     };
   }

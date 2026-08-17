@@ -1,6 +1,6 @@
 # ADR 0007: First video pipeline uses one HLS rendition
 
-- Status: Accepted
+- Status: Superseded by ADR 0008
 - Date: 2026-08-17
 
 ## Decision

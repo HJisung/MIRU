@@ -83,7 +83,7 @@ describe('real queued video pipeline', () => {
   afterAll(async () => {
     await worker?.close();
     if (assetId) {
-      await storage.clearPrefix(`derived/${assetId}/v1`);
+      await storage.clearPrefix(`derived/${assetId}/v2`);
       if (sourceKey) await storage.delete(sourceKey);
     }
     if (userId) {
@@ -182,6 +182,11 @@ describe('real queued video pipeline', () => {
       payload: { assetId, title: 'Real pipeline', description: 'Queue proof' },
     });
     expect(draftRetry.json<{ id: string }>().id).toBe(homeId);
+    const privateManifest = await app.inject({
+      method: 'GET',
+      url: `/api/v1/media/assets/${assetId}/hls/master.m3u8`,
+    });
+    expect(privateManifest.statusCode).toBe(404);
     const publish = await app.inject({
       method: 'POST',
       url: `/api/v1/home/videos/${homeId}/publish`,
@@ -196,12 +201,38 @@ describe('real queued video pipeline', () => {
     expect(publishRetry.statusCode).toBe(201);
     const manifest = await app.inject({
       method: 'GET',
-      url: `/api/v1/media/assets/${assetId}/hls/index.m3u8`,
+      url: `/api/v1/media/assets/${assetId}/hls/master.m3u8`,
     });
     expect(manifest.statusCode).toBe(200);
     expect(manifest.headers['content-type']).toBe(
       'application/vnd.apple.mpegurl',
     );
-    expect(manifest.rawPayload.toString()).toContain('segment-00000.ts');
+    const master = manifest.rawPayload.toString();
+    expect(master).toContain('#EXT-X-STREAM-INF');
+    const variantPath = master
+      .split('\n')
+      .find((line) => line.endsWith('/index.m3u8'));
+    expect(variantPath).toBeTruthy();
+    const variant = await app.inject({
+      method: 'GET',
+      url: `/api/v1/media/assets/${assetId}/hls/${variantPath}`,
+    });
+    expect(variant.statusCode).toBe(200);
+    expect(variant.headers['content-type']).toBe(
+      'application/vnd.apple.mpegurl',
+    );
+    const segment = variant.rawPayload
+      .toString()
+      .split('\n')
+      .find((line) => line.endsWith('.ts'));
+    expect(segment).toBeTruthy();
+    const rendition = variantPath!.split('/')[0];
+    const segmentResponse = await app.inject({
+      method: 'GET',
+      url: `/api/v1/media/assets/${assetId}/hls/${rendition}/${segment}`,
+    });
+    expect(segmentResponse.statusCode).toBe(200);
+    expect(segmentResponse.headers['content-type']).toBe('video/mp2t');
+    expect(segmentResponse.headers['cache-control']).toContain('immutable');
   }, 120_000);
 });

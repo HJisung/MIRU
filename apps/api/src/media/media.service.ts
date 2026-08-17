@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -12,6 +13,7 @@ import { DatabaseService } from '../database/database.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import type { CreateImageUploadDto } from './media.dto.js';
 import type { CreateVideoUploadDto } from './media.dto.js';
+import type { AuthUser } from '../auth/auth.service.js';
 import { VideoQueueService } from './video-queue.service.js';
 
 const allowedSignatures = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -129,8 +131,60 @@ export class MediaService {
     return this.statusResult(await this.ownedVideo(userId, assetId));
   }
 
+  async queueOperations(user: AuthUser) {
+    this.assertOperator(user);
+    const counts = await this.videoQueue.counts();
+    return {
+      waiting: counts.waiting ?? 0,
+      active: counts.active ?? 0,
+      completed: counts.completed ?? 0,
+      failed: counts.failed ?? 0,
+      delayed: counts.delayed ?? 0,
+      waitingChildren: counts['waiting-children'] ?? 0,
+    };
+  }
+
+  async processingOperation(user: AuthUser, assetId: string) {
+    this.assertOperator(user);
+    const asset = await this.database.client.mediaAsset.findFirst({
+      where: { id: assetId, kind: MediaKind.VIDEO },
+      select: {
+        id: true,
+        status: true,
+        pipelineVersion: true,
+        failureCode: true,
+        failureMessage: true,
+        processedAt: true,
+      },
+    });
+    if (!asset) throw new NotFoundException('Video asset not found');
+    const job = await this.videoQueue.job(asset.id);
+    return {
+      ...asset,
+      processedAt: asset.processedAt?.toISOString() ?? null,
+      jobState: job?.state ?? null,
+      attemptsMade: job?.attemptsMade ?? 0,
+    };
+  }
+
+  async retryProcessing(user: AuthUser, assetId: string) {
+    this.assertOperator(user);
+    const changed = await this.database.client.mediaAsset.updateMany({
+      where: { id: assetId, kind: MediaKind.VIDEO, status: MediaStatus.FAILED },
+      data: { status: MediaStatus.UPLOADED },
+    });
+    if (!changed.count)
+      throw new BadRequestException('Only FAILED video assets can be retried');
+    await this.videoQueue.enqueue(assetId);
+    return this.processingOperation(user, assetId);
+  }
+
   async derivedContent(assetId: string, file: string) {
-    if (!/^(index\.m3u8|segment-\d{5}\.ts|poster\.jpg)$/.test(file))
+    if (
+      !/^(index\.m3u8|master\.m3u8|poster\.jpg|(?:\d{2,4}p)\/(?:index\.m3u8|segment-\d{5}\.ts))$/.test(
+        file,
+      )
+    )
       throw new NotFoundException('Media artifact not found');
     const asset = await this.database.client.mediaAsset.findFirst({
       where: {
@@ -264,14 +318,13 @@ export class MediaService {
     failureCode: string | null;
     hlsManifestKey: string | null;
     posterKey: string | null;
+    publicUrl: string | null;
   }) {
     return {
       id: asset.id,
       status: asset.status,
       failureCode: asset.failureCode,
-      playbackUrl: asset.hlsManifestKey
-        ? `/api/v1/media/assets/${asset.id}/hls/index.m3u8`
-        : null,
+      playbackUrl: asset.hlsManifestKey ? asset.publicUrl : null,
       posterUrl: asset.posterKey
         ? `/api/v1/media/assets/${asset.id}/hls/poster.jpg`
         : null,
@@ -290,5 +343,10 @@ export class MediaService {
       mimeType: asset.mimeType,
       byteSize: asset.byteSize?.toString() ?? null,
     };
+  }
+
+  private assertOperator(user: AuthUser) {
+    if (user.role !== 'ADMIN')
+      throw new ForbiddenException('Administrator role required');
   }
 }
