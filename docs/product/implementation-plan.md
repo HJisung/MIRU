@@ -15,14 +15,16 @@ Status: implemented for the repository source of truth.
 
 ## Phase B: relational migration
 
-Status: domain foundation implemented; legacy publication removal is deferred
-until all dependent slices have moved.
+Status: product-native foundation implemented. Physical LegacyPublication
+removal is deferred until residual data receives its final retention/export
+decision.
 
 - Add explicit domain records and migrate deterministic demo data
 - Expand Series to work type, publication/review state, optional Season, and
   Episode
 - Keep Collection and personal Playlist structurally and legally separate
-- Preserve legacy publication identifiers while dependent flows are migrated
+- Preserve nullable legacy publication identifiers only for historical
+  compatibility resolution
 
 ## Phase C: API contracts
 
@@ -67,20 +69,33 @@ foundation, then Shortform and Community Post migration.
 - Native product-identity engagement persistence, EPISODIC Series aggregate
   engagement, compatibility bridging, and audited operational moderation:
   complete
+- Product-native discovery/following feeds, typed personal Playlists, normal
+  product-write decoupling from LegacyPublication, and residual-data audit:
+  complete
 
 ## LegacyPublication migration status
 
-Product routes no longer read Shortform or Community Post through discovery
-format filters. The compatibility aggregate remains for:
+Normal product services no longer create, publish, edit, archive, remove, feed,
+play, engage with, or moderate content through the compatibility aggregate.
+Nullable historical publication identifiers remain only to resolve old mapped
+URLs. The aggregate remains for:
 
-- legacy discovery/following cards not yet moved to product-native reads
-- genuinely unmapped legacy interactions retained as residual data
-- compatibility projections still synchronized by product transactions
+- explicitly legacy `/posts` read/create and engagement adapters
+- genuinely unmapped legacy interactions and media retained as residual data
+- historical mapped URL resolution
+- unsupported or unmapped historical Playlist items retained with reasons
+- read-only audit/export tooling and migration fixtures
 
 Mapped compatibility endpoints resolve to native targets and never dual-write.
-The native migration rejects ambiguous mappings, preserves unmapped residual
-rows, and derives counters from interaction rows. No new product read should
-query the compatibility table directly.
+Mapped legacy detail cannot bypass native product visibility; unmapped legacy
+detail remains within the compatibility boundary. Migrations reject ambiguous
+required mappings, preserve residual rows, and never infer a product with an
+arbitrary first match. No normal product read or write queries the compatibility
+table.
+
+The remaining physical `Post`, PostMedia, PostLike, PostSave, Comment, Report,
+and residual Playlist rows require a separately approved retention/export and
+final-drop slice. Their existence does not make LegacyPublication authoritative.
 
 ## Existing implementation history
 

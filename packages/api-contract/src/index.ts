@@ -4,7 +4,7 @@ export type CreatorSummary = components["schemas"]["CreatorSummaryDto"];
 export type MediaSummary = components["schemas"]["MediaSummaryDto"];
 export type FeedItem = components["schemas"]["FeedItemDto"];
 export type DiscoveryFeed = components["schemas"]["DiscoveryFeedDto"];
-export type PostFormat = components["schemas"]["PostFormat"];
+export type LegacyPost = components["schemas"]["LegacyPostDto"];
 export type HomeVideo = components["schemas"]["HomeVideoDto"];
 export type HomeVideoList = components["schemas"]["HomeVideoListDto"];
 export type Collection = components["schemas"]["CollectionDto"];
@@ -45,3 +45,7 @@ export type EngagementSaveState =
   components["schemas"]["EngagementSaveStateDto"];
 export type EngagementComment =
   components["schemas"]["EngagementCommentDto"];
+export type Playlist = components["schemas"]["PlaylistDto"];
+export type PlaylistList = components["schemas"]["PlaylistListDto"];
+export type PlaylistItem = components["schemas"]["PlaylistItemDto"];
+export type PlaylistTarget = components["schemas"]["PlaylistTargetDto"];

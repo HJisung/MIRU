@@ -31,9 +31,10 @@ capabilities without collapsing their publication models into one table.
 - profiles: public profiles and settings
 - social: follow, block, mute
 - media: upload sessions, assets, renditions, lifecycle state
-- legacy publications: temporary compatibility boundary while existing flows
-  migrate to the four explicit product domains
-- feed: candidate selection, ranking, cursor pagination
+- legacy publications: isolated compatibility endpoints, residual-data audit,
+  and export support; normal product flows do not depend on this boundary
+- feed: bounded product-native candidate selection, deterministic mixed-type
+  ordering, and cursor pagination
 - engagement: likes, saves, shares, view events
 - comments: threaded comments and moderation state
 - moderation: reports, review decisions, safety state
@@ -49,14 +50,16 @@ Each module owns its tables and exposes application services/events. Cross-modul
 4. Completion request verifies object existence/size and creates a durable processing job.
 5. Worker probes the file, validates codecs/container, scans as required, and creates thumbnails/posters.
 6. Video is transcoded into an HLS adaptive bitrate ladder; images are normalized into safe web renditions.
-7. Worker atomically marks renditions ready. The post becomes publishable only after required assets are ready.
+7. Worker atomically marks renditions ready. The owning product becomes
+   publishable only after its required assets are ready.
 8. Playback uses signed CDN access when content is private or access-controlled.
 
 Jobs are idempotent by asset plus pipeline version. Originals, intermediate files, and derived renditions use distinct prefixes/buckets and lifecycle policies.
 
 ## Data roles
 
-- PostgreSQL: source of truth for users, posts, relationships, asset metadata, moderation, and durable business state.
+- PostgreSQL: source of truth for users, authoritative product records,
+  relationships, asset metadata, moderation, and durable business state.
 - Redis: rate limits, ephemeral caching, distributed coordination, and BullMQ jobs. Never the only store of business truth.
 - Object storage: originals and derived media. Never store large binaries in PostgreSQL.
 - Analytics store: deferred. Emit versioned events now; add ClickHouse or a managed warehouse only when volume and queries justify it.

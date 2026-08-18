@@ -1,5 +1,5 @@
 import type {
-  FeedItem,
+  LegacyPost,
   HomeVideo,
   HomeVideoList,
   CollectionList,
@@ -40,7 +40,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function getPost(postId: string) {
-  return apiFetch<FeedItem>(`/posts/${encodeURIComponent(postId)}`);
+  return apiFetch<LegacyPost>(`/posts/${encodeURIComponent(postId)}`);
 }
 
 export function getHomeVideos() {

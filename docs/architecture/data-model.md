@@ -35,7 +35,7 @@ The original filename is presentation metadata only. Object keys are server-gene
 
 The first read-only discovery slice uses `MediaAsset.publicUrl` only for repository-owned demo images. `MediaRendition` is added with the upload/processing migration so the schema does not contain unused speculative tables. Production publication will reference verified renditions rather than a client-provided URL.
 
-### LegacyPublication (migration only)
+### LegacyPublication (isolated compatibility and residual data)
 
 - `id`, `authorId`
 - `format`: `IMAGE`, `SHORT_VIDEO`, `LONG_VIDEO`
@@ -43,11 +43,13 @@ The first read-only discovery slice uses `MediaAsset.publicUrl` only for reposit
 - caption/title/description fields appropriate to the format
 - visibility and publishing timestamps
 
-The original Prisma model is still named `Post` during the first compatibility
-migration. It is not the product Community Post. A join entity orders ready
-media assets, and existing upload/social/moderation flows continue to use it
-until their domain slice is migrated. New product features must not extend this
-model with more cross-domain nullable fields.
+The original Prisma model remains named `Post`. It is not the product Community
+Post and is no longer normal product infrastructure. New Home, Series,
+Episode, Shortform, and Community Post writes do not create or synchronize it.
+It remains only for explicitly legacy `/posts` compatibility endpoints,
+unmapped legacy engagement and media, residual Playlist rows, and migration or
+export tooling. New product features must not add dependencies or cross-domain
+nullable fields to it.
 
 ### HomeSingle and Collection
 
@@ -55,6 +57,29 @@ model with more cross-domain nullable fields.
 - Collection contains ordered references to existing HomeSingles and never
   duplicates their media.
 - Playlist is viewer-owned and separate from Collection.
+
+### Playlist
+
+`Playlist` is viewer-owned personal organization with `PRIVATE`, `UNLISTED`,
+or `PUBLIC` visibility. `PlaylistItem` stores a narrow typed product identity:
+
+- `HOME_VIDEO`
+- `SERIES` for playable `SINGLE_WORK` only
+- `SERIES_EPISODE`
+- `SHORTFORM` for video Shortforms only
+- `COMMUNITY_POST` for video Community Posts only
+
+Exactly one product foreign key must match the item type. Position and product
+identity are unique inside a Playlist, while the same product may appear in
+different Playlists. Owner mutation serializes on the Playlist row and reorder
+uses a transaction-safe temporary position range. Items are retained if their
+product later becomes unavailable, but public and owner reads render them as
+unavailable without a playback link.
+
+Historical `publicationId` items that cannot be mapped safely or refer to an
+unsupported non-playable product are retained in
+`LegacyPlaylistItemResidual`, with a diagnostic reason. They are not returned
+as normal product items.
 
 ### Series
 
@@ -83,20 +108,40 @@ Series by setting a nullable foreign key, and Series is not a playlist.
 ### Social and engagement
 
 - `Follow(followerId, followingId)` with a unique pair and no self-follow
-- `Like(userId, postId)` and `Save(userId, postId)` with unique pairs
-- `Comment(id, postId, authorId, body, status, createdAt)`; only top-level comments in MVP
-- `Report(id, reporterId, targetType, targetId, reason, status, createdAt)`
+- `EngagementTarget` is a typed, one-product identity for engagement and
+  moderation only; it does not store product content or playback fields
+- native Like, Save, Comment, and Report rows point to `EngagementTarget`
+- legacy PostLike, PostSave, Comment, and Report rows are residual-only
 
-Counters displayed in feeds are derived initially. Denormalized counters may be introduced only with a reconciliation strategy when measurements show they are necessary.
+Feed counters come from `EngagementTarget`. Its denormalized like and comment
+counters are updated atomically with native interactions and can be reconciled
+from native rows.
 
 ## Feed query
 
-The first discovery feed returns published posts ordered by `(publishedAt DESC, id DESC)` with an opaque cursor carrying both values. A following feed adds an author membership filter. Cursor pagination is chosen because offset pagination becomes unstable as new posts arrive.
+Discovery and following feeds query authoritative HomeVideo, single-work
+Series, SeriesEpisode, and ShortForm tables in bounded parallel candidate
+queries. Community Post retains its separate Post Home information
+architecture. Each query includes creator, authoritative media, and native
+engagement counters, so hydration has no per-card query.
+
+Candidates use a total order of `(publishedAt DESC, typeRank DESC, id DESC)`.
+The versioned opaque cursor carries all three fields, preventing duplicate or
+skipped cards when different product types share a timestamp. Following adds
+creator follow and bidirectional block filters at each native product source.
+Visibility is determined only by native publication state, ready media, and an
+ACTIVE engagement/moderation target; legacy Post status cannot make a product
+public.
 
 ## Ownership and deletion
 
 - Identity owns users and sessions.
 - Media owns assets and renditions.
-- Posts owns posts and post-media ordering.
-- Social owns follows; engagement owns likes/saves; comments and moderation own their records.
+- Product modules own product metadata, publication state, and authoritative
+  media relations.
+- Library owns typed Playlist identity and ordering.
+- Social owns follows; engagement owns native likes/saves/comments/reports and
+  moderation identity.
+- The legacy publications module owns residual Post data and compatibility
+  endpoints; it cannot be called by normal product writes.
 - User deletion begins as a durable state transition and background cleanup workflow, not an immediate cross-table cascade that can orphan media operations.

@@ -10,7 +10,7 @@ import {
   PostVisibility,
 } from '@stream/database';
 import { DatabaseService } from '../database/database.service.js';
-import { toFeedItem } from '../feed/feed.mapper.js';
+import { toPlayableMedia } from '../playback/playback.mapper.js';
 import type { CreateImagePostDto } from './posts.dto.js';
 import type { LegacyCreateCommunityImagePostDto } from '../community/community.dto.js';
 
@@ -27,47 +27,12 @@ export class PostsService {
         status: PostStatus.PUBLISHED,
         visibility: PostVisibility.PUBLIC,
         communityPost: null,
+        homeVideo: null,
+        shortForm: null,
+        seriesEpisode: null,
+        seriesSingleWork: null,
       },
       include: {
-        homeVideo: {
-          select: {
-            id: true,
-            engagementTarget: {
-              select: { likeCount: true, commentCount: true },
-            },
-          },
-        },
-        shortForm: {
-          select: {
-            id: true,
-            engagementTarget: {
-              select: { likeCount: true, commentCount: true },
-            },
-          },
-        },
-        seriesEpisode: {
-          select: {
-            id: true,
-            engagementTarget: {
-              select: { likeCount: true, commentCount: true },
-            },
-          },
-        },
-        seriesSingleWork: {
-          select: {
-            id: true,
-            engagementTarget: {
-              select: { likeCount: true, commentCount: true },
-            },
-          },
-        },
-        series: {
-          select: {
-            id: true,
-            title: true,
-            _count: { select: { posts: true } },
-          },
-        },
         author: {
           select: {
             id: true,
@@ -91,7 +56,24 @@ export class PostsService {
         },
       });
     }
-    return toFeedItem(post);
+    if (!post.publishedAt)
+      throw new Error(`Legacy Post ${post.id} has no publishedAt`);
+    return {
+      id: post.id,
+      format: post.format,
+      title: post.title,
+      caption: post.caption,
+      publishedAt: post.publishedAt.toISOString(),
+      likeCount: post.likeCount,
+      commentCount: post.commentCount,
+      author: post.author,
+      media: post.media.map(({ asset }) => {
+        const mapped = toPlayableMedia(asset);
+        if (!mapped)
+          throw new Error(`Legacy Post media ${asset.id} is not displayable`);
+        return mapped;
+      }),
+    };
   }
 
   async createImagePost(userId: string, input: CreateImagePostDto) {

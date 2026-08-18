@@ -304,7 +304,15 @@ export class MediaService {
               {
                 postLinks: {
                   some: {
-                    post: { status: 'PUBLISHED', visibility: 'PUBLIC' },
+                    post: {
+                      status: 'PUBLISHED',
+                      visibility: 'PUBLIC',
+                      homeVideo: null,
+                      seriesSingleWork: null,
+                      seriesEpisode: null,
+                      shortForm: null,
+                      communityPost: null,
+                    },
                   },
                 },
               },

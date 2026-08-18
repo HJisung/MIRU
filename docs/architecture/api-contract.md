@@ -45,7 +45,7 @@ Returns public Collections with ordered references to existing Home Singles.
 Return published reviewed works and their ordered episodes. Series remains a
 separate browse surface from Home.
 
-## Compatibility reads
+## Public and compatibility reads
 
 ### `GET /api/v1/health/live`
 
@@ -55,11 +55,24 @@ Returns process liveness without checking external dependencies.
 
 Returns readiness and verifies PostgreSQL connectivity.
 
-### `GET /api/v1/feed/discovery?cursor=&limit=`
+### `GET /api/v1/feed/discovery?cursor=&limit=&type=`
 
-Returns legacy published publication records and an opaque `nextCursor` while
-Shortform and Community Post slices migrate to explicit endpoints. The initial
-maximum page size is 24.
+Returns published native Home Video, SINGLE_WORK Series, Series Episode, and
+Shortform records. Every card identity is the canonical `{type, id}` product
+identity; legacy publication IDs are never returned. The opaque cursor encodes
+the stable `(publishedAt, type rank, product id)` boundary. The initial maximum
+page size is 24. `GET /api/v1/feed/following` uses the same contract and requires
+an authenticated session.
+
+### `/api/v1/playlists`
+
+Authenticated viewers can create and manage private-by-default Playlists and
+add supported playable products by `{type, id}`. Item reorder is an atomic full
+order replacement. `PUBLIC` Playlists are browsable, `UNLISTED` Playlists are
+available by direct ID, and `PRIVATE` Playlists are owner-only. Unavailable
+products remain as tombstones without a playback link. The generated OpenAPI
+document is authoritative for the create, update, delete, item, and manage route
+shapes.
 
 ### `GET /api/v1/posts/{postId}`
 

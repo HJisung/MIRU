@@ -159,10 +159,8 @@ const demoPosts = [
 
 const craftSeriesId = "40000000-0000-4000-8000-000000000001";
 const craftEpisodeAssetId = "20000000-0000-4000-8000-000000000007";
-const craftEpisodePostId = "30000000-0000-4000-8000-000000000007";
 const singleWorkSeriesId = "40000000-0000-4000-8000-000000000002";
 const singleWorkAssetId = "20000000-0000-4000-8000-000000000013";
-const singleWorkPublicationId = "30000000-0000-4000-8000-000000000013";
 
 async function seed() {
   await prisma.$transaction([
@@ -229,19 +227,6 @@ async function seed() {
       byteSize: BigInt(0),
     },
   });
-  await prisma.post.create({
-    data: {
-      id: singleWorkPublicationId,
-      authorId: demoUsers[2].id,
-      format: PostFormat.LONG_VIDEO,
-      status: PostStatus.PUBLISHED,
-      visibility: PostVisibility.PUBLIC,
-      title: "활자와 도시",
-      caption: "한 편으로 완결되는 장편 다큐멘터리",
-      publishedAt: new Date("2026-08-16T12:00:00.000Z"),
-      media: { create: { assetId: singleWorkAssetId, order: 0 } },
-    },
-  });
   await prisma.series.create({
     data: {
       id: singleWorkSeriesId,
@@ -251,11 +236,11 @@ async function seed() {
       synopsis: "도시의 오래된 인쇄소와 그곳을 지키는 사람들을 따라갑니다.",
       workType: SeriesWorkType.SINGLE_WORK,
       publicationStatus: DomainPublicationStatus.PUBLISHED,
+      publishedAt: new Date("2026-08-16T12:00:00.000Z"),
       genres: ["영화", "다큐멘터리"],
       tags: ["인쇄", "도시", "기록"],
       ageRating: "ALL",
       releaseDate: new Date("2026-08-16T12:00:00.000Z"),
-      singleWorkPublicationId,
       singleWorkAssetId,
       engagementTarget: { create: { type: EngagementTargetType.SERIES } },
     },
@@ -279,26 +264,36 @@ async function seed() {
         byteSize: BigInt(0),
       },
     });
-
-    await prisma.post.create({
-      data: {
-        id: post.id,
-        authorId: post.authorId,
-        format: post.format,
-        status: PostStatus.PUBLISHED,
-        visibility: PostVisibility.PUBLIC,
-        title: post.title,
-        caption: post.caption,
-        publishedAt: post.publishedAt,
-        likeCount: post.likeCount,
-        commentCount: post.commentCount,
-        ...(post.id === "30000000-0000-4000-8000-000000000003"
-          ? { seriesId: craftSeriesId, episodeNumber: 1 }
-          : {}),
-        media: { create: { assetId: post.assetId, order: 0 } },
-      },
-    });
   }
+
+  const residualAssetId = "20000000-0000-4000-8000-000000000099";
+  await prisma.mediaAsset.create({
+    data: {
+      id: residualAssetId,
+      ownerId: demoUsers[0].id,
+      kind: MediaKind.IMAGE,
+      purpose: MediaPurpose.POST_IMAGE,
+      status: MediaStatus.READY,
+      sourceKey: `legacy-residual/${residualAssetId}/source`,
+      publicUrl: "/demo/dawn-city.png",
+      mimeType: "image/png",
+      width: 1600,
+      height: 1200,
+      byteSize: BigInt(0),
+    },
+  });
+  await prisma.post.create({
+    data: {
+      id: "30000000-0000-4000-8000-000000000099",
+      authorId: demoUsers[0].id,
+      format: PostFormat.IMAGE,
+      status: PostStatus.PUBLISHED,
+      visibility: PostVisibility.PUBLIC,
+      caption: "Explicit legacy residual fixture",
+      publishedAt: new Date("2026-08-01T00:00:00.000Z"),
+      media: { create: { assetId: residualAssetId, order: 0 } },
+    },
+  });
 
   await prisma.mediaAsset.create({
     data: {
@@ -316,23 +311,6 @@ async function seed() {
       byteSize: BigInt(0),
     },
   });
-  await prisma.post.create({
-    data: {
-      id: craftEpisodePostId,
-      authorId: demoUsers[2].id,
-      format: PostFormat.LONG_VIDEO,
-      status: PostStatus.PUBLISHED,
-      visibility: PostVisibility.PUBLIC,
-      title: "흙이 그릇이 되는 시간",
-      caption: "두 번째 이야기. 흙과 불, 그리고 도예가의 손을 따라갑니다.",
-      publishedAt: new Date("2026-08-11T12:00:00.000Z"),
-      likeCount: 3_418,
-      commentCount: 126,
-      seriesId: craftSeriesId,
-      episodeNumber: 2,
-      media: { create: { assetId: craftEpisodeAssetId, order: 0 } },
-    },
-  });
 
   const standalone = demoPosts.find(
     (post) => post.id === "30000000-0000-4000-8000-000000000005",
@@ -343,7 +321,6 @@ async function seed() {
     data: {
       id: "50000000-0000-4000-8000-000000000001",
       creatorId: standalone.authorId,
-      publicationId: standalone.id,
       videoAssetId: standalone.assetId,
       title: standalone.title,
       description: standalone.caption,
@@ -370,7 +347,6 @@ async function seed() {
       {
         id: "70000000-0000-4000-8000-000000000001",
         seriesId: craftSeriesId,
-        publicationId: "30000000-0000-4000-8000-000000000003",
         videoAssetId: "20000000-0000-4000-8000-000000000003",
         episodeNumber: 1,
         title: "서울의 마지막 활판 인쇄공",
@@ -380,7 +356,6 @@ async function seed() {
       {
         id: "70000000-0000-4000-8000-000000000002",
         seriesId: craftSeriesId,
-        publicationId: craftEpisodePostId,
         videoAssetId: craftEpisodeAssetId,
         episodeNumber: 2,
         title: "흙이 그릇이 되는 시간",
@@ -391,8 +366,14 @@ async function seed() {
   });
   await prisma.engagementTarget.createMany({
     data: [
-      { type: EngagementTargetType.SERIES_EPISODE, seriesEpisodeId: "70000000-0000-4000-8000-000000000001" },
-      { type: EngagementTargetType.SERIES_EPISODE, seriesEpisodeId: "70000000-0000-4000-8000-000000000002" },
+      {
+        type: EngagementTargetType.SERIES_EPISODE,
+        seriesEpisodeId: "70000000-0000-4000-8000-000000000001",
+      },
+      {
+        type: EngagementTargetType.SERIES_EPISODE,
+        seriesEpisodeId: "70000000-0000-4000-8000-000000000002",
+      },
     ],
   });
 
@@ -415,7 +396,6 @@ async function seed() {
     await prisma.shortForm.create({
       data: {
         creatorId: post.authorId,
-        publicationId: post.id,
         type: ShortFormType.VIDEO,
         title: post.title,
         description: post.caption,
@@ -432,61 +412,35 @@ async function seed() {
     });
   }
 
-  const carouselPublicationId = "30000000-0000-4000-8000-000000000008";
-  await prisma.post.create({
+  await prisma.shortForm.create({
     data: {
-      id: carouselPublicationId,
-      authorId: demoUsers[0].id,
-      format: PostFormat.IMAGE,
-      status: PostStatus.PUBLISHED,
-      visibility: PostVisibility.PUBLIC,
-      caption: "서울의 아침을 두 장면으로 넘겨보세요.",
+      creatorId: demoUsers[0].id,
+      type: ShortFormType.IMAGE_CAROUSEL,
+      title: "조용한 서울의 아침",
+      description: "왼쪽과 오른쪽 버튼으로 장면을 넘길 수 있어요.",
+      promotedSeriesId: craftSeriesId,
+      status: DomainPublicationStatus.PUBLISHED,
       publishedAt: new Date("2026-08-15T01:00:00.000Z"),
-      likeCount: 724,
-      commentCount: 18,
       media: {
         create: [
-          { assetId: demoPosts[0].assetId, order: 0 },
-          { assetId: demoPosts[3].assetId, order: 1 },
+          { assetId: demoPosts[0].assetId, position: 0 },
+          { assetId: demoPosts[3].assetId, position: 1 },
         ],
       },
-      shortForm: {
-        create: {
-          creatorId: demoUsers[0].id,
-          type: ShortFormType.IMAGE_CAROUSEL,
-          title: "조용한 서울의 아침",
-          description: "왼쪽과 오른쪽 버튼으로 장면을 넘길 수 있어요.",
-          promotedSeriesId: craftSeriesId,
-          status: DomainPublicationStatus.PUBLISHED,
-          publishedAt: new Date("2026-08-15T01:00:00.000Z"),
-          media: {
-            create: [
-              { assetId: demoPosts[0].assetId, position: 0 },
-              { assetId: demoPosts[3].assetId, position: 1 },
-            ],
-          },
-          engagementTarget: { create: { type: EngagementTargetType.SHORTFORM } },
-        },
+      engagementTarget: {
+        create: { type: EngagementTargetType.SHORTFORM },
       },
     },
   });
 
-  await prisma.post.create({
+  await prisma.shortForm.create({
     data: {
-      id: "30000000-0000-4000-8000-000000000009",
-      authorId: demoUsers[1].id,
-      format: PostFormat.SHORT_VIDEO,
-      status: PostStatus.DRAFT,
-      visibility: PostVisibility.PUBLIC,
-      caption: "공개 전 Shortform",
-      shortForm: {
-        create: {
-          creatorId: demoUsers[1].id,
-          type: ShortFormType.VIDEO,
-          description: "공개 API에 노출되면 안 됩니다.",
-          status: DomainPublicationStatus.DRAFT,
-          engagementTarget: { create: { type: EngagementTargetType.SHORTFORM } },
-        },
+      creatorId: demoUsers[1].id,
+      type: ShortFormType.VIDEO,
+      description: "공개 API에 노출되면 안 됩니다.",
+      status: DomainPublicationStatus.DRAFT,
+      engagementTarget: {
+        create: { type: EngagementTargetType.SHORTFORM },
       },
     },
   });
@@ -520,79 +474,55 @@ async function seed() {
     await prisma.communityPost.create({
       data: {
         authorId: post.authorId,
-        publicationId: post.id,
         categoryId: index === 0 ? null : developCategory.id,
         type: CommunityPostType.IMAGE,
         body: post.caption,
         status: DomainPublicationStatus.PUBLISHED,
         publishedAt: post.publishedAt,
         media: { create: { assetId: post.assetId, position: 0 } },
-        engagementTarget: { create: { type: EngagementTargetType.COMMUNITY_POST } },
+        engagementTarget: {
+          create: { type: EngagementTargetType.COMMUNITY_POST },
+        },
       },
     });
   }
 
-  await prisma.post.create({
+  await prisma.communityPost.create({
     data: {
-      id: "30000000-0000-4000-8000-000000000010",
       authorId: demoUsers[2].id,
-      format: PostFormat.IMAGE,
-      status: PostStatus.DRAFT,
-      visibility: PostVisibility.PUBLIC,
-      caption: "MIRU를 만들며 배운 점을 공유합니다.",
+      categoryId: developCategory.id,
+      type: CommunityPostType.LINK,
+      body: "도메인을 명확하게 나누면 코드를 따라가기 쉬워집니다.",
+      linkUrl: "https://example.com/miru-domain-notes",
+      status: DomainPublicationStatus.PUBLISHED,
       publishedAt: new Date("2026-08-15T02:00:00.000Z"),
-      communityPost: {
-        create: {
-          authorId: demoUsers[2].id,
-          categoryId: developCategory.id,
-          type: CommunityPostType.LINK,
-          body: "도메인을 명확하게 나누면 코드를 따라가기 쉬워집니다.",
-          linkUrl: "https://example.com/miru-domain-notes",
-          status: DomainPublicationStatus.PUBLISHED,
-          publishedAt: new Date("2026-08-15T02:00:00.000Z"),
-          engagementTarget: { create: { type: EngagementTargetType.COMMUNITY_POST } },
-        },
+      engagementTarget: {
+        create: { type: EngagementTargetType.COMMUNITY_POST },
       },
     },
   });
 
-  await prisma.post.create({
+  await prisma.communityPost.create({
     data: {
-      id: "30000000-0000-4000-8000-000000000011",
       authorId: demoUsers[0].id,
-      format: PostFormat.IMAGE,
-      status: PostStatus.DRAFT,
-      visibility: PostVisibility.PUBLIC,
-      caption: "공개 전 Community Post",
-      communityPost: {
-        create: {
-          authorId: demoUsers[0].id,
-          type: CommunityPostType.TEXT,
-          body: "공개 API에 노출되면 안 됩니다.",
-          status: DomainPublicationStatus.DRAFT,
-          engagementTarget: { create: { type: EngagementTargetType.COMMUNITY_POST } },
-        },
+      type: CommunityPostType.TEXT,
+      body: "공개 API에 노출되면 안 됩니다.",
+      status: DomainPublicationStatus.DRAFT,
+      engagementTarget: {
+        create: { type: EngagementTargetType.COMMUNITY_POST },
       },
     },
   });
 
-  await prisma.post.create({
+  await prisma.communityPost.create({
     data: {
-      id: "30000000-0000-4000-8000-000000000012",
       authorId: demoUsers[0].id,
-      format: PostFormat.IMAGE,
-      status: PostStatus.REMOVED,
-      visibility: PostVisibility.PUBLIC,
-      caption: "삭제 처리된 Community Post",
-      communityPost: {
-        create: {
-          authorId: demoUsers[0].id,
-          type: CommunityPostType.TEXT,
-          body: "삭제 처리된 Community Post",
-          status: DomainPublicationStatus.REMOVED,
-          publishedAt: new Date("2026-08-15T03:00:00.000Z"),
-          engagementTarget: { create: { type: EngagementTargetType.COMMUNITY_POST } },
-        },
+      type: CommunityPostType.TEXT,
+      body: "삭제 처리된 Community Post",
+      status: DomainPublicationStatus.REMOVED,
+      publishedAt: new Date("2026-08-15T03:00:00.000Z"),
+      engagementTarget: {
+        create: { type: EngagementTargetType.COMMUNITY_POST },
       },
     },
   });

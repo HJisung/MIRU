@@ -21,6 +21,12 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
   Categories, retry safety, shared HLS playback, and archive semantics
 - Persist engagement against native typed product targets, including EPISODIC
   Series aggregates, and operate an audited moderator removal workflow
+- Serve discovery and following from bounded product-native queries with stable
+  mixed-product cursors and native engagement counters
+- Organize playable products in viewer-owned typed Playlists without exposing
+  or storing LegacyPublication identity in normal items
+- Stop normal product creation and lifecycle transitions from creating or
+  synchronizing compatibility Post rows
 
 ## MVP
 
@@ -35,10 +41,10 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
 
 ## Next
 
+- Complete the explicit retention/export decision and final removal tooling for
+  isolated LegacyPublication rows and residual legacy interactions/media
 - Add media lifecycle retention, stale-v1 reprocessing tools, and dead-letter
   administration around the adaptive HLS pipeline
-- Retire residual compatibility publication consumers and unmapped interaction
-  storage through an explicit retention/export policy
 - Add richer Series artwork/analytics and Community media-replacement tools
 - Nested comments, notifications, richer creator tools
 - Search, hashtags/topics, captions/subtitles

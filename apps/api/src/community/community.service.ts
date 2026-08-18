@@ -11,9 +11,6 @@ import {
   EngagementTargetType,
   MediaPurpose,
   MediaStatus,
-  PostFormat,
-  PostStatus,
-  PostVisibility,
 } from '@stream/database';
 import type { Prisma } from '@stream/database';
 import { DatabaseService } from '../database/database.service.js';
@@ -32,7 +29,6 @@ const include = {
     select: { id: true, handle: true, displayName: true, avatarUrl: true },
   },
   category: { select: { id: true, slug: true, name: true, description: true } },
-  publication: { select: { likeCount: true, commentCount: true } },
   engagementTarget: { select: { likeCount: true, commentCount: true } },
   media: {
     where: { asset: { status: MediaStatus.READY } },
@@ -129,7 +125,7 @@ export class CommunityService {
           authorId: userId,
           status: DomainPublicationStatus.PUBLISHED,
         },
-        select: { type: true, publicationId: true, body: true, linkUrl: true },
+        select: { type: true, body: true, linkUrl: true },
       });
       if (!record) throw new NotFoundException('Community Post not found');
       const body = input.body === undefined ? record.body : input.body;
@@ -151,10 +147,6 @@ export class CommunityService {
           ...(categoryId !== undefined ? { categoryId } : {}),
         },
       });
-      await tx.post.update({
-        where: { id: record.publicationId },
-        data: { caption: body },
-      });
     });
     return this.findManaged(userId, id);
   }
@@ -163,7 +155,7 @@ export class CommunityService {
     await this.database.client.$transaction(async (tx) => {
       const record = await tx.communityPost.findFirst({
         where: { id, authorId: userId },
-        select: { status: true, publicationId: true },
+        select: { status: true },
       });
       if (!record) throw new NotFoundException('Community Post not found');
       if (record.status === DomainPublicationStatus.ARCHIVED) return;
@@ -175,10 +167,6 @@ export class CommunityService {
           status: DomainPublicationStatus.ARCHIVED,
           publishedAt: null,
         },
-      });
-      await tx.post.update({
-        where: { id: record.publicationId },
-        data: { status: PostStatus.ARCHIVED, publishedAt: null },
       });
     });
     return this.findManaged(userId, id);
@@ -228,7 +216,6 @@ export class CommunityService {
               purpose: MediaPurpose.POST_IMAGE,
               status: MediaStatus.READY,
               communityLinks: { none: {} },
-              postLinks: { none: {} },
             },
             select: { id: true },
           });
@@ -246,41 +233,26 @@ export class CommunityService {
           );
         }
         const publishedAt = new Date();
-        const created = await tx.post.create({
+        const created = await tx.communityPost.create({
           data: {
             authorId: userId,
-            format: this.compatibilityFormat(type),
-            status: PostStatus.PUBLISHED,
-            visibility: PostVisibility.PUBLIC,
-            caption: body,
+            creationId: input.creationId,
+            categoryId,
+            type,
+            body,
+            linkUrl,
+            status: DomainPublicationStatus.PUBLISHED,
             publishedAt,
-            ...(asset
-              ? { media: { create: { assetId: asset.id, order: 0 } } }
-              : {}),
-            communityPost: {
-              create: {
-                authorId: userId,
-                creationId: input.creationId,
-                categoryId,
-                type,
-                body,
-                linkUrl,
-                status: DomainPublicationStatus.PUBLISHED,
-                publishedAt,
-                engagementTarget: {
-                  create: { type: EngagementTargetType.COMMUNITY_POST },
-                },
-                ...(asset
-                  ? { media: { create: { assetId: asset.id, position: 0 } } }
-                  : {}),
-              },
+            engagementTarget: {
+              create: { type: EngagementTargetType.COMMUNITY_POST },
             },
+            ...(asset
+              ? { media: { create: { assetId: asset.id, position: 0 } } }
+              : {}),
           },
-          select: { communityPost: { select: { id: true } } },
+          select: { id: true },
         });
-        if (!created.communityPost)
-          throw new Error('Community Post creation failed');
-        return created.communityPost.id;
+        return created.id;
       });
       return this.findOne(id);
     } catch (error) {
@@ -331,19 +303,6 @@ export class CommunityService {
     }
     if (url.protocol !== 'http:' && url.protocol !== 'https:')
       throw new BadRequestException('linkUrl must use http or https');
-  }
-
-  private compatibilityFormat(type: CommunityPostType) {
-    switch (type) {
-      case CommunityPostType.TEXT:
-        return PostFormat.COMMUNITY_TEXT;
-      case CommunityPostType.IMAGE:
-        return PostFormat.IMAGE;
-      case CommunityPostType.VIDEO:
-        return PostFormat.COMMUNITY_VIDEO;
-      case CommunityPostType.LINK:
-        return PostFormat.COMMUNITY_LINK;
-    }
   }
 
   private prismaCode(error: unknown) {

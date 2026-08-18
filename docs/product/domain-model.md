@@ -38,6 +38,12 @@ The owner controls its title, description, cover, visibility, and ordering.
 A Playlist is a private-by-default viewer library. It is owned by the viewer,
 may contain supported playable content, and is not a creator publication.
 Collection and Playlist therefore use separate models and authorization rules.
+Items use typed native product IDs for Home video, playable single-work Series,
+Series Episode, video Shortform, and video Community Post. Text, link, image
+carousel, and episodic Series-shell records are not playable Playlist items.
+Removal or unpublication preserves the viewer's item but makes it unavailable;
+the product is never rendered or played merely because it remains organized in
+a Playlist.
 
 ## Series
 
@@ -123,14 +129,15 @@ Each browser creation carries an author-scoped UUID. The database unique key on
 `(authorId, creationId)` makes ambiguous and concurrent retries resolve to one
 Community Post without making identical text globally unique. Community VIDEO
 uses the shared adaptive HLS pipeline and a `COMMUNITY_POST_VIDEO`
-`MediaPlaybackClaim`; the claim, compatibility publication, product row, and
-media links are created atomically.
+`MediaPlaybackClaim`; the claim, authoritative product row, engagement target,
+and media links are created atomically. Normal authoring does not create a
+LegacyPublication.
 
 Authors may edit body, Category, and LINK URL without changing type or replacing
-media. Archive clears product and compatibility publication timestamps and
-states in one transaction while preserving rows, engagement, media, and playback
-claims. Archived product reads and derived media are unavailable. Media
-replacement and LINK previews remain deliberately out of scope.
+media. Archive changes the authoritative product state while preserving rows,
+engagement, media, and playback claims. Archived product reads and derived media
+are unavailable. Media replacement and LINK previews remain deliberately out of
+scope.
 
 ## Shared capabilities
 
@@ -143,12 +150,12 @@ their service.
 ## Naming during migration
 
 The original Prisma `Post` model is a legacy universal publication aggregate.
-New product code must not use the word Post for that aggregate. During the
-incremental migration it is called `LegacyPublication` in documentation. It is
-retained temporarily so authentication, upload, feed, engagement, comments,
-and moderation remain operational while each product service receives an
-explicit model and API. The migration is complete only when `Post` unambiguously
-means Community Post in product-facing code.
+New product code must not use the word Post for that aggregate. It is called
+`LegacyPublication` in documentation and retained only for isolated legacy
+endpoints, residual data, audit/export, and historical ID resolution. Normal
+product creation, feed, Playlist, playback, engagement, moderation, and
+lifecycle transitions do not depend on it. A later retention decision may
+export or delete the physical tables without changing normal MIRU behavior.
 
 Product contracts expose engagement as a typed product reference, never a
 compatibility publication ID. Native targets own like, save, comment, report,
@@ -157,13 +164,12 @@ publication. EPISODIC Series aggregate engagement and Episode engagement are
 separate targets. Product reads and media traversal do not start from the
 compatibility aggregate.
 
-Community Post is authoritative for product fields. Its legacy publication is
-updated in the same transaction as creation, metadata edits, and archive solely
-as a temporary engagement/feed/moderation projection; its identifier and
-compatibility format are not exposed by Community APIs.
+Community Post is authoritative for product fields. New Community content has
+no compatibility publication. Historical nullable publication identifiers may
+resolve old URLs but are not exposed by Community APIs.
 
 Moderator removal is a durable target restriction and an authoritative product
-state transition. It synchronizes any compatibility publication, denies public
-and derived-media access, preserves source media and playback claims, and
-prevents creator republish. Reports move through OPEN, REVIEWING, DISMISSED, or
-RESOLVED with append-only actor, timestamp, action, and note audit entries.
+state transition. It does not require a compatibility publication, denies
+public and derived-media access, preserves source media and playback claims,
+and prevents creator republish. Reports move through OPEN, REVIEWING, DISMISSED,
+or RESOLVED with append-only actor, timestamp, action, and note audit entries.

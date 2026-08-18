@@ -266,13 +266,9 @@ describe('EPISODIC Series content management', () => {
     const editedEpisode = await database.client.seriesEpisode.findUniqueOrThrow(
       {
         where: { id: secondId },
-        include: { publication: true },
       },
     );
-    expect(editedEpisode.publication).toMatchObject({
-      title: '수정한 둘째 화',
-      caption: '수정된 줄거리',
-    });
+    expect(editedEpisode.publicationId).toBeNull();
     expect(
       (
         await call(
@@ -436,19 +432,12 @@ describe('EPISODIC Series content management', () => {
     const afterConcurrentUnpublish =
       await database.client.seriesEpisode.findMany({
         where: { seriesId },
-        include: { publication: true },
       });
     expect(
       afterConcurrentUnpublish.filter((episode) => episode.publishedAt),
     ).toHaveLength(1);
-    for (const episode of afterConcurrentUnpublish) {
-      expect(episode.publication.status).toBe(
-        episode.publishedAt ? 'PUBLISHED' : 'DRAFT',
-      );
-      expect(Boolean(episode.publication.publishedAt)).toBe(
-        Boolean(episode.publishedAt),
-      );
-    }
+    for (const episode of afterConcurrentUnpublish)
+      expect(episode.publicationId).toBeNull();
     for (const episode of episodes) {
       expect(
         (

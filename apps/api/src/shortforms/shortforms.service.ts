@@ -9,9 +9,6 @@ import {
   EngagementTargetType,
   MediaPurpose,
   MediaStatus,
-  PostFormat,
-  PostStatus,
-  PostVisibility,
   ShortFormType,
 } from '@stream/database';
 import type { Prisma } from '@stream/database';
@@ -26,7 +23,6 @@ const include = {
   creator: {
     select: { id: true, handle: true, displayName: true, avatarUrl: true },
   },
-  publication: { select: { likeCount: true, commentCount: true } },
   engagementTarget: { select: { likeCount: true, commentCount: true } },
   media: {
     where: { asset: { status: MediaStatus.READY } },
@@ -109,36 +105,24 @@ export class ShortformsService {
         [MediaStatus.READY],
         'SHORTFORM',
       );
-      return tx.post.create({
+      return tx.shortForm.create({
         data: {
-          authorId: userId,
-          format: PostFormat.SHORT_VIDEO,
-          status: PostStatus.DRAFT,
-          visibility: PostVisibility.PUBLIC,
+          creatorId: userId,
+          type: ShortFormType.VIDEO,
           title: input.title?.trim() || null,
-          caption: input.description.trim(),
-          media: { create: { assetId: asset.id, order: 0 } },
-          shortForm: {
-            create: {
-              creatorId: userId,
-              type: ShortFormType.VIDEO,
-              title: input.title?.trim() || null,
-              description: input.description.trim(),
-              musicKey: input.musicKey?.trim() || null,
-              ...promotion,
-              media: { create: { assetId: asset.id, position: 0 } },
-              engagementTarget: {
-                create: { type: EngagementTargetType.SHORTFORM },
-              },
-            },
+          description: input.description.trim(),
+          musicKey: input.musicKey?.trim() || null,
+          ...promotion,
+          media: { create: { assetId: asset.id, position: 0 } },
+          engagementTarget: {
+            create: { type: EngagementTargetType.SHORTFORM },
           },
         },
-        select: { shortForm: { select: { id: true } } },
+        select: { id: true },
       });
     });
-    if (!created.shortForm) throw new Error('Shortform creation failed');
     return {
-      id: created.shortForm.id,
+      id: created.id,
       assetId: input.assetId,
       status: DomainPublicationStatus.DRAFT,
     };
@@ -152,7 +136,6 @@ export class ShortformsService {
       },
       select: {
         status: true,
-        publicationId: true,
         media: { select: { asset: { select: { kind: true, status: true } } } },
       },
     });
@@ -172,10 +155,6 @@ export class ShortformsService {
       await tx.shortForm.update({
         where: { id },
         data: { status: DomainPublicationStatus.PUBLISHED, publishedAt },
-      });
-      await tx.post.update({
-        where: { id: record.publicationId },
-        data: { status: PostStatus.PUBLISHED, publishedAt },
       });
     });
     return this.findOne(id);

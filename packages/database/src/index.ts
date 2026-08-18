@@ -22,6 +22,7 @@ export {
   ShortFormType,
   CommunityPostType,
   PlaylistVisibility,
+  PlaylistTargetType,
 } from "./generated/prisma/enums.js";
 
 export function createDatabaseClient(connectionString: string) {

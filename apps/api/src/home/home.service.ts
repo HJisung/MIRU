@@ -4,9 +4,6 @@ import {
   EngagementTargetType,
   MediaPurpose,
   MediaStatus,
-  PostFormat,
-  PostStatus,
-  PostVisibility,
 } from '@stream/database';
 import { DatabaseService } from '../database/database.service.js';
 import { MediaAttachmentService } from '../media/media-attachment.service.js';
@@ -26,7 +23,6 @@ const homeInclude = {
     },
   },
   videoAsset: true,
-  publication: { select: { likeCount: true, commentCount: true } },
   engagementTarget: { select: { likeCount: true, commentCount: true } },
 } as const;
 
@@ -74,37 +70,23 @@ export class HomeService {
         [MediaStatus.UPLOADED, MediaStatus.PROCESSING, MediaStatus.READY],
         'HOME_VIDEO',
       );
-      return tx.post.create({
+      return tx.homeVideo.create({
         data: {
-          authorId: userId,
-          format: PostFormat.LONG_VIDEO,
-          status: PostStatus.DRAFT,
-          visibility: PostVisibility.PUBLIC,
+          creatorId: userId,
+          videoAssetId: asset.id,
           title: input.title.trim(),
-          caption: input.description.trim(),
-          media: { create: { assetId: asset.id, order: 0 } },
-          homeVideo: {
-            create: {
-              creatorId: userId,
-              videoAssetId: asset.id,
-              title: input.title.trim(),
-              description: input.description.trim(),
-              engagementTarget: {
-                create: { type: EngagementTargetType.HOME_VIDEO },
-              },
-            },
+          description: input.description.trim(),
+          engagementTarget: {
+            create: { type: EngagementTargetType.HOME_VIDEO },
           },
         },
-        select: {
-          homeVideo: { select: { id: true, status: true, videoAssetId: true } },
-        },
+        select: { id: true, status: true, videoAssetId: true },
       });
     });
-    if (!created.homeVideo) throw new Error('Home video creation failed');
     return {
-      id: created.homeVideo.id,
-      status: created.homeVideo.status,
-      assetId: created.homeVideo.videoAssetId,
+      id: created.id,
+      status: created.status,
+      assetId: created.videoAssetId,
     };
   }
 
@@ -116,7 +98,6 @@ export class HomeService {
       },
       select: {
         status: true,
-        publicationId: true,
         videoAsset: { select: { status: true } },
       },
     });
@@ -131,10 +112,6 @@ export class HomeService {
       await tx.homeVideo.update({
         where: { id },
         data: { status: DomainPublicationStatus.PUBLISHED, publishedAt },
-      });
-      await tx.post.update({
-        where: { id: record.publicationId },
-        data: { status: PostStatus.PUBLISHED, publishedAt },
       });
     });
     return this.findOne(id);

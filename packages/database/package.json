@@ -11,6 +11,7 @@
   },
   "scripts": {
     "build": "prisma generate && tsc -p tsconfig.json",
+    "audit:legacy": "tsx scripts/audit-legacy-publications.ts",
     "format": "prisma format && prettier --write \"src/**/*.ts\" \"prisma/seed.ts\" \"prisma.config.ts\"",
     "generate": "prisma generate",
     "migrate:dev": "prisma migrate dev",

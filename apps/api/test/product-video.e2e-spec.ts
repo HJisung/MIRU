@@ -134,6 +134,71 @@ describe('processed video product attachments', () => {
     });
   }
 
+  it('creates and publishes a native-only Home video without a compatibility Post', async () => {
+    const asset = await readyAsset(MediaPurpose.LONG_VIDEO);
+    const postCountBefore = await database.client.post.count({
+      where: { authorId: userId },
+    });
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/v1/home/videos',
+      headers: { cookie },
+      payload: {
+        assetId: asset.id,
+        title: 'Native Home',
+        description: 'No legacy publication.',
+      },
+    });
+    expect(created.statusCode).toBe(201);
+    const homeId = created.json<{ id: string }>().id;
+    expect(
+      await database.client.homeVideo.findUniqueOrThrow({
+        where: { id: homeId },
+        select: { publicationId: true },
+      }),
+    ).toEqual({ publicationId: null });
+    expect(
+      await database.client.post.count({ where: { authorId: userId } }),
+    ).toBe(postCountBefore);
+    expect(
+      (
+        await app.inject({
+          method: 'GET',
+          url: `/api/v1/home/videos/${homeId}`,
+        })
+      ).statusCode,
+    ).toBe(404);
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: `/api/v1/home/videos/${homeId}/publish`,
+          headers: { cookie },
+        })
+      ).statusCode,
+    ).toBe(201);
+    expect(
+      (
+        await app.inject({
+          method: 'GET',
+          url: `/api/v1/home/videos/${homeId}`,
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (
+        await app.inject({
+          method: 'PUT',
+          url: `/api/v1/engagement/HOME_VIDEO/${homeId}/like`,
+          headers: { cookie },
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      await database.client.post.count({ where: { authorId: userId } }),
+    ).toBe(postCountBefore);
+  });
+
   it('attaches a READY video directly to SINGLE_WORK playback', async () => {
     const asset = await readyAsset(MediaPurpose.LONG_VIDEO);
     const attached = await app.inject({
@@ -251,6 +316,12 @@ describe('processed video product attachments', () => {
       },
     });
     const shortformId = created.json<{ id: string }>().id;
+    expect(
+      await database.client.shortForm.findUniqueOrThrow({
+        where: { id: shortformId },
+        select: { publicationId: true },
+      }),
+    ).toEqual({ publicationId: null });
     const retried = await app.inject({
       method: 'POST',
       url: '/api/v1/shortforms/videos',

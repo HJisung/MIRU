@@ -9,15 +9,35 @@ const profileSelect = {
   bio: true,
   avatarUrl: true,
   createdAt: true,
-  _count: { select: { posts: true } },
+  _count: {
+    select: {
+      homeVideos: true,
+      series: true,
+      shortForms: true,
+      communityPosts: true,
+    },
+  },
+  series: { select: { _count: { select: { episodes: true } } } },
 } as const;
 
 function mapProfile(
   profile: Awaited<ReturnType<ProfilesService['findRecord']>>,
 ) {
   if (!profile) throw new NotFoundException('Profile not found');
-  const { _count, ...rest } = profile;
-  return { ...rest, postCount: _count.posts };
+  const { _count, series, ...rest } = profile;
+  const episodeCount = series.reduce(
+    (total, record) => total + record._count.episodes,
+    0,
+  );
+  return {
+    ...rest,
+    postCount:
+      _count.homeVideos +
+      _count.series +
+      _count.shortForms +
+      _count.communityPosts +
+      episodeCount,
+  };
 }
 
 @Injectable()

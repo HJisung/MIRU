@@ -1,24 +1,19 @@
 import { Transform } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PostFormat } from '@stream/database';
+import { FeedItemType } from './feed.dto.js';
 
 export class FeedQuery {
-  @ApiPropertyOptional({
-    enum: [PostFormat.IMAGE, PostFormat.SHORT_VIDEO, PostFormat.LONG_VIDEO],
-    enumName: 'LegacyFeedPostFormat',
-  })
+  @ApiPropertyOptional({ enum: FeedItemType })
   @IsOptional()
-  @IsIn([PostFormat.IMAGE, PostFormat.SHORT_VIDEO, PostFormat.LONG_VIDEO])
-  format?: PostFormat;
-
+  @IsEnum(FeedItemType)
+  type?: FeedItemType;
   @ApiPropertyOptional({
     description: 'Opaque cursor returned by the previous page',
   })
   @IsOptional()
   @IsString()
   cursor?: string;
-
   @ApiPropertyOptional({ default: 12, minimum: 1, maximum: 24 })
   @Transform(({ value }) => Number(value))
   @IsInt()

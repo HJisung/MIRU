@@ -1,15 +1,27 @@
 import 'reflect-metadata';
+import fastifyCookie from '@fastify/cookie';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import {
+  DomainPublicationStatus,
+  EngagementTargetType,
+  MediaKind,
+  MediaPurpose,
+  MediaStatus,
+  ModerationTargetStatus,
+  ShortFormType,
+} from '@stream/database';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppModule } from '../src/app.module.js';
+import { DatabaseService } from '../src/database/database.service.js';
 
 describe('public discovery flow (PostgreSQL integration)', () => {
   let app: NestFastifyApplication;
+  let database: DatabaseService;
 
   beforeAll(async () => {
     app = await NestFactory.create<NestFastifyApplication>(
@@ -17,6 +29,7 @@ describe('public discovery flow (PostgreSQL integration)', () => {
       new FastifyAdapter(),
       { logger: false },
     );
+    await app.register(fastifyCookie);
     app.setGlobalPrefix('api/v1');
     app.useGlobalPipes(
       new ValidationPipe({
@@ -26,6 +39,7 @@ describe('public discovery flow (PostgreSQL integration)', () => {
       }),
     );
     await app.init();
+    database = app.get(DatabaseService);
   });
 
   afterAll(async () => app.close());
@@ -58,25 +72,200 @@ describe('public discovery flow (PostgreSQL integration)', () => {
     );
   });
 
-  it('returns a display-ready post detail from the feed', async () => {
+  it('paginates identical timestamps by native type and applies following, block, moderation, and native counters', async () => {
+    const viewer = await register('feed_viewer');
+    const followed = await register('feed_followed');
+    const blocked = await register('feed_blocked');
+    const moderated = await register('feed_moderated');
+    const userIds = [viewer.id, followed.id, blocked.id, moderated.id];
+    const assetIds: string[] = [];
+    const sharedProductId = crypto.randomUUID();
+    const publishedAt = new Date('2099-08-19T00:00:00.000Z');
+    try {
+      await database.client.follow.createMany({
+        data: [
+          { followerId: viewer.id, followeeId: followed.id },
+          { followerId: viewer.id, followeeId: blocked.id },
+          { followerId: viewer.id, followeeId: moderated.id },
+        ],
+      });
+      await database.client.block.create({
+        data: { blockerId: blocked.id, blockedId: viewer.id },
+      });
+      const homeAsset = await readyAsset(followed.id, MediaPurpose.LONG_VIDEO);
+      const shortAsset = await readyAsset(
+        followed.id,
+        MediaPurpose.SHORT_VIDEO,
+      );
+      const blockedAsset = await readyAsset(
+        blocked.id,
+        MediaPurpose.LONG_VIDEO,
+      );
+      const moderatedAsset = await readyAsset(
+        moderated.id,
+        MediaPurpose.LONG_VIDEO,
+      );
+      assetIds.push(
+        homeAsset.id,
+        shortAsset.id,
+        blockedAsset.id,
+        moderatedAsset.id,
+      );
+      await database.client.homeVideo.create({
+        data: {
+          id: sharedProductId,
+          creatorId: followed.id,
+          videoAssetId: homeAsset.id,
+          title: 'Same timestamp Home',
+          status: DomainPublicationStatus.PUBLISHED,
+          publishedAt,
+          engagementTarget: {
+            create: {
+              type: EngagementTargetType.HOME_VIDEO,
+              likeCount: 17,
+              commentCount: 5,
+            },
+          },
+        },
+      });
+      await database.client.shortForm.create({
+        data: {
+          id: sharedProductId,
+          creatorId: followed.id,
+          type: ShortFormType.VIDEO,
+          title: 'Same timestamp Short',
+          status: DomainPublicationStatus.PUBLISHED,
+          publishedAt,
+          media: { create: { assetId: shortAsset.id, position: 0 } },
+          engagementTarget: {
+            create: { type: EngagementTargetType.SHORTFORM },
+          },
+        },
+      });
+      await database.client.homeVideo.create({
+        data: {
+          creatorId: blocked.id,
+          videoAssetId: blockedAsset.id,
+          title: 'Blocked Home',
+          status: DomainPublicationStatus.PUBLISHED,
+          publishedAt: new Date('2098-08-20T00:00:00.000Z'),
+          engagementTarget: {
+            create: { type: EngagementTargetType.HOME_VIDEO },
+          },
+        },
+      });
+      await database.client.homeVideo.create({
+        data: {
+          creatorId: moderated.id,
+          videoAssetId: moderatedAsset.id,
+          title: 'Moderated Home',
+          status: DomainPublicationStatus.PUBLISHED,
+          publishedAt: new Date('2099-08-21T00:00:00.000Z'),
+          engagementTarget: {
+            create: {
+              type: EngagementTargetType.HOME_VIDEO,
+              moderationStatus: ModerationTargetStatus.REMOVED,
+              removedAt: new Date(),
+            },
+          },
+        },
+      });
+
+      const first = await app.inject({
+        method: 'GET',
+        url: '/api/v1/feed/discovery?limit=1',
+      });
+      expect(first.statusCode, first.body).toBe(200);
+      const firstBody = first.json<{
+        items: Array<{
+          id: string;
+          type: string;
+          likeCount: number;
+          commentCount: number;
+        }>;
+        nextCursor: string;
+      }>();
+      expect(firstBody.items[0]).toMatchObject({
+        id: sharedProductId,
+        type: 'HOME_VIDEO',
+        likeCount: 17,
+        commentCount: 5,
+      });
+      const second = await app.inject({
+        method: 'GET',
+        url: `/api/v1/feed/discovery?limit=1&cursor=${encodeURIComponent(firstBody.nextCursor)}`,
+      });
+      expect(
+        second.json<{ items: Array<{ id: string; type: string }> }>().items[0],
+      ).toMatchObject({ id: sharedProductId, type: 'SHORTFORM' });
+
+      const following = await app.inject({
+        method: 'GET',
+        url: '/api/v1/feed/following?limit=10',
+        headers: { cookie: viewer.cookie },
+      });
+      const followingItems = following.json<{
+        items: Array<{ id: string; type: string; title: string }>;
+      }>().items;
+      expect(followingItems.map(({ id, type }) => `${type}:${id}`)).toEqual([
+        `HOME_VIDEO:${sharedProductId}`,
+        `SHORTFORM:${sharedProductId}`,
+      ]);
+      expect(
+        followingItems.some(
+          (item) =>
+            item.title === 'Blocked Home' || item.title === 'Moderated Home',
+        ),
+      ).toBe(false);
+    } finally {
+      await database.client.shortForm.deleteMany({
+        where: { creatorId: { in: userIds } },
+      });
+      await database.client.homeVideo.deleteMany({
+        where: { creatorId: { in: userIds } },
+      });
+      await database.client.mediaAsset.deleteMany({
+        where: { id: { in: assetIds } },
+      });
+      await database.client.user.deleteMany({ where: { id: { in: userIds } } });
+    }
+  });
+
+  it('returns product identities and canonical product details from the feed', async () => {
     const feed = await app.inject({
       method: 'GET',
       url: '/api/v1/feed/discovery?limit=1',
     });
-    const item = feed.json<{ items: Array<{ id: string }> }>().items[0];
+    const item = feed.json<{
+      items: Array<{
+        id: string;
+        type: string;
+        engagementTarget: { type: string; id: string };
+        publicationId?: string;
+      }>;
+    }>().items[0];
     expect(item).toBeDefined();
+    expect(item?.publicationId).toBeUndefined();
+    expect(item?.engagementTarget).toEqual({ type: item?.type, id: item?.id });
+    const path =
+      item?.type === 'HOME_VIDEO'
+        ? `/home/videos/${item.id}`
+        : item?.type === 'SERIES'
+          ? `/series/${item.id}`
+          : item?.type === 'SERIES_EPISODE'
+            ? `/series/episodes/${item.id}`
+            : `/shortforms/${item?.id}`;
     const detail = await app.inject({
       method: 'GET',
-      url: `/api/v1/posts/${item.id}`,
+      url: `/api/v1${path}`,
     });
     expect(detail.statusCode).toBe(200);
-    expect(detail.json<{ media: unknown[] }>().media.length).toBeGreaterThan(0);
   });
 
   it('distinguishes standalone long-form videos from ordered series episodes', async () => {
     const response = await app.inject({
       method: 'GET',
-      url: '/api/v1/feed/discovery?format=LONG_VIDEO&limit=12',
+      url: '/api/v1/feed/discovery?limit=12',
     });
     expect(response.statusCode).toBe(200);
     const items = response.json<{
@@ -264,4 +453,43 @@ describe('public discovery flow (PostgreSQL integration)', () => {
       'internet-broadcasting',
     ]);
   });
+
+  async function register(label: string) {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: `${label}-${crypto.randomUUID()}@example.test`,
+        handle: `${label}_${crypto.randomUUID().slice(0, 8)}`,
+        displayName: label,
+        password: 'correct-horse-battery-staple',
+      },
+    });
+    const header = response.headers['set-cookie'];
+    return {
+      id: response.json<{ id: string }>().id,
+      cookie: (Array.isArray(header) ? header[0] : header)?.split(';')[0] ?? '',
+    };
+  }
+
+  function readyAsset(ownerId: string, purpose: MediaPurpose) {
+    const id = crypto.randomUUID();
+    return database.client.mediaAsset.create({
+      data: {
+        id,
+        ownerId,
+        kind: MediaKind.VIDEO,
+        purpose,
+        status: MediaStatus.READY,
+        sourceKey: `feed-verification/${id}`,
+        publicUrl: `/api/v1/media/assets/${id}/hls/master.m3u8`,
+        mimeType: 'application/vnd.apple.mpegurl',
+        width: 1280,
+        height: 720,
+        durationMs: 1_000,
+        hlsManifestKey: `derived/${id}/v2/master.m3u8`,
+        posterKey: `derived/${id}/v2/poster.jpg`,
+      },
+    });
+  }
 });

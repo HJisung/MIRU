@@ -133,42 +133,50 @@ enum PlaylistVisibility {
   PUBLIC
 }
 
+enum PlaylistTargetType {
+  HOME_VIDEO
+  SERIES
+  SERIES_EPISODE
+  SHORTFORM
+  COMMUNITY_POST
+}
+
 model User {
-  id                String             @id @default(uuid()) @db.Uuid
-  email             String             @unique
-  handle            String             @unique
-  displayName       String
-  bio               String             @default("")
-  avatarUrl         String?
-  passwordHash      String?
-  role              UserRole           @default(MEMBER)
-  sessions          Session[]
-  mediaAssets       MediaAsset[]
-  posts             Post[]
-  following         Follow[]           @relation("Follower")
-  followers         Follow[]           @relation("Followee")
-  likes             PostLike[]
-  saves             PostSave[]
-  comments          Comment[]
-  blocksMade        Block[]            @relation("Blocker")
-  blocksReceived    Block[]            @relation("Blocked")
-  reports           Report[]
-  engagementLikes   EngagementLike[]
-  engagementSaves   EngagementSave[]
+  id                 String               @id @default(uuid()) @db.Uuid
+  email              String               @unique
+  handle             String               @unique
+  displayName        String
+  bio                String               @default("")
+  avatarUrl          String?
+  passwordHash       String?
+  role               UserRole             @default(MEMBER)
+  sessions           Session[]
+  mediaAssets        MediaAsset[]
+  posts              Post[]
+  following          Follow[]             @relation("Follower")
+  followers          Follow[]             @relation("Followee")
+  likes              PostLike[]
+  saves              PostSave[]
+  comments           Comment[]
+  blocksMade         Block[]              @relation("Blocker")
+  blocksReceived     Block[]              @relation("Blocked")
+  reports            Report[]
+  engagementLikes    EngagementLike[]
+  engagementSaves    EngagementSave[]
   engagementComments EngagementComment[]
-  engagementReports EngagementReport[]
-  moderationRemovals EngagementTarget[] @relation("EngagementTargetRemovedBy")
-  moderationAudits  ModerationAuditLog[] @relation("ModerationAuditActor")
-  series            Series[]
-  homeVideos        HomeVideo[]
-  collections       Collection[]
-  seriesSubmissions SeriesSubmission[] @relation("SeriesApplicant")
-  seriesReviews     SeriesSubmission[] @relation("SeriesReviewer")
-  shortForms        ShortForm[]
-  communityPosts    CommunityPost[]
-  playlists         Playlist[]
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  engagementReports  EngagementReport[]
+  moderationRemovals EngagementTarget[]   @relation("EngagementTargetRemovedBy")
+  moderationAudits   ModerationAuditLog[] @relation("ModerationAuditActor")
+  series             Series[]
+  homeVideos         HomeVideo[]
+  collections        Collection[]
+  seriesSubmissions  SeriesSubmission[]   @relation("SeriesApplicant")
+  seriesReviews      SeriesSubmission[]   @relation("SeriesReviewer")
+  shortForms         ShortForm[]
+  communityPosts     CommunityPost[]
+  playlists          Playlist[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
 
   @@index([createdAt])
 }
@@ -237,33 +245,33 @@ model MediaPlaybackClaim {
 }
 
 model Post {
-  id               String         @id @default(uuid()) @db.Uuid
-  authorId         String         @db.Uuid
-  author           User           @relation(fields: [authorId], references: [id], onDelete: Restrict)
-  format           PostFormat
-  status           PostStatus     @default(DRAFT)
-  visibility       PostVisibility @default(PUBLIC)
-  title            String?
-  caption          String         @default("")
-  media            PostMedia[]
-  likes            PostLike[]
-  saves            PostSave[]
-  comments         Comment[]
-  reports          Report[]
-  seriesId         String?        @db.Uuid
-  series           Series?        @relation(fields: [seriesId], references: [id], onDelete: SetNull)
-  episodeNumber    Int?
-  likeCount        Int            @default(0)
-  commentCount     Int            @default(0)
-  publishedAt      DateTime?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  homeVideo        HomeVideo?
-  seriesSingleWork Series?        @relation("SeriesSingleWork")
-  seriesEpisode    SeriesEpisode?
-  shortForm        ShortForm?
-  communityPost    CommunityPost?
-  playlistItems    PlaylistItem[]
+  id                  String                       @id @default(uuid()) @db.Uuid
+  authorId            String                       @db.Uuid
+  author              User                         @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  format              PostFormat
+  status              PostStatus                   @default(DRAFT)
+  visibility          PostVisibility               @default(PUBLIC)
+  title               String?
+  caption             String                       @default("")
+  media               PostMedia[]
+  likes               PostLike[]
+  saves               PostSave[]
+  comments            Comment[]
+  reports             Report[]
+  seriesId            String?                      @db.Uuid
+  series              Series?                      @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  episodeNumber       Int?
+  likeCount           Int                          @default(0)
+  commentCount        Int                          @default(0)
+  publishedAt         DateTime?
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+  homeVideo           HomeVideo?
+  seriesSingleWork    Series?                      @relation("SeriesSingleWork")
+  seriesEpisode       SeriesEpisode?
+  shortForm           ShortForm?
+  communityPost       CommunityPost?
+  legacyPlaylistItems LegacyPlaylistItemResidual[]
 
   @@unique([seriesId, episodeNumber])
   @@index([status, visibility, publishedAt(sort: Desc), id(sort: Desc)])
@@ -299,33 +307,36 @@ model Series {
   submissions             SeriesSubmission[]
   promotedBy              ShortForm[]             @relation("PromotedSeries")
   engagementTarget        EngagementTarget?
+  playlistItems           PlaylistItem[]
+  publishedAt             DateTime?
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
 
   @@index([creatorId, createdAt(sort: Desc)])
-  @@index([publicationStatus, releaseDate(sort: Desc)])
+  @@index([publicationStatus, workType, publishedAt(sort: Desc), id(sort: Desc)])
   @@index([singleWorkAssetId])
 }
 
 /// MIRU Home's ordinary, self-contained video. `publicationId` bridges the
 /// proven upload/engagement aggregate while domain APIs migrate incrementally.
 model HomeVideo {
-  id              String                  @id @default(uuid()) @db.Uuid
-  creatorId       String                  @db.Uuid
-  creator         User                    @relation(fields: [creatorId], references: [id], onDelete: Restrict)
-  publicationId   String                  @unique @db.Uuid
-  publication     Post                    @relation(fields: [publicationId], references: [id], onDelete: Restrict)
-  videoAssetId    String?                 @db.Uuid
-  videoAsset      MediaAsset?             @relation("HomeVideoPlayback", fields: [videoAssetId], references: [id], onDelete: SetNull)
-  title           String
-  description     String                  @default("")
-  status          DomainPublicationStatus @default(DRAFT)
-  publishedAt     DateTime?
-  collectionItems CollectionItem[]
-  promotedBy      ShortForm[]             @relation("PromotedHomeVideo")
+  id               String                  @id @default(uuid()) @db.Uuid
+  creatorId        String                  @db.Uuid
+  creator          User                    @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  publicationId    String?                 @unique @db.Uuid
+  publication      Post?                   @relation(fields: [publicationId], references: [id], onDelete: SetNull)
+  videoAssetId     String?                 @db.Uuid
+  videoAsset       MediaAsset?             @relation("HomeVideoPlayback", fields: [videoAssetId], references: [id], onDelete: SetNull)
+  title            String
+  description      String                  @default("")
+  status           DomainPublicationStatus @default(DRAFT)
+  publishedAt      DateTime?
+  collectionItems  CollectionItem[]
+  promotedBy       ShortForm[]             @relation("PromotedHomeVideo")
   engagementTarget EngagementTarget?
-  createdAt       DateTime                @default(now())
-  updatedAt       DateTime                @updatedAt
+  playlistItems    PlaylistItem[]
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
 
   @@index([status, publishedAt(sort: Desc), id(sort: Desc)])
   @@index([creatorId, createdAt(sort: Desc)])
@@ -378,29 +389,31 @@ model SeriesSeason {
 }
 
 model SeriesEpisode {
-  id                  String        @id @default(uuid()) @db.Uuid
-  seriesId            String        @db.Uuid
-  series              Series        @relation(fields: [seriesId], references: [id], onDelete: Cascade)
-  seasonId            String?       @db.Uuid
-  season              SeriesSeason? @relation(fields: [seasonId], references: [id], onDelete: SetNull)
-  publicationId       String        @unique @db.Uuid
-  publication         Post          @relation(fields: [publicationId], references: [id], onDelete: Restrict)
-  videoAssetId        String?       @db.Uuid
-  videoAsset          MediaAsset?   @relation("SeriesEpisodePlayback", fields: [videoAssetId], references: [id], onDelete: SetNull)
-  promotedBy          ShortForm[]   @relation("PromotedSeriesEpisode")
+  id                  String            @id @default(uuid()) @db.Uuid
+  seriesId            String            @db.Uuid
+  series              Series            @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  seasonId            String?           @db.Uuid
+  season              SeriesSeason?     @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+  publicationId       String?           @unique @db.Uuid
+  publication         Post?             @relation(fields: [publicationId], references: [id], onDelete: SetNull)
+  videoAssetId        String?           @db.Uuid
+  videoAsset          MediaAsset?       @relation("SeriesEpisodePlayback", fields: [videoAssetId], references: [id], onDelete: SetNull)
+  promotedBy          ShortForm[]       @relation("PromotedSeriesEpisode")
   engagementTarget    EngagementTarget?
+  playlistItems       PlaylistItem[]
   episodeNumber       Int
   seasonEpisodeNumber Int?
   title               String
-  synopsis            String        @default("")
+  synopsis            String            @default("")
   publishedAt         DateTime?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
   @@unique([seriesId, episodeNumber])
   @@unique([seasonId, seasonEpisodeNumber])
   @@index([seasonId, seasonEpisodeNumber])
   @@index([videoAssetId])
+  @@index([publishedAt(sort: Desc), id(sort: Desc)])
 }
 
 model SeriesSubmission {
@@ -426,8 +439,8 @@ model ShortForm {
   id                  String                  @id @default(uuid()) @db.Uuid
   creatorId           String                  @db.Uuid
   creator             User                    @relation(fields: [creatorId], references: [id], onDelete: Restrict)
-  publicationId       String                  @unique @db.Uuid
-  publication         Post                    @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  publicationId       String?                 @unique @db.Uuid
+  publication         Post?                   @relation(fields: [publicationId], references: [id], onDelete: SetNull)
   type                ShortFormType
   title               String?
   description         String                  @default("")
@@ -440,6 +453,7 @@ model ShortForm {
   promotedEpisode     SeriesEpisode?          @relation("PromotedSeriesEpisode", fields: [promotedEpisodeId], references: [id], onDelete: SetNull)
   media               ShortFormMedia[]
   engagementTarget    EngagementTarget?
+  playlistItems       PlaylistItem[]
   status              DomainPublicationStatus @default(DRAFT)
   publishedAt         DateTime?
   createdAt           DateTime                @default(now())
@@ -477,23 +491,24 @@ model CommunityCategory {
 }
 
 model CommunityPost {
-  id            String                  @id @default(uuid()) @db.Uuid
-  authorId      String                  @db.Uuid
-  author        User                    @relation(fields: [authorId], references: [id], onDelete: Restrict)
-  publicationId String                  @unique @db.Uuid
-  publication   Post                    @relation(fields: [publicationId], references: [id], onDelete: Restrict)
-  categoryId    String?                 @db.Uuid
-  category      CommunityCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  type          CommunityPostType
-  body          String                  @default("")
-  linkUrl       String?
-  creationId    String?                 @db.Uuid
-  media         CommunityPostMedia[]
+  id               String                  @id @default(uuid()) @db.Uuid
+  authorId         String                  @db.Uuid
+  author           User                    @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  publicationId    String?                 @unique @db.Uuid
+  publication      Post?                   @relation(fields: [publicationId], references: [id], onDelete: SetNull)
+  categoryId       String?                 @db.Uuid
+  category         CommunityCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  type             CommunityPostType
+  body             String                  @default("")
+  linkUrl          String?
+  creationId       String?                 @db.Uuid
+  media            CommunityPostMedia[]
   engagementTarget EngagementTarget?
-  status        DomainPublicationStatus @default(DRAFT)
-  publishedAt   DateTime?
-  createdAt     DateTime                @default(now())
-  updatedAt     DateTime                @updatedAt
+  playlistItems    PlaylistItem[]
+  status           DomainPublicationStatus @default(DRAFT)
+  publishedAt      DateTime?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
 
   @@unique([authorId, creationId])
   @@index([categoryId, status, publishedAt(sort: Desc)])
@@ -514,31 +529,31 @@ model CommunityPostMedia {
 /// Narrow shared identity for engagement and moderation. Product rows remain
 /// authoritative for content, ownership, publication, and playback.
 model EngagementTarget {
-  id                String                 @id @default(uuid()) @db.Uuid
-  type              EngagementTargetType
-  homeVideoId       String?                @unique @db.Uuid
-  homeVideo         HomeVideo?             @relation(fields: [homeVideoId], references: [id], onDelete: Cascade)
-  seriesId          String?                @unique @db.Uuid
-  series            Series?                @relation(fields: [seriesId], references: [id], onDelete: Cascade)
-  seriesEpisodeId   String?                @unique @db.Uuid
-  seriesEpisode     SeriesEpisode?         @relation(fields: [seriesEpisodeId], references: [id], onDelete: Cascade)
-  shortFormId       String?                @unique @db.Uuid
-  shortForm         ShortForm?             @relation(fields: [shortFormId], references: [id], onDelete: Cascade)
-  communityPostId   String?                @unique @db.Uuid
-  communityPost     CommunityPost?         @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
-  likeCount         Int                    @default(0)
-  commentCount      Int                    @default(0)
-  moderationStatus  ModerationTargetStatus @default(ACTIVE)
-  removedAt         DateTime?
-  removedById       String?                @db.Uuid
-  removedBy         User?                  @relation("EngagementTargetRemovedBy", fields: [removedById], references: [id], onDelete: SetNull)
-  likes             EngagementLike[]
-  saves             EngagementSave[]
-  comments          EngagementComment[]
-  reports           EngagementReport[]
-  auditLogs         ModerationAuditLog[]
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
+  id               String                 @id @default(uuid()) @db.Uuid
+  type             EngagementTargetType
+  homeVideoId      String?                @unique @db.Uuid
+  homeVideo        HomeVideo?             @relation(fields: [homeVideoId], references: [id], onDelete: Cascade)
+  seriesId         String?                @unique @db.Uuid
+  series           Series?                @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  seriesEpisodeId  String?                @unique @db.Uuid
+  seriesEpisode    SeriesEpisode?         @relation(fields: [seriesEpisodeId], references: [id], onDelete: Cascade)
+  shortFormId      String?                @unique @db.Uuid
+  shortForm        ShortForm?             @relation(fields: [shortFormId], references: [id], onDelete: Cascade)
+  communityPostId  String?                @unique @db.Uuid
+  communityPost    CommunityPost?         @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
+  likeCount        Int                    @default(0)
+  commentCount     Int                    @default(0)
+  moderationStatus ModerationTargetStatus @default(ACTIVE)
+  removedAt        DateTime?
+  removedById      String?                @db.Uuid
+  removedBy        User?                  @relation("EngagementTargetRemovedBy", fields: [removedById], references: [id], onDelete: SetNull)
+  likes            EngagementLike[]
+  saves            EngagementSave[]
+  comments         EngagementComment[]
+  reports          EngagementReport[]
+  auditLogs        ModerationAuditLog[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
 
   @@index([type, moderationStatus])
 }
@@ -580,16 +595,16 @@ model EngagementComment {
 }
 
 model EngagementReport {
-  id         String           @id @default(uuid()) @db.Uuid
-  reporterId String           @db.Uuid
-  targetId   String           @db.Uuid
-  reporter   User             @relation(fields: [reporterId], references: [id], onDelete: Cascade)
-  target     EngagementTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  id         String               @id @default(uuid()) @db.Uuid
+  reporterId String               @db.Uuid
+  targetId   String               @db.Uuid
+  reporter   User                 @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  target     EngagementTarget     @relation(fields: [targetId], references: [id], onDelete: Cascade)
   reason     ReportReason
-  details    String           @default("")
-  status     ReportStatus     @default(OPEN)
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+  details    String               @default("")
+  status     ReportStatus         @default(OPEN)
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
   auditLogs  ModerationAuditLog[]
 
   @@unique([reporterId, targetId])
@@ -598,47 +613,76 @@ model EngagementReport {
 }
 
 model ModerationAuditLog {
-  id                String                @id @default(uuid()) @db.Uuid
-  actorId           String                @db.Uuid
-  actor             User                  @relation("ModerationAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
-  reportId          String?               @db.Uuid
-  report            EngagementReport?     @relation(fields: [reportId], references: [id], onDelete: SetNull)
-  targetId          String                @db.Uuid
-  target            EngagementTarget      @relation(fields: [targetId], references: [id], onDelete: Restrict)
-  action            ModerationAuditAction
-  previousStatus    ReportStatus?
-  resultingStatus   ReportStatus?
-  note              String                @default("")
-  createdAt         DateTime              @default(now())
+  id              String                @id @default(uuid()) @db.Uuid
+  actorId         String                @db.Uuid
+  actor           User                  @relation("ModerationAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  reportId        String?               @db.Uuid
+  report          EngagementReport?     @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  targetId        String                @db.Uuid
+  target          EngagementTarget      @relation(fields: [targetId], references: [id], onDelete: Restrict)
+  action          ModerationAuditAction
+  previousStatus  ReportStatus?
+  resultingStatus ReportStatus?
+  note            String                @default("")
+  createdAt       DateTime              @default(now())
 
   @@index([reportId, createdAt, id])
   @@index([targetId, createdAt, id])
 }
 
 model Playlist {
-  id          String             @id @default(uuid()) @db.Uuid
-  ownerId     String             @db.Uuid
-  owner       User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  id          String                       @id @default(uuid()) @db.Uuid
+  ownerId     String                       @db.Uuid
+  owner       User                         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   title       String
-  description String             @default("")
-  visibility  PlaylistVisibility @default(PRIVATE)
+  description String                       @default("")
+  visibility  PlaylistVisibility           @default(PRIVATE)
   items       PlaylistItem[]
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  legacyItems LegacyPlaylistItemResidual[]
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt
 
   @@index([ownerId, updatedAt(sort: Desc)])
+  @@index([visibility, updatedAt(sort: Desc), id(sort: Desc)])
 }
 
 model PlaylistItem {
+  id              String             @id @default(uuid()) @db.Uuid
+  playlistId      String             @db.Uuid
+  type            PlaylistTargetType
+  homeVideoId     String?            @db.Uuid
+  seriesId        String?            @db.Uuid
+  seriesEpisodeId String?            @db.Uuid
+  shortFormId     String?            @db.Uuid
+  communityPostId String?            @db.Uuid
+  position        Int
+  playlist        Playlist           @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  homeVideo       HomeVideo?         @relation(fields: [homeVideoId], references: [id], onDelete: Restrict)
+  series          Series?            @relation(fields: [seriesId], references: [id], onDelete: Restrict)
+  seriesEpisode   SeriesEpisode?     @relation(fields: [seriesEpisodeId], references: [id], onDelete: Restrict)
+  shortForm       ShortForm?         @relation(fields: [shortFormId], references: [id], onDelete: Restrict)
+  communityPost   CommunityPost?     @relation(fields: [communityPostId], references: [id], onDelete: Restrict)
+  addedAt         DateTime           @default(now())
+
+  @@unique([playlistId, position])
+  @@unique([playlistId, homeVideoId])
+  @@unique([playlistId, seriesId])
+  @@unique([playlistId, seriesEpisodeId])
+  @@unique([playlistId, shortFormId])
+  @@unique([playlistId, communityPostId])
+  @@index([playlistId, position])
+}
+
+model LegacyPlaylistItemResidual {
   playlistId    String   @db.Uuid
   publicationId String   @db.Uuid
   position      Int
+  reason        String
   playlist      Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
-  publication   Post     @relation(fields: [publicationId], references: [id], onDelete: Cascade)
-  addedAt       DateTime @default(now())
+  publication   Post     @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  addedAt       DateTime
 
   @@id([playlistId, publicationId])
-  @@unique([playlistId, position])
   @@index([publicationId])
 }
 

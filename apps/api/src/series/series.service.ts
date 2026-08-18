@@ -10,9 +10,6 @@ import {
   EngagementTargetType,
   MediaPurpose,
   MediaStatus,
-  PostFormat,
-  PostStatus,
-  PostVisibility,
   Prisma,
   SeriesSubmissionStatus,
   SeriesWorkType,
@@ -59,7 +56,6 @@ const managementInclude = {
   episodes: {
     select: {
       id: true,
-      publicationId: true,
       seasonId: true,
       episodeNumber: true,
       seasonEpisodeNumber: true,
@@ -386,17 +382,11 @@ export class SeriesService {
       await this.targets.lockActive(tx, ApiEngagementTargetType.SERIES, id);
       await tx.series.update({
         where: { id },
-        data: { publicationStatus: DomainPublicationStatus.PUBLISHED },
+        data: {
+          publicationStatus: DomainPublicationStatus.PUBLISHED,
+          publishedAt,
+        },
       });
-      if (
-        series.workType === SeriesWorkType.SINGLE_WORK &&
-        series.singleWorkPublicationId
-      ) {
-        await tx.post.update({
-          where: { id: series.singleWorkPublicationId },
-          data: { status: PostStatus.PUBLISHED, publishedAt },
-        });
-      }
     });
     return this.findOne(id);
   }
@@ -421,39 +411,9 @@ export class SeriesService {
         [MediaStatus.READY],
         'SERIES_SINGLE',
       );
-      let publicationId = series.singleWorkPublicationId;
-      if (!publicationId) {
-        const publication = await tx.post.create({
-          data: {
-            authorId: user.id,
-            format: PostFormat.LONG_VIDEO,
-            status:
-              series.publicationStatus === DomainPublicationStatus.PUBLISHED
-                ? PostStatus.PUBLISHED
-                : PostStatus.DRAFT,
-            visibility: PostVisibility.PUBLIC,
-            title: series.title,
-            caption: series.synopsis,
-            publishedAt:
-              series.publicationStatus === DomainPublicationStatus.PUBLISHED
-                ? new Date()
-                : null,
-            media: { create: { assetId, order: 0 } },
-          },
-        });
-        publicationId = publication.id;
-      } else {
-        await tx.postMedia.deleteMany({ where: { postId: publicationId } });
-        await tx.postMedia.create({
-          data: { postId: publicationId, assetId, order: 0 },
-        });
-      }
       await tx.series.update({
         where: { id: series.id },
-        data: {
-          singleWorkAssetId: assetId,
-          singleWorkPublicationId: publicationId,
-        },
+        data: { singleWorkAssetId: assetId },
       });
     });
     return {
@@ -513,34 +473,22 @@ export class SeriesService {
           [MediaStatus.READY],
           'SERIES_EPISODE',
         );
-        return tx.post.create({
+        const created = await tx.seriesEpisode.create({
           data: {
-            authorId: user.id,
-            format: PostFormat.LONG_VIDEO,
-            status: PostStatus.DRAFT,
-            visibility: PostVisibility.PUBLIC,
+            seriesId,
+            seasonId: input.seasonId,
+            videoAssetId: input.assetId,
+            episodeNumber: input.episodeNumber,
+            seasonEpisodeNumber: input.seasonEpisodeNumber,
             title: input.title.trim(),
-            caption: input.synopsis.trim(),
-            media: { create: { assetId: input.assetId, order: 0 } },
-            seriesEpisode: {
-              create: {
-                seriesId,
-                seasonId: input.seasonId,
-                videoAssetId: input.assetId,
-                episodeNumber: input.episodeNumber,
-                seasonEpisodeNumber: input.seasonEpisodeNumber,
-                title: input.title.trim(),
-                synopsis: input.synopsis.trim(),
-                engagementTarget: {
-                  create: { type: EngagementTargetType.SERIES_EPISODE },
-                },
-              },
+            synopsis: input.synopsis.trim(),
+            engagementTarget: {
+              create: { type: EngagementTargetType.SERIES_EPISODE },
             },
           },
-          select: {
-            seriesEpisode: { select: { id: true, videoAssetId: true } },
-          },
+          select: { id: true, videoAssetId: true },
         });
+        return { seriesEpisode: created };
       });
     } catch (error) {
       if (this.prismaCode(error) === 'P2002')
@@ -671,12 +619,6 @@ export class SeriesService {
             seasonEpisodeNumber: targetSeasonEpisodeNumber,
           },
         });
-        if (input.title !== undefined || input.synopsis !== undefined) {
-          await tx.post.update({
-            where: { id: episode.publicationId },
-            data: { title, caption: input.synopsis?.trim() },
-          });
-        }
       });
     } catch (error) {
       if (this.prismaCode(error) === 'P2002')
@@ -764,10 +706,6 @@ export class SeriesService {
         where: { id: episode.id },
         data: { publishedAt },
       });
-      await tx.post.update({
-        where: { id: episode.publicationId },
-        data: { status: PostStatus.PUBLISHED, publishedAt },
-      });
     });
     return this.findEpisode(episode.id);
   }
@@ -802,10 +740,6 @@ export class SeriesService {
       await tx.seriesEpisode.update({
         where: { id: episodeId },
         data: { publishedAt: null },
-      });
-      await tx.post.update({
-        where: { id: episode.publicationId },
-        data: { status: PostStatus.DRAFT, publishedAt: null },
       });
     });
     return this.managedEpisode(episodeId);

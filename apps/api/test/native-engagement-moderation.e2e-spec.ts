@@ -256,12 +256,18 @@ describe('native engagement and operational moderation', () => {
   });
 
   it('enforces moderation roles, transitions, atomic removal, HLS denial, audit, and republish restriction', async () => {
-    const mappedPublication = await database.client.homeVideo.findUniqueOrThrow(
-      {
-        where: { id: homeId },
-        select: { publicationId: true },
+    const mappedPublication = await database.client.post.create({
+      data: {
+        authorId: creator.id,
+        format: PostFormat.LONG_VIDEO,
+        status: PostStatus.DRAFT,
+        visibility: PostVisibility.PUBLIC,
       },
-    );
+    });
+    await database.client.homeVideo.update({
+      where: { id: homeId },
+      data: { publicationId: mappedPublication.id },
+    });
     const residualPost = await database.client.post.create({
       data: {
         authorId: creator.id,
@@ -274,7 +280,7 @@ describe('native engagement and operational moderation', () => {
       data: [
         {
           reporterId: viewer.id,
-          postId: mappedPublication.publicationId,
+          postId: mappedPublication.id,
           reason: 'OTHER',
         },
         { reporterId: viewer.id, postId: residualPost.id, reason: 'OTHER' },
@@ -289,7 +295,7 @@ describe('native engagement and operational moderation', () => {
       .json<Array<{ post: { id: string } }>>()
       .map((item) => item.post.id);
     expect(legacyIds).toContain(residualPost.id);
-    expect(legacyIds).not.toContain(mappedPublication.publicationId);
+    expect(legacyIds).not.toContain(mappedPublication.id);
     const report = await engage(
       'POST',
       { type: 'HOME_VIDEO', id: homeId },

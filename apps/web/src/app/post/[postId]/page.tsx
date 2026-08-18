@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   Bookmark,
   Heart,
-  Layers3,
   MessageCircle,
   MoreHorizontal,
   Play,
@@ -104,23 +103,6 @@ export default async function PostPage({ params }: PostPageProps) {
           <p className="mt-4 whitespace-pre-wrap text-[15px] leading-7">
             {post.caption}
           </p>
-          {post.series && (
-            <section className="mt-6 flex items-center gap-4 rounded-2xl border border-line bg-background p-4">
-              <div className="grid size-11 place-items-center rounded-xl bg-accent-soft text-accent">
-                <Layers3 className="size-5" />
-              </div>
-              <div>
-                <p className="text-xs font-bold tracking-[0.12em] text-accent">
-                  MIRU SERIES
-                </p>
-                <h2 className="mt-1 font-semibold">{post.series.title}</h2>
-                <p className="mt-1 text-xs text-muted">
-                  EP.{post.series.episodeNumber} · 전체{" "}
-                  {post.series.episodeCount}편
-                </p>
-              </div>
-            </section>
-          )}
           <div className="mt-7 flex items-center gap-2 border-t border-line pt-5">
             <button className="flex h-10 items-center gap-2 rounded-full bg-background px-4 text-sm font-semibold">
               <Heart className="size-4" /> {compactNumber(post.likeCount)}

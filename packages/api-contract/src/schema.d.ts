@@ -1262,6 +1262,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/playlists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlaylistsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/playlists/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlaylistsController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/playlists/{playlistId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlaylistsController_public"];
+        put?: never;
+        post?: never;
+        delete: operations["PlaylistsController_delete"];
+        options?: never;
+        head?: never;
+        patch: operations["PlaylistsController_update"];
+        trace?: never;
+    };
+    "/api/v1/playlists/{playlistId}/manage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlaylistsController_manage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/playlists/{playlistId}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlaylistsController_add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/playlists/{playlistId}/items/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["PlaylistsController_reorder"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/playlists/{playlistId}/items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["PlaylistsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1437,11 +1549,7 @@ export interface components {
         ModerationActionDto: {
             note?: string;
         };
-        /** @enum {string} */
-        LegacyFeedPostFormat: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO";
         Object: Record<string, never>;
-        /** @enum {string} */
-        PostFormat: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO" | "COMMUNITY_TEXT" | "COMMUNITY_VIDEO" | "COMMUNITY_LINK";
         MediaSummaryDto: {
             id: string;
             url: string;
@@ -1458,14 +1566,16 @@ export interface components {
             episodeCount: number;
         };
         FeedItemDto: {
+            /** Format: uuid */
             id: string;
-            format: components["schemas"]["PostFormat"];
+            /** @enum {string} */
+            type: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE" | "SHORTFORM";
             title?: string | null;
             caption: string;
             publishedAt: string;
             likeCount: number;
             commentCount: number;
-            engagementTarget?: components["schemas"]["EngagementTargetDto"] | null;
+            engagementTarget: components["schemas"]["EngagementTargetDto"];
             author: components["schemas"]["CreatorSummaryDto"];
             media: components["schemas"]["MediaSummaryDto"][];
             series?: components["schemas"]["SeriesSummaryDto"] | null;
@@ -1478,6 +1588,19 @@ export interface components {
             /** Format: uuid */
             assetId: string;
             caption: string;
+        };
+        LegacyPostDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            format: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO" | "COMMUNITY_TEXT" | "COMMUNITY_VIDEO" | "COMMUNITY_LINK";
+            title?: string | null;
+            caption: string;
+            publishedAt: string;
+            likeCount: number;
+            commentCount: number;
+            author: components["schemas"]["CreatorSummaryDto"];
+            media: components["schemas"]["MediaSummaryDto"][];
         };
         PlayableDto: {
             /** @enum {string} */
@@ -1898,6 +2021,57 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             author: components["schemas"]["EngagementAuthorDto"];
+        };
+        CreatePlaylistDto: {
+            title: string;
+            description?: string;
+            /**
+             * @default PRIVATE
+             * @enum {string}
+             */
+            visibility: "PRIVATE" | "UNLISTED" | "PUBLIC";
+        };
+        PlaylistTargetDto: {
+            /** @enum {string} */
+            type: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE" | "SHORTFORM" | "COMMUNITY_POST";
+            /** Format: uuid */
+            id: string;
+        };
+        PlaylistItemDto: {
+            /** Format: uuid */
+            id: string;
+            position: number;
+            available: boolean;
+            target: components["schemas"]["PlaylistTargetDto"];
+            title?: string | null;
+            href?: string | null;
+        };
+        PlaylistDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            description: string;
+            /** @enum {string} */
+            visibility: "PRIVATE" | "UNLISTED" | "PUBLIC";
+            items: components["schemas"]["PlaylistItemDto"][];
+        };
+        PlaylistListDto: {
+            items: components["schemas"]["PlaylistDto"][];
+        };
+        UpdatePlaylistDto: {
+            title?: string;
+            description?: string;
+            /** @enum {string} */
+            visibility?: "PRIVATE" | "UNLISTED" | "PUBLIC";
+        };
+        AddPlaylistItemDto: {
+            /** @enum {string} */
+            type: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE" | "SHORTFORM" | "COMMUNITY_POST";
+            /** Format: uuid */
+            id: string;
+        };
+        ReorderPlaylistItemsDto: {
+            itemIds: string[];
         };
     };
     responses: never;
@@ -2658,7 +2832,7 @@ export interface operations {
     FeedController_discover: {
         parameters: {
             query?: {
-                format?: components["schemas"]["LegacyFeedPostFormat"];
+                type?: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE" | "SHORTFORM";
                 /** @description Opaque cursor returned by the previous page */
                 cursor?: string;
                 limit?: components["schemas"]["Object"];
@@ -2682,7 +2856,7 @@ export interface operations {
     FeedController_following: {
         parameters: {
             query?: {
-                format?: components["schemas"]["LegacyFeedPostFormat"];
+                type?: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE" | "SHORTFORM";
                 /** @description Opaque cursor returned by the previous page */
                 cursor?: string;
                 limit?: components["schemas"]["Object"];
@@ -2740,7 +2914,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FeedItemDto"];
+                    "application/json": components["schemas"]["LegacyPostDto"];
                 };
             };
             /** @description Post does not exist or is not public */
@@ -3912,6 +4086,206 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EngagementReportReceiptDto"];
+                };
+            };
+        };
+    };
+    PlaylistsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePlaylistDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDto"];
+                };
+            };
+        };
+    };
+    PlaylistsController_mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistListDto"];
+                };
+            };
+        };
+    };
+    PlaylistsController_public: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                playlistId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDto"];
+                };
+            };
+        };
+    };
+    PlaylistsController_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                playlistId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PlaylistsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                playlistId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePlaylistDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDto"];
+                };
+            };
+        };
+    };
+    PlaylistsController_manage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                playlistId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDto"];
+                };
+            };
+        };
+    };
+    PlaylistsController_add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                playlistId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddPlaylistItemDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDto"];
+                };
+            };
+        };
+    };
+    PlaylistsController_reorder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                playlistId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderPlaylistItemsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDto"];
+                };
+            };
+        };
+    };
+    PlaylistsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                playlistId: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaylistDto"];
                 };
             };
         };

@@ -1046,11 +1046,17 @@
         "operationId": "FeedController_discover",
         "parameters": [
           {
-            "name": "format",
+            "name": "type",
             "required": false,
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/LegacyFeedPostFormat"
+              "type": "string",
+              "enum": [
+                "HOME_VIDEO",
+                "SERIES",
+                "SERIES_EPISODE",
+                "SHORTFORM"
+              ]
             }
           },
           {
@@ -1094,11 +1100,17 @@
         "operationId": "FeedController_following",
         "parameters": [
           {
-            "name": "format",
+            "name": "type",
             "required": false,
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/LegacyFeedPostFormat"
+              "type": "string",
+              "enum": [
+                "HOME_VIDEO",
+                "SERIES",
+                "SERIES_EPISODE",
+                "SHORTFORM"
+              ]
             }
           },
           {
@@ -1180,7 +1192,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FeedItemDto"
+                  "$ref": "#/components/schemas/LegacyPostDto"
                 }
               }
             }
@@ -2869,6 +2881,295 @@
           "engagement"
         ]
       }
+    },
+    "/api/v1/playlists": {
+      "post": {
+        "operationId": "PlaylistsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlaylistDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "playlists"
+        ]
+      }
+    },
+    "/api/v1/playlists/me": {
+      "get": {
+        "operationId": "PlaylistsController_mine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "playlists"
+        ]
+      }
+    },
+    "/api/v1/playlists/{playlistId}": {
+      "get": {
+        "operationId": "PlaylistsController_public",
+        "parameters": [
+          {
+            "name": "playlistId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "playlists"
+        ]
+      },
+      "patch": {
+        "operationId": "PlaylistsController_update",
+        "parameters": [
+          {
+            "name": "playlistId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlaylistDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "playlists"
+        ]
+      },
+      "delete": {
+        "operationId": "PlaylistsController_delete",
+        "parameters": [
+          {
+            "name": "playlistId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "playlists"
+        ]
+      }
+    },
+    "/api/v1/playlists/{playlistId}/manage": {
+      "get": {
+        "operationId": "PlaylistsController_manage",
+        "parameters": [
+          {
+            "name": "playlistId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "playlists"
+        ]
+      }
+    },
+    "/api/v1/playlists/{playlistId}/items": {
+      "post": {
+        "operationId": "PlaylistsController_add",
+        "parameters": [
+          {
+            "name": "playlistId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddPlaylistItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "playlists"
+        ]
+      }
+    },
+    "/api/v1/playlists/{playlistId}/items/order": {
+      "put": {
+        "operationId": "PlaylistsController_reorder",
+        "parameters": [
+          {
+            "name": "playlistId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderPlaylistItemsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "playlists"
+        ]
+      }
+    },
+    "/api/v1/playlists/{playlistId}/items/{itemId}": {
+      "delete": {
+        "operationId": "PlaylistsController_remove",
+        "parameters": [
+          {
+            "name": "playlistId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "playlists"
+        ]
+      }
     }
   },
   "info": {
@@ -3541,28 +3842,9 @@
           }
         }
       },
-      "LegacyFeedPostFormat": {
-        "type": "string",
-        "enum": [
-          "IMAGE",
-          "SHORT_VIDEO",
-          "LONG_VIDEO"
-        ]
-      },
       "Object": {
         "type": "object",
         "properties": {}
-      },
-      "PostFormat": {
-        "type": "string",
-        "enum": [
-          "IMAGE",
-          "SHORT_VIDEO",
-          "LONG_VIDEO",
-          "COMMUNITY_TEXT",
-          "COMMUNITY_VIDEO",
-          "COMMUNITY_LINK"
-        ]
       },
       "MediaSummaryDto": {
         "type": "object",
@@ -3626,13 +3908,16 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "format": "uuid"
           },
-          "format": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PostFormat"
-              }
+          "type": {
+            "type": "string",
+            "enum": [
+              "HOME_VIDEO",
+              "SERIES",
+              "SERIES_EPISODE",
+              "SHORTFORM"
             ]
           },
           "title": {
@@ -3652,12 +3937,7 @@
             "type": "number"
           },
           "engagementTarget": {
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EngagementTargetDto"
-              }
-            ]
+            "$ref": "#/components/schemas/EngagementTargetDto"
           },
           "author": {
             "$ref": "#/components/schemas/CreatorSummaryDto"
@@ -3679,11 +3959,12 @@
         },
         "required": [
           "id",
-          "format",
+          "type",
           "caption",
           "publishedAt",
           "likeCount",
           "commentCount",
+          "engagementTarget",
           "author",
           "media"
         ]
@@ -3721,6 +4002,61 @@
         "required": [
           "assetId",
           "caption"
+        ]
+      },
+      "LegacyPostDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "SHORT_VIDEO",
+              "LONG_VIDEO",
+              "COMMUNITY_TEXT",
+              "COMMUNITY_VIDEO",
+              "COMMUNITY_LINK"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "caption": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string"
+          },
+          "likeCount": {
+            "type": "number"
+          },
+          "commentCount": {
+            "type": "number"
+          },
+          "author": {
+            "$ref": "#/components/schemas/CreatorSummaryDto"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "format",
+          "caption",
+          "publishedAt",
+          "likeCount",
+          "commentCount",
+          "author",
+          "media"
         ]
       },
       "PlayableDto": {
@@ -5322,6 +5658,191 @@
           "body",
           "createdAt",
           "author"
+        ]
+      },
+      "CreatePlaylistDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "PRIVATE",
+              "UNLISTED",
+              "PUBLIC"
+            ],
+            "default": "PRIVATE"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "PlaylistTargetDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "HOME_VIDEO",
+              "SERIES",
+              "SERIES_EPISODE",
+              "SHORTFORM",
+              "COMMUNITY_POST"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ]
+      },
+      "PlaylistItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "position": {
+            "type": "number"
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "target": {
+            "$ref": "#/components/schemas/PlaylistTargetDto"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "href": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "available",
+          "target"
+        ]
+      },
+      "PlaylistDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "PRIVATE",
+              "UNLISTED",
+              "PUBLIC"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaylistItemDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "visibility",
+          "items"
+        ]
+      },
+      "PlaylistListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaylistDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "UpdatePlaylistDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "PRIVATE",
+              "UNLISTED",
+              "PUBLIC"
+            ]
+          }
+        }
+      },
+      "AddPlaylistItemDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "HOME_VIDEO",
+              "SERIES",
+              "SERIES_EPISODE",
+              "SHORTFORM",
+              "COMMUNITY_POST"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ]
+      },
+      "ReorderPlaylistItemsDto": {
+        "type": "object",
+        "properties": {
+          "itemIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "itemIds"
         ]
       }
     }

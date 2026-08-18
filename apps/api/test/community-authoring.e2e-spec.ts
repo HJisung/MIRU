@@ -6,12 +6,7 @@ import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import {
-  MediaKind,
-  MediaPurpose,
-  MediaStatus,
-  PostStatus,
-} from '@stream/database';
+import { MediaKind, MediaPurpose, MediaStatus } from '@stream/database';
 import { Readable } from 'node:stream';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../src/app.module.js';
@@ -155,12 +150,7 @@ describe('Community Post authoring', () => {
     const textStored = await database.client.communityPost.findUniqueOrThrow({
       where: { id },
     });
-    expect(
-      await app.inject({
-        method: 'GET',
-        url: `/api/v1/posts/${textStored.publicationId}`,
-      }),
-    ).toMatchObject({ statusCode: 404 });
+    expect(textStored.publicationId).toBeNull();
     expect(
       await database.client.communityPost.count({
         where: { authorId, creationId },
@@ -225,12 +215,7 @@ describe('Community Post authoring', () => {
     const imagePost = await database.client.communityPost.findUniqueOrThrow({
       where: { id: imagePostId },
     });
-    expect(
-      await app.inject({
-        method: 'GET',
-        url: `/api/v1/posts/${imagePost.publicationId}`,
-      }),
-    ).toMatchObject({ statusCode: 404 });
+    expect(imagePost.publicationId).toBeNull();
     expect(
       await app.inject({
         method: 'POST',
@@ -238,20 +223,12 @@ describe('Community Post authoring', () => {
         headers: { cookie: authorCookie },
       }),
     ).toMatchObject({ statusCode: 200 });
-    await database.client.post.update({
-      where: { id: imagePost.publicationId },
-      data: { status: PostStatus.PUBLISHED, publishedAt: new Date() },
-    });
     expect(
       await app.inject({
         method: 'GET',
         url: `/api/v1/media/assets/${image.id}/content`,
       }),
     ).toMatchObject({ statusCode: 404 });
-    await database.client.post.update({
-      where: { id: imagePost.publicationId },
-      data: { status: PostStatus.ARCHIVED, publishedAt: null },
-    });
 
     for (const asset of [
       await readyAsset(otherId, MediaKind.IMAGE, MediaPurpose.POST_IMAGE),
@@ -436,9 +413,8 @@ describe('Community Post authoring', () => {
     expect(edited.statusCode).toBe(200);
     const stored = await database.client.communityPost.findUniqueOrThrow({
       where: { id },
-      include: { publication: true },
     });
-    expect(stored.publication.caption).toBe(stored.body);
+    expect(stored.publicationId).toBeNull();
 
     const like = await app.inject({
       method: 'PUT',
@@ -489,11 +465,9 @@ describe('Community Post authoring', () => {
     const archivedStored =
       await database.client.communityPost.findUniqueOrThrow({
         where: { id },
-        include: { publication: true },
       });
     expect(archivedStored.publishedAt).toBeNull();
-    expect(archivedStored.publication.status).toBe(PostStatus.ARCHIVED);
-    expect(archivedStored.publication.publishedAt).toBeNull();
+    expect(archivedStored.publicationId).toBeNull();
     expect(
       await database.client.mediaPlaybackClaim.count({
         where: { assetId: video.id },

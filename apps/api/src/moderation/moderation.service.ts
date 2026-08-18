@@ -209,13 +209,13 @@ export class ModerationService {
       const target = await tx.engagementTarget.findUnique({
         where: { id: report.targetId },
         include: {
-          homeVideo: { select: { id: true, publicationId: true } },
+          homeVideo: { select: { id: true } },
           series: { select: { id: true } },
           seriesEpisode: {
-            select: { id: true, seriesId: true, publicationId: true },
+            select: { id: true, seriesId: true },
           },
-          shortForm: { select: { id: true, publicationId: true } },
-          communityPost: { select: { id: true, publicationId: true } },
+          shortForm: { select: { id: true } },
+          communityPost: { select: { id: true } },
         },
       });
       if (!target) throw new NotFoundException('Engagement target not found');
@@ -236,19 +236,16 @@ export class ModerationService {
           where: { id: target.homeVideo.id },
           data: { status: DomainPublicationStatus.REMOVED, publishedAt: null },
         });
-        await this.removePosts(tx, [target.homeVideo.publicationId]);
       } else if (target.shortForm) {
         await tx.shortForm.update({
           where: { id: target.shortForm.id },
           data: { status: DomainPublicationStatus.REMOVED, publishedAt: null },
         });
-        await this.removePosts(tx, [target.shortForm.publicationId]);
       } else if (target.communityPost) {
         await tx.communityPost.update({
           where: { id: target.communityPost.id },
           data: { status: DomainPublicationStatus.REMOVED, publishedAt: null },
         });
-        await this.removePosts(tx, [target.communityPost.publicationId]);
       } else if (target.series) {
         await this.removeSeries(tx, target.series.id, actorId, removedAt);
       } else if (target.seriesEpisode) {
@@ -331,13 +328,6 @@ export class ModerationService {
       throw new ConflictException('Report state no longer permits this action');
   }
 
-  private removePosts(tx: Prisma.TransactionClient, ids: string[]) {
-    return tx.post.updateMany({
-      where: { id: { in: ids } },
-      data: { status: PostStatus.REMOVED, publishedAt: null },
-    });
-  }
-
   private async lockSeries(tx: Prisma.TransactionClient, seriesId: string) {
     await tx.$queryRaw`SELECT 1 AS "locked" FROM (SELECT pg_advisory_xact_lock(hashtextextended(${seriesId}, 0))) AS series_lock`;
   }
@@ -348,28 +338,17 @@ export class ModerationService {
     actorId: string,
     removedAt: Date,
   ) {
-    const series = await tx.series.findUniqueOrThrow({
-      where: { id: seriesId },
-      select: {
-        singleWorkPublicationId: true,
-        episodes: { select: { publicationId: true } },
-      },
-    });
     await tx.series.update({
       where: { id: seriesId },
-      data: { publicationStatus: DomainPublicationStatus.REMOVED },
+      data: {
+        publicationStatus: DomainPublicationStatus.REMOVED,
+        publishedAt: null,
+      },
     });
     await tx.seriesEpisode.updateMany({
       where: { seriesId },
       data: { publishedAt: null },
     });
-    await this.removePosts(
-      tx,
-      [
-        series.singleWorkPublicationId,
-        ...series.episodes.map((episode) => episode.publicationId),
-      ].filter((id): id is string => Boolean(id)),
-    );
     await tx.engagementTarget.updateMany({
       where: { seriesId },
       data: {
@@ -382,7 +361,7 @@ export class ModerationService {
 
   private async removeEpisode(
     tx: Prisma.TransactionClient,
-    episode: { id: string; seriesId: string; publicationId: string },
+    episode: { id: string; seriesId: string },
     actorId: string,
     removedAt: Date,
   ) {
@@ -413,7 +392,6 @@ export class ModerationService {
       where: { id: episode.id },
       data: { publishedAt: null },
     });
-    await this.removePosts(tx, [episode.publicationId]);
   }
 
   private mapReport(

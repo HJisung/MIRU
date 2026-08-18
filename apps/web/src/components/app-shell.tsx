@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import {
   ChevronDown,
   Clapperboard,
+  Compass,
   FileText,
   Home,
   Layers3,
@@ -14,6 +15,7 @@ import {
   Menu,
   Moon,
   PlaySquare,
+  ListVideo,
   Search,
   Sun,
   Upload,
@@ -23,6 +25,12 @@ import { BrandMark } from "./brand-mark";
 
 const navigation = [
   { label: "홈", description: "Single과 Collection", href: "/", icon: Home },
+  {
+    label: "탐색",
+    description: "새 콘텐츠와 팔로잉",
+    href: "/discover",
+    icon: Compass,
+  },
   {
     label: "시리즈",
     description: "영화와 에피소드 작품",
@@ -40,6 +48,12 @@ const navigation = [
     description: "사진과 이야기",
     href: "/posts",
     icon: FileText,
+  },
+  {
+    label: "Playlist",
+    description: "내가 정리한 재생 목록",
+    href: "/playlists",
+    icon: ListVideo,
   },
 ] as const;
 
@@ -163,7 +177,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           className={`fixed bottom-0 left-0 z-30 hidden w-[4.5rem] flex-col items-center border-r border-line bg-panel-strong py-4 md:flex ${hasBrowseNavigation ? "top-28" : "top-16"}`}
         >
           <nav className="space-y-2" aria-label="빠른 메뉴">
-            {navigation.slice(0, 4).map(({ label, href, icon: Icon }) => {
+            {navigation.slice(0, 5).map(({ label, href, icon: Icon }) => {
               const active =
                 href === "/" ? pathname === "/" : pathname.startsWith(href);
               return (
