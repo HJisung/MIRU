@@ -9,6 +9,10 @@ interface FeedPostRecord {
   publishedAt: Date | null;
   likeCount: number;
   commentCount: number;
+  homeVideo: ProductTargetRecord | null;
+  shortForm: ProductTargetRecord | null;
+  seriesEpisode: ProductTargetRecord | null;
+  seriesSingleWork: ProductTargetRecord | null;
   episodeNumber: number | null;
   series: {
     id: string;
@@ -34,17 +38,35 @@ interface FeedPostRecord {
   }>;
 }
 
+interface ProductTargetRecord {
+  id: string;
+  engagementTarget: { likeCount: number; commentCount: number } | null;
+}
+
 export function toFeedItem(post: FeedPostRecord): FeedItemDto {
   if (!post.publishedAt)
     throw new Error(`Published post ${post.id} has no publishedAt.`);
+  const product = post.homeVideo
+    ? { type: 'HOME_VIDEO' as const, record: post.homeVideo }
+    : post.seriesEpisode
+      ? { type: 'SERIES_EPISODE' as const, record: post.seriesEpisode }
+      : post.shortForm
+        ? { type: 'SHORTFORM' as const, record: post.shortForm }
+        : post.seriesSingleWork
+          ? { type: 'SERIES' as const, record: post.seriesSingleWork }
+          : null;
   return {
     id: post.id,
     format: post.format,
     title: post.title,
     caption: post.caption,
     publishedAt: post.publishedAt.toISOString(),
-    likeCount: post.likeCount,
-    commentCount: post.commentCount,
+    likeCount: product?.record.engagementTarget?.likeCount ?? post.likeCount,
+    commentCount:
+      product?.record.engagementTarget?.commentCount ?? post.commentCount,
+    engagementTarget: product
+      ? { type: product.type, id: product.record.id }
+      : null,
     series:
       post.series && post.episodeNumber
         ? {

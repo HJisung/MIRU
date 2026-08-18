@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CommunityPostType,
   DomainPublicationStatus,
+  EngagementTargetType,
   MediaPurpose,
   MediaStatus,
   PostFormat,
@@ -28,6 +29,38 @@ export class PostsService {
         communityPost: null,
       },
       include: {
+        homeVideo: {
+          select: {
+            id: true,
+            engagementTarget: {
+              select: { likeCount: true, commentCount: true },
+            },
+          },
+        },
+        shortForm: {
+          select: {
+            id: true,
+            engagementTarget: {
+              select: { likeCount: true, commentCount: true },
+            },
+          },
+        },
+        seriesEpisode: {
+          select: {
+            id: true,
+            engagementTarget: {
+              select: { likeCount: true, commentCount: true },
+            },
+          },
+        },
+        seriesSingleWork: {
+          select: {
+            id: true,
+            engagementTarget: {
+              select: { likeCount: true, commentCount: true },
+            },
+          },
+        },
         series: {
           select: {
             id: true,
@@ -111,6 +144,9 @@ export class PostsService {
             body: input.caption.trim(),
             status: DomainPublicationStatus.PUBLISHED,
             publishedAt,
+            engagementTarget: {
+              create: { type: EngagementTargetType.COMMUNITY_POST },
+            },
             media: { create: { assetId: asset.id, position: 0 } },
           },
         },

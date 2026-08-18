@@ -6,6 +6,7 @@ import { ApiError, getHomeVideo } from "@/lib/api";
 import { mediaUrl } from "@/lib/client-api";
 import { compactNumber, duration, relativeDate } from "@/lib/format";
 import { VideoPlayer } from "@/components/video-player";
+import { EngagementPanel } from "@/features/engagement/engagement-panel";
 
 export default async function HomeWatch({
   params,
@@ -66,6 +67,12 @@ export default async function HomeWatch({
       <p className="mt-6 rounded-2xl bg-panel p-5 text-sm leading-7">
         {video.description}
       </p>
+      <EngagementPanel
+        type="HOME_VIDEO"
+        id={video.id}
+        initialLikeCount={video.likeCount}
+        initialCommentCount={video.commentCount}
+      />
     </div>
   );
 }

@@ -64,22 +64,23 @@ foundation, then Shortform and Community Post migration.
 - Community Post TEXT/IMAGE/VIDEO/LINK authoring, author-scoped retry identity,
   shared adaptive video attachment, edit/archive management, and public
   type-aware rendering: complete
+- Native product-identity engagement persistence, EPISODIC Series aggregate
+  engagement, compatibility bridging, and audited operational moderation:
+  complete
 
 ## LegacyPublication migration status
 
 Product routes no longer read Shortform or Community Post through discovery
 format filters. The compatibility aggregate remains for:
 
-- the proven engagement target used by likes, saves, comments, and reports
-- existing feed/following ranking and moderation services
-- engagement rows and counters behind the domain-aware resolver
-- the direct-upload publish transaction, which creates both a Community Post
-  and its compatibility engagement target atomically
+- legacy discovery/following cards not yet moved to product-native reads
+- genuinely unmapped legacy interactions retained as residual data
+- compatibility projections still synchronized by product transactions
 
-Home and Series playback now read MediaAsset directly. Removal is safe after
-engagement rows/counters, discovery/following, moderation queue projections,
-and the upload transaction move off the compatibility table. No new product
-read should query the compatibility table directly.
+Mapped compatibility endpoints resolve to native targets and never dual-write.
+The native migration rejects ambiguous mappings, preserves unmapped residual
+rows, and derives counters from interaction rows. No new product read should
+query the compatibility table directly.
 
 ## Existing implementation history
 
@@ -138,9 +139,11 @@ Status: API baseline implemented.
 
 ## Slice 6: Moderation baseline
 
-Status: API baseline implemented. The admin web surface and append-only audit records remain pending.
+Status: operational MVP implemented.
 
-- Report and block flows, moderation state, admin review surface, audit records
+- Typed product reports, bounded moderator queue/detail, review and dismissal
+- Product-aware removal, republish/media denial, and append-only audit
+- Responsive ADMIN/MODERATOR web workflow with destructive confirmation
 
 ## Definition of done for every slice
 

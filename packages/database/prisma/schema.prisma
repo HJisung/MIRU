@@ -74,6 +74,25 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum EngagementTargetType {
+  HOME_VIDEO
+  SERIES
+  SERIES_EPISODE
+  SHORTFORM
+  COMMUNITY_POST
+}
+
+enum ModerationTargetStatus {
+  ACTIVE
+  REMOVED
+}
+
+enum ModerationAuditAction {
+  REVIEW_STARTED
+  REPORT_DISMISSED
+  CONTENT_REMOVED
+}
+
 enum DomainPublicationStatus {
   DRAFT
   PENDING_REVIEW
@@ -134,6 +153,12 @@ model User {
   blocksMade        Block[]            @relation("Blocker")
   blocksReceived    Block[]            @relation("Blocked")
   reports           Report[]
+  engagementLikes   EngagementLike[]
+  engagementSaves   EngagementSave[]
+  engagementComments EngagementComment[]
+  engagementReports EngagementReport[]
+  moderationRemovals EngagementTarget[] @relation("EngagementTargetRemovedBy")
+  moderationAudits  ModerationAuditLog[] @relation("ModerationAuditActor")
   series            Series[]
   homeVideos        HomeVideo[]
   collections       Collection[]
@@ -273,6 +298,7 @@ model Series {
   episodes                SeriesEpisode[]
   submissions             SeriesSubmission[]
   promotedBy              ShortForm[]             @relation("PromotedSeries")
+  engagementTarget        EngagementTarget?
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
 
@@ -297,6 +323,7 @@ model HomeVideo {
   publishedAt     DateTime?
   collectionItems CollectionItem[]
   promotedBy      ShortForm[]             @relation("PromotedHomeVideo")
+  engagementTarget EngagementTarget?
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
 
@@ -361,6 +388,7 @@ model SeriesEpisode {
   videoAssetId        String?       @db.Uuid
   videoAsset          MediaAsset?   @relation("SeriesEpisodePlayback", fields: [videoAssetId], references: [id], onDelete: SetNull)
   promotedBy          ShortForm[]   @relation("PromotedSeriesEpisode")
+  engagementTarget    EngagementTarget?
   episodeNumber       Int
   seasonEpisodeNumber Int?
   title               String
@@ -411,6 +439,7 @@ model ShortForm {
   promotedEpisodeId   String?                 @db.Uuid
   promotedEpisode     SeriesEpisode?          @relation("PromotedSeriesEpisode", fields: [promotedEpisodeId], references: [id], onDelete: SetNull)
   media               ShortFormMedia[]
+  engagementTarget    EngagementTarget?
   status              DomainPublicationStatus @default(DRAFT)
   publishedAt         DateTime?
   createdAt           DateTime                @default(now())
@@ -460,6 +489,7 @@ model CommunityPost {
   linkUrl       String?
   creationId    String?                 @db.Uuid
   media         CommunityPostMedia[]
+  engagementTarget EngagementTarget?
   status        DomainPublicationStatus @default(DRAFT)
   publishedAt   DateTime?
   createdAt     DateTime                @default(now())
@@ -479,6 +509,110 @@ model CommunityPostMedia {
 
   @@id([communityPostId, assetId])
   @@unique([communityPostId, position])
+}
+
+/// Narrow shared identity for engagement and moderation. Product rows remain
+/// authoritative for content, ownership, publication, and playback.
+model EngagementTarget {
+  id                String                 @id @default(uuid()) @db.Uuid
+  type              EngagementTargetType
+  homeVideoId       String?                @unique @db.Uuid
+  homeVideo         HomeVideo?             @relation(fields: [homeVideoId], references: [id], onDelete: Cascade)
+  seriesId          String?                @unique @db.Uuid
+  series            Series?                @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  seriesEpisodeId   String?                @unique @db.Uuid
+  seriesEpisode     SeriesEpisode?         @relation(fields: [seriesEpisodeId], references: [id], onDelete: Cascade)
+  shortFormId       String?                @unique @db.Uuid
+  shortForm         ShortForm?             @relation(fields: [shortFormId], references: [id], onDelete: Cascade)
+  communityPostId   String?                @unique @db.Uuid
+  communityPost     CommunityPost?         @relation(fields: [communityPostId], references: [id], onDelete: Cascade)
+  likeCount         Int                    @default(0)
+  commentCount      Int                    @default(0)
+  moderationStatus  ModerationTargetStatus @default(ACTIVE)
+  removedAt         DateTime?
+  removedById       String?                @db.Uuid
+  removedBy         User?                  @relation("EngagementTargetRemovedBy", fields: [removedById], references: [id], onDelete: SetNull)
+  likes             EngagementLike[]
+  saves             EngagementSave[]
+  comments          EngagementComment[]
+  reports           EngagementReport[]
+  auditLogs         ModerationAuditLog[]
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@index([type, moderationStatus])
+}
+
+model EngagementLike {
+  userId    String           @db.Uuid
+  targetId  String           @db.Uuid
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  target    EngagementTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@id([userId, targetId])
+  @@index([targetId, createdAt])
+}
+
+model EngagementSave {
+  userId    String           @db.Uuid
+  targetId  String           @db.Uuid
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  target    EngagementTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@id([userId, targetId])
+  @@index([targetId, createdAt])
+}
+
+model EngagementComment {
+  id        String           @id @default(uuid()) @db.Uuid
+  authorId  String           @db.Uuid
+  targetId  String           @db.Uuid
+  author    User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  target    EngagementTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([targetId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([authorId, createdAt(sort: Desc)])
+}
+
+model EngagementReport {
+  id         String           @id @default(uuid()) @db.Uuid
+  reporterId String           @db.Uuid
+  targetId   String           @db.Uuid
+  reporter   User             @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  target     EngagementTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  reason     ReportReason
+  details    String           @default("")
+  status     ReportStatus     @default(OPEN)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  auditLogs  ModerationAuditLog[]
+
+  @@unique([reporterId, targetId])
+  @@index([status, createdAt, id])
+  @@index([targetId, createdAt])
+}
+
+model ModerationAuditLog {
+  id                String                @id @default(uuid()) @db.Uuid
+  actorId           String                @db.Uuid
+  actor             User                  @relation("ModerationAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  reportId          String?               @db.Uuid
+  report            EngagementReport?     @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  targetId          String                @db.Uuid
+  target            EngagementTarget      @relation(fields: [targetId], references: [id], onDelete: Restrict)
+  action            ModerationAuditAction
+  previousStatus    ReportStatus?
+  resultingStatus   ReportStatus?
+  note              String                @default("")
+  createdAt         DateTime              @default(now())
+
+  @@index([reportId, createdAt, id])
+  @@index([targetId, createdAt, id])
 }
 
 model Playlist {

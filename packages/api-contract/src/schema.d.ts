@@ -379,9 +379,89 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get: operations["ModerationController_legacyQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moderation/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         get: operations["ModerationController_queue"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moderation/reports/{reportId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ModerationController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moderation/reports/{reportId}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ModerationController_review"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moderation/reports/{reportId}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ModerationController_dismiss"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/moderation/reports/{reportId}/remove-content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ModerationController_removeContent"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1276,17 +1356,92 @@ export interface components {
         CreateReportDto: {
             reason: components["schemas"]["ReportReason"];
         };
-        /** @enum {string} */
-        LegacyFeedPostFormat: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO";
-        Object: Record<string, never>;
-        /** @enum {string} */
-        PostFormat: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO" | "COMMUNITY_TEXT" | "COMMUNITY_VIDEO" | "COMMUNITY_LINK";
+        EngagementReportReceiptDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "OPEN" | "REVIEWING" | "RESOLVED" | "DISMISSED";
+            /** Format: date-time */
+            createdAt: string;
+        };
         CreatorSummaryDto: {
             id: string;
             handle: string;
             displayName: string;
             avatarUrl?: string | null;
         };
+        EngagementTargetDto: {
+            /** @enum {string} */
+            type: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE" | "SHORTFORM" | "COMMUNITY_POST";
+            /**
+             * Format: uuid
+             * @description Product-domain entity ID
+             */
+            id: string;
+        };
+        ModerationContentDto: {
+            title?: string | null;
+            body: string;
+            author: components["schemas"]["CreatorSummaryDto"];
+        };
+        ModerationReportDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            reason: "SPAM" | "HARASSMENT" | "NUDITY" | "VIOLENCE" | "COPYRIGHT" | "OTHER";
+            details: string;
+            /** @enum {string} */
+            status: "OPEN" | "REVIEWING" | "RESOLVED" | "DISMISSED";
+            createdAt: string;
+            updatedAt: string;
+            reporter: components["schemas"]["CreatorSummaryDto"];
+            target: components["schemas"]["EngagementTargetDto"];
+            /** @enum {string} */
+            moderationStatus: "ACTIVE" | "REMOVED";
+            content: components["schemas"]["ModerationContentDto"];
+        };
+        ModerationReportListDto: {
+            items: components["schemas"]["ModerationReportDto"][];
+            nextCursor: Record<string, never> | null;
+        };
+        ModerationAuditEntryDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            action: "REVIEW_STARTED" | "REPORT_DISMISSED" | "CONTENT_REMOVED";
+            /** @enum {string|null} */
+            previousStatus?: "OPEN" | "REVIEWING" | "RESOLVED" | "DISMISSED" | null;
+            /** @enum {string|null} */
+            resultingStatus?: "OPEN" | "REVIEWING" | "RESOLVED" | "DISMISSED" | null;
+            note: string;
+            createdAt: string;
+            actor: components["schemas"]["CreatorSummaryDto"];
+        };
+        ModerationReportDetailDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            reason: "SPAM" | "HARASSMENT" | "NUDITY" | "VIOLENCE" | "COPYRIGHT" | "OTHER";
+            details: string;
+            /** @enum {string} */
+            status: "OPEN" | "REVIEWING" | "RESOLVED" | "DISMISSED";
+            createdAt: string;
+            updatedAt: string;
+            reporter: components["schemas"]["CreatorSummaryDto"];
+            target: components["schemas"]["EngagementTargetDto"];
+            /** @enum {string} */
+            moderationStatus: "ACTIVE" | "REMOVED";
+            content: components["schemas"]["ModerationContentDto"];
+            audit: components["schemas"]["ModerationAuditEntryDto"][];
+        };
+        ModerationActionDto: {
+            note?: string;
+        };
+        /** @enum {string} */
+        LegacyFeedPostFormat: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO";
+        Object: Record<string, never>;
+        /** @enum {string} */
+        PostFormat: "IMAGE" | "SHORT_VIDEO" | "LONG_VIDEO" | "COMMUNITY_TEXT" | "COMMUNITY_VIDEO" | "COMMUNITY_LINK";
         MediaSummaryDto: {
             id: string;
             url: string;
@@ -1310,6 +1465,7 @@ export interface components {
             publishedAt: string;
             likeCount: number;
             commentCount: number;
+            engagementTarget?: components["schemas"]["EngagementTargetDto"] | null;
             author: components["schemas"]["CreatorSummaryDto"];
             media: components["schemas"]["MediaSummaryDto"][];
             series?: components["schemas"]["SeriesSummaryDto"] | null;
@@ -1332,15 +1488,6 @@ export interface components {
              */
             id: string;
             media: components["schemas"]["MediaSummaryDto"];
-        };
-        EngagementTargetDto: {
-            /** @enum {string} */
-            type: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE" | "SHORTFORM" | "COMMUNITY_POST";
-            /**
-             * Format: uuid
-             * @description Product-domain entity ID
-             */
-            id: string;
         };
         HomeVideoDto: {
             /** Format: uuid */
@@ -1408,6 +1555,8 @@ export interface components {
             media?: components["schemas"]["MediaSummaryDto"] | null;
             playable?: components["schemas"]["PlayableDto"] | null;
             engagementTarget?: components["schemas"]["EngagementTargetDto"] | null;
+            likeCount: number;
+            commentCount: number;
         };
         SeriesDto: {
             /** Format: uuid */
@@ -1425,6 +1574,8 @@ export interface components {
             creator: components["schemas"]["CreatorSummaryDto"];
             singleWork?: components["schemas"]["PlayableDto"] | null;
             engagementTarget: components["schemas"]["EngagementTargetDto"];
+            likeCount: number;
+            commentCount: number;
             episodes: components["schemas"]["SeriesEpisodeDto"][];
         };
         SeriesListDto: {
@@ -1725,6 +1876,28 @@ export interface components {
         };
         CommunityCategoryListDto: {
             items: components["schemas"]["CommunityCategoryDto"][];
+        };
+        EngagementLikeStateDto: {
+            liked: boolean;
+            likeCount: number;
+        };
+        EngagementSaveStateDto: {
+            saved: boolean;
+        };
+        EngagementAuthorDto: {
+            /** Format: uuid */
+            id: string;
+            handle: string;
+            displayName: string;
+            avatarUrl: Record<string, never> | null;
+        };
+        EngagementCommentDto: {
+            /** Format: uuid */
+            id: string;
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            author: components["schemas"]["EngagementAuthorDto"];
         };
     };
     responses: never;
@@ -2300,11 +2473,13 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EngagementReportReceiptDto"];
+                };
             };
         };
     };
-    ModerationController_queue: {
+    ModerationController_legacyQueue: {
         parameters: {
             query?: never;
             header?: never;
@@ -2318,6 +2493,127 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ModerationController_queue: {
+        parameters: {
+            query?: {
+                status?: "OPEN" | "REVIEWING" | "RESOLVED" | "DISMISSED";
+                targetType?: "HOME_VIDEO" | "SERIES" | "SERIES_EPISODE" | "SHORTFORM" | "COMMUNITY_POST";
+                reason?: "SPAM" | "HARASSMENT" | "NUDITY" | "VIOLENCE" | "COPYRIGHT" | "OTHER";
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModerationReportListDto"];
+                };
+            };
+        };
+    };
+    ModerationController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reportId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModerationReportDetailDto"];
+                };
+            };
+        };
+    };
+    ModerationController_review: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reportId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModerationActionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModerationReportDetailDto"];
+                };
+            };
+        };
+    };
+    ModerationController_dismiss: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reportId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModerationActionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModerationReportDetailDto"];
+                };
+            };
+        };
+    };
+    ModerationController_removeContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reportId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModerationActionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModerationReportDetailDto"];
+                };
             };
         };
     };
@@ -3476,7 +3772,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EngagementLikeStateDto"];
+                };
             };
         };
     };
@@ -3496,7 +3794,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EngagementLikeStateDto"];
+                };
             };
         };
     };
@@ -3516,7 +3816,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EngagementSaveStateDto"];
+                };
             };
         };
     };
@@ -3556,7 +3858,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EngagementCommentDto"][];
+                };
             };
         };
     };
@@ -3580,7 +3884,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EngagementCommentDto"];
+                };
             };
         };
     };
@@ -3604,7 +3910,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EngagementReportReceiptDto"];
+                };
             };
         };
     };

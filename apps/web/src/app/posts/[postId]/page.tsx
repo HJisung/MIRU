@@ -5,6 +5,7 @@ import { ApiError, getCommunityPost } from "@/lib/api";
 import { mediaUrl } from "@/lib/client-api";
 import { relativeDate } from "@/lib/format";
 import { VideoPlayer } from "@/components/video-player";
+import { EngagementPanel } from "@/features/engagement/engagement-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,12 @@ export default async function CommunityPostDetailPage({
           )}
         </div>
       </article>
+      <EngagementPanel
+        type="COMMUNITY_POST"
+        id={post.id}
+        initialLikeCount={post.likeCount}
+        initialCommentCount={post.commentCount}
+      />
     </main>
   );
 }

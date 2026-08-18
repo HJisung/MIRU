@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   DomainPublicationStatus,
+  EngagementTargetType,
   MediaPurpose,
   MediaStatus,
   PostFormat,
@@ -18,12 +19,15 @@ import { DatabaseService } from '../database/database.service.js';
 import type { CreateVideoShortformDto } from './shortforms.dto.js';
 import { toPlayableMedia } from '../playback/playback.mapper.js';
 import { MediaAttachmentService } from '../media/media-attachment.service.js';
+import { EngagementTargetService } from '../engagement/engagement-target.service.js';
+import { EngagementTargetType as ApiEngagementTargetType } from '../engagement/engagement.dto.js';
 
 const include = {
   creator: {
     select: { id: true, handle: true, displayName: true, avatarUrl: true },
   },
   publication: { select: { likeCount: true, commentCount: true } },
+  engagementTarget: { select: { likeCount: true, commentCount: true } },
   media: {
     where: { asset: { status: MediaStatus.READY } },
     orderBy: { position: 'asc' as const },
@@ -42,6 +46,8 @@ export class ShortformsService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(MediaAttachmentService)
     private readonly mediaAttachments: MediaAttachmentService,
+    @Inject(EngagementTargetService)
+    private readonly targets: EngagementTargetService,
   ) {}
 
   async list() {
@@ -121,6 +127,9 @@ export class ShortformsService {
               musicKey: input.musicKey?.trim() || null,
               ...promotion,
               media: { create: { assetId: asset.id, position: 0 } },
+              engagementTarget: {
+                create: { type: EngagementTargetType.SHORTFORM },
+              },
             },
           },
         },
@@ -158,16 +167,17 @@ export class ShortformsService {
     )
       throw new NotFoundException('Ready Shortform draft not found');
     const publishedAt = new Date();
-    await this.database.client.$transaction([
-      this.database.client.shortForm.update({
+    await this.database.client.$transaction(async (tx) => {
+      await this.targets.lockActive(tx, ApiEngagementTargetType.SHORTFORM, id);
+      await tx.shortForm.update({
         where: { id },
         data: { status: DomainPublicationStatus.PUBLISHED, publishedAt },
-      }),
-      this.database.client.post.update({
+      });
+      await tx.post.update({
         where: { id: record.publicationId },
         data: { status: PostStatus.PUBLISHED, publishedAt },
-      }),
-    ]);
+      });
+    });
     return this.findOne(id);
   }
 
@@ -215,8 +225,8 @@ export class ShortformsService {
       description: record.description,
       musicKey: record.musicKey,
       publishedAt: record.publishedAt.toISOString(),
-      likeCount: record.publication.likeCount,
-      commentCount: record.publication.commentCount,
+      likeCount: record.engagementTarget?.likeCount ?? 0,
+      commentCount: record.engagementTarget?.commentCount ?? 0,
       creator: record.creator,
       media: record.media.map(({ asset }) => {
         const media = toPlayableMedia(asset);

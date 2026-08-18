@@ -34,3 +34,14 @@ export type ManagedCommunityPost =
   components["schemas"]["ManagedCommunityPostDto"];
 export type ManagedCommunityPostList =
   components["schemas"]["ManagedCommunityPostListDto"];
+export type ModerationReport = components["schemas"]["ModerationReportDto"];
+export type ModerationReportList =
+  components["schemas"]["ModerationReportListDto"];
+export type ModerationReportDetail =
+  components["schemas"]["ModerationReportDetailDto"];
+export type EngagementLikeState =
+  components["schemas"]["EngagementLikeStateDto"];
+export type EngagementSaveState =
+  components["schemas"]["EngagementSaveStateDto"];
+export type EngagementComment =
+  components["schemas"]["EngagementCommentDto"];

@@ -6,11 +6,14 @@ import {
 } from '@nestjs/common';
 import { PostStatus, PostVisibility } from '@stream/database';
 import { DatabaseService } from '../database/database.service.js';
+import { EngagementTargetService } from '../engagement/engagement-target.service.js';
 
 @Injectable()
 export class SocialService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(EngagementTargetService)
+    private readonly targets: EngagementTargetService,
   ) {}
 
   async follow(userId: string, followeeId: string) {
@@ -31,19 +34,78 @@ export class SocialService {
     });
   }
 
-  async like(userId: string, postId: string) {
+  async like(userId: string, targetId: string) {
+    return this.database.client.$transaction(async (transaction) => {
+      await this.targets.lockActiveTarget(transaction, targetId);
+      const inserted = await transaction.engagementLike.createMany({
+        data: [{ userId, targetId }],
+        skipDuplicates: true,
+      });
+      if (inserted.count) {
+        await transaction.engagementTarget.update({
+          where: { id: targetId },
+          data: { likeCount: { increment: 1 } },
+        });
+      }
+      const target = await transaction.engagementTarget.findUniqueOrThrow({
+        where: { id: targetId },
+      });
+      return { liked: true, likeCount: target.likeCount };
+    });
+  }
+
+  async unlike(userId: string, targetId: string) {
+    return this.database.client.$transaction(async (transaction) => {
+      await this.targets.lockActiveTarget(transaction, targetId);
+      const deleted = await transaction.engagementLike.deleteMany({
+        where: { userId, targetId },
+      });
+      if (deleted.count) {
+        await transaction.engagementTarget.updateMany({
+          where: { id: targetId, likeCount: { gt: 0 } },
+          data: { likeCount: { decrement: 1 } },
+        });
+      }
+      const target = await transaction.engagementTarget.findUnique({
+        where: { id: targetId },
+      });
+      return { liked: false, likeCount: target?.likeCount ?? 0 };
+    });
+  }
+
+  async save(userId: string, targetId: string) {
+    await this.database.client.$transaction(async (transaction) => {
+      await this.targets.lockActiveTarget(transaction, targetId);
+      await transaction.engagementSave.upsert({
+        where: { userId_targetId: { userId, targetId } },
+        create: { userId, targetId },
+        update: {},
+      });
+    });
+    return { saved: true };
+  }
+
+  async unsave(userId: string, targetId: string) {
+    await this.database.client.$transaction(async (transaction) => {
+      await this.targets.lockActiveTarget(transaction, targetId);
+      await transaction.engagementSave.deleteMany({
+        where: { userId, targetId },
+      });
+    });
+  }
+
+  async likeLegacy(userId: string, postId: string) {
     await this.assertPost(postId);
     return this.database.client.$transaction(async (transaction) => {
-      const existing = await transaction.postLike.findUnique({
-        where: { userId_postId: { userId, postId } },
+      const inserted = await transaction.postLike.createMany({
+        data: [{ userId, postId }],
+        skipDuplicates: true,
       });
-      if (!existing) {
-        await transaction.postLike.create({ data: { userId, postId } });
+      if (inserted.count)
         await transaction.post.update({
           where: { id: postId },
           data: { likeCount: { increment: 1 } },
         });
-      }
       const post = await transaction.post.findUniqueOrThrow({
         where: { id: postId },
       });
@@ -51,23 +113,22 @@ export class SocialService {
     });
   }
 
-  async unlike(userId: string, postId: string) {
+  async unlikeLegacy(userId: string, postId: string) {
     return this.database.client.$transaction(async (transaction) => {
       const deleted = await transaction.postLike.deleteMany({
         where: { userId, postId },
       });
-      if (deleted.count) {
+      if (deleted.count)
         await transaction.post.updateMany({
           where: { id: postId, likeCount: { gt: 0 } },
           data: { likeCount: { decrement: 1 } },
         });
-      }
       const post = await transaction.post.findUnique({ where: { id: postId } });
       return { liked: false, likeCount: post?.likeCount ?? 0 };
     });
   }
 
-  async save(userId: string, postId: string) {
+  async saveLegacy(userId: string, postId: string) {
     await this.assertPost(postId);
     await this.database.client.postSave.upsert({
       where: { userId_postId: { userId, postId } },
@@ -77,7 +138,7 @@ export class SocialService {
     return { saved: true };
   }
 
-  async unsave(userId: string, postId: string) {
+  async unsaveLegacy(userId: string, postId: string) {
     await this.database.client.postSave.deleteMany({
       where: { userId, postId },
     });

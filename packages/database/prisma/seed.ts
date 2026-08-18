@@ -4,6 +4,7 @@ import { config } from "dotenv";
 import {
   CommunityPostType,
   DomainPublicationStatus,
+  EngagementTargetType,
   MediaKind,
   MediaPurpose,
   MediaStatus,
@@ -165,6 +166,12 @@ const singleWorkPublicationId = "30000000-0000-4000-8000-000000000013";
 
 async function seed() {
   await prisma.$transaction([
+    prisma.moderationAuditLog.deleteMany(),
+    prisma.engagementReport.deleteMany(),
+    prisma.engagementComment.deleteMany(),
+    prisma.engagementSave.deleteMany(),
+    prisma.engagementLike.deleteMany(),
+    prisma.engagementTarget.deleteMany(),
     prisma.playlistItem.deleteMany(),
     prisma.playlist.deleteMany(),
     prisma.communityPostMedia.deleteMany(),
@@ -202,6 +209,7 @@ async function seed() {
       ageRating: "ALL",
       productionInfo: { studio: "Field Notes", country: "KR" },
       releaseDate: new Date("2026-08-11T12:00:00.000Z"),
+      engagementTarget: { create: { type: EngagementTargetType.SERIES } },
     },
   });
 
@@ -249,6 +257,7 @@ async function seed() {
       releaseDate: new Date("2026-08-16T12:00:00.000Z"),
       singleWorkPublicationId,
       singleWorkAssetId,
+      engagementTarget: { create: { type: EngagementTargetType.SERIES } },
     },
   });
 
@@ -340,6 +349,7 @@ async function seed() {
       description: standalone.caption,
       status: DomainPublicationStatus.PUBLISHED,
       publishedAt: standalone.publishedAt,
+      engagementTarget: { create: { type: EngagementTargetType.HOME_VIDEO } },
     },
   });
 
@@ -379,6 +389,12 @@ async function seed() {
       },
     ],
   });
+  await prisma.engagementTarget.createMany({
+    data: [
+      { type: EngagementTargetType.SERIES_EPISODE, seriesEpisodeId: "70000000-0000-4000-8000-000000000001" },
+      { type: EngagementTargetType.SERIES_EPISODE, seriesEpisodeId: "70000000-0000-4000-8000-000000000002" },
+    ],
+  });
 
   await prisma.seriesSubmission.create({
     data: {
@@ -411,6 +427,7 @@ async function seed() {
         status: DomainPublicationStatus.PUBLISHED,
         publishedAt: post.publishedAt,
         media: { create: { assetId: post.assetId, position: 0 } },
+        engagementTarget: { create: { type: EngagementTargetType.SHORTFORM } },
       },
     });
   }
@@ -448,6 +465,7 @@ async function seed() {
               { assetId: demoPosts[3].assetId, position: 1 },
             ],
           },
+          engagementTarget: { create: { type: EngagementTargetType.SHORTFORM } },
         },
       },
     },
@@ -467,6 +485,7 @@ async function seed() {
           type: ShortFormType.VIDEO,
           description: "공개 API에 노출되면 안 됩니다.",
           status: DomainPublicationStatus.DRAFT,
+          engagementTarget: { create: { type: EngagementTargetType.SHORTFORM } },
         },
       },
     },
@@ -508,6 +527,7 @@ async function seed() {
         status: DomainPublicationStatus.PUBLISHED,
         publishedAt: post.publishedAt,
         media: { create: { assetId: post.assetId, position: 0 } },
+        engagementTarget: { create: { type: EngagementTargetType.COMMUNITY_POST } },
       },
     });
   }
@@ -530,6 +550,7 @@ async function seed() {
           linkUrl: "https://example.com/miru-domain-notes",
           status: DomainPublicationStatus.PUBLISHED,
           publishedAt: new Date("2026-08-15T02:00:00.000Z"),
+          engagementTarget: { create: { type: EngagementTargetType.COMMUNITY_POST } },
         },
       },
     },
@@ -549,6 +570,7 @@ async function seed() {
           type: CommunityPostType.TEXT,
           body: "공개 API에 노출되면 안 됩니다.",
           status: DomainPublicationStatus.DRAFT,
+          engagementTarget: { create: { type: EngagementTargetType.COMMUNITY_POST } },
         },
       },
     },
@@ -569,6 +591,7 @@ async function seed() {
           body: "삭제 처리된 Community Post",
           status: DomainPublicationStatus.REMOVED,
           publishedAt: new Date("2026-08-15T03:00:00.000Z"),
+          engagementTarget: { create: { type: EngagementTargetType.COMMUNITY_POST } },
         },
       },
     },

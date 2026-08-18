@@ -151,11 +151,19 @@ explicit model and API. The migration is complete only when `Post` unambiguously
 means Community Post in product-facing code.
 
 Product contracts expose engagement as a typed product reference, never a
-compatibility publication ID. The resolver currently maps that reference to
-legacy like/comment/save/report storage internally. Product reads and media
-traversal do not start from the compatibility aggregate.
+compatibility publication ID. Native targets own like, save, comment, report,
+counter, and moderation persistence; they do not own product metadata or
+publication. EPISODIC Series aggregate engagement and Episode engagement are
+separate targets. Product reads and media traversal do not start from the
+compatibility aggregate.
 
 Community Post is authoritative for product fields. Its legacy publication is
 updated in the same transaction as creation, metadata edits, and archive solely
 as a temporary engagement/feed/moderation projection; its identifier and
 compatibility format are not exposed by Community APIs.
+
+Moderator removal is a durable target restriction and an authoritative product
+state transition. It synchronizes any compatibility publication, denies public
+and derived-media access, preserves source media and playback claims, and
+prevents creator republish. Reports move through OPEN, REVIEWING, DISMISSED, or
+RESOLVED with append-only actor, timestamp, action, and note audit entries.

@@ -275,6 +275,8 @@ export class SeriesEpisodeDto {
   playable!: PlayableDto | null;
   @ApiPropertyOptional({ type: EngagementTargetDto, nullable: true })
   engagementTarget!: EngagementTargetDto | null;
+  @ApiProperty() likeCount!: number;
+  @ApiProperty() commentCount!: number;
 }
 
 export class SeriesDto {
@@ -295,6 +297,8 @@ export class SeriesDto {
   singleWork!: PlayableDto | null;
   @ApiProperty({ type: EngagementTargetDto })
   engagementTarget!: EngagementTargetDto;
+  @ApiProperty() likeCount!: number;
+  @ApiProperty() commentCount!: number;
   @ApiProperty({ type: [SeriesEpisodeDto] }) episodes!: SeriesEpisodeDto[];
 }
 

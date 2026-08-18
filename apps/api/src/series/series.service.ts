@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import {
   DomainPublicationStatus,
+  EngagementTargetType,
   MediaPurpose,
   MediaStatus,
   PostFormat,
@@ -28,6 +29,8 @@ import type {
   UpdateSeriesSeasonDto,
 } from './series.dto.js';
 import { MediaAttachmentService } from '../media/media-attachment.service.js';
+import { EngagementTargetService } from '../engagement/engagement-target.service.js';
+import { EngagementTargetType as ApiEngagementTargetType } from '../engagement/engagement.dto.js';
 
 const seriesInclude = {
   creator: {
@@ -39,8 +42,13 @@ const seriesInclude = {
     },
   },
   singleWorkAsset: true,
+  engagementTarget: { select: { likeCount: true, commentCount: true } },
   episodes: {
-    include: { videoAsset: true, season: true },
+    include: {
+      videoAsset: true,
+      season: true,
+      engagementTarget: { select: { likeCount: true, commentCount: true } },
+    },
     orderBy: { episodeNumber: 'asc' as const },
   },
 } as const;
@@ -95,6 +103,8 @@ export class SeriesService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(MediaAttachmentService)
     private readonly mediaAttachments: MediaAttachmentService,
+    @Inject(EngagementTargetService)
+    private readonly targets: EngagementTargetService,
   ) {}
 
   async list() {
@@ -122,7 +132,11 @@ export class SeriesService {
         publishedAt: { not: null },
         series: { publicationStatus: DomainPublicationStatus.PUBLISHED },
       },
-      include: { videoAsset: true, season: true },
+      include: {
+        videoAsset: true,
+        season: true,
+        engagementTarget: { select: { likeCount: true, commentCount: true } },
+      },
     });
     if (!episode) throw new NotFoundException('Series episode not found');
     return this.mapEpisode(episode);
@@ -141,6 +155,9 @@ export class SeriesService {
         ageRating: input.ageRating?.trim() || null,
         productionInfo: input.productionInfo as Prisma.InputJsonValue,
         releaseDate: input.releaseDate ? new Date(input.releaseDate) : null,
+        engagementTarget: {
+          create: { type: EngagementTargetType.SERIES },
+        },
       },
       include: managementInclude,
     });
@@ -366,6 +383,7 @@ export class SeriesService {
       );
     const publishedAt = new Date();
     await this.database.client.$transaction(async (tx) => {
+      await this.targets.lockActive(tx, ApiEngagementTargetType.SERIES, id);
       await tx.series.update({
         where: { id },
         data: { publicationStatus: DomainPublicationStatus.PUBLISHED },
@@ -513,6 +531,9 @@ export class SeriesService {
                 seasonEpisodeNumber: input.seasonEpisodeNumber,
                 title: input.title.trim(),
                 synopsis: input.synopsis.trim(),
+                engagementTarget: {
+                  create: { type: EngagementTargetType.SERIES_EPISODE },
+                },
               },
             },
           },
@@ -720,11 +741,23 @@ export class SeriesService {
     if (episode.videoAsset?.status !== MediaStatus.READY)
       throw new BadRequestException('Episode video is not ready');
     await this.database.client.$transaction(async (tx) => {
+      await this.targets.lockActive(
+        tx,
+        ApiEngagementTargetType.SERIES_EPISODE,
+        episode.id,
+      );
       await this.lockSeries(tx, episode.seriesId);
       const current = await tx.seriesEpisode.findUniqueOrThrow({
         where: { id: episode.id },
-        select: { publishedAt: true },
+        select: {
+          publishedAt: true,
+          series: { select: { publicationStatus: true } },
+        },
       });
+      if (
+        current.series.publicationStatus !== DomainPublicationStatus.PUBLISHED
+      )
+        throw new BadRequestException('Series must be published first');
       if (current.publishedAt) return;
       const publishedAt = new Date();
       await tx.seriesEpisode.update({
@@ -984,10 +1017,9 @@ export class SeriesService {
       singleWork: singleMedia
         ? { kind: 'SERIES' as const, id: work.id, media: singleMedia }
         : null,
-      engagementTarget:
-        work.workType === 'SINGLE_WORK'
-          ? { type: 'SERIES' as const, id: work.id }
-          : null,
+      engagementTarget: { type: 'SERIES' as const, id: work.id },
+      likeCount: work.engagementTarget?.likeCount ?? 0,
+      commentCount: work.engagementTarget?.commentCount ?? 0,
       episodes: work.episodes
         .filter((episode) => episode.publishedAt)
         .map((episode) => this.mapEpisode(episode)),
@@ -1013,6 +1045,7 @@ export class SeriesService {
           status: MediaStatus;
         })
       | null;
+    engagementTarget?: { likeCount: number; commentCount: number } | null;
   }) {
     const media = toPlayableMedia(
       episode.videoAsset?.status === MediaStatus.READY
@@ -1036,6 +1069,8 @@ export class SeriesService {
         ? { kind: 'SERIES_EPISODE' as const, id: episode.id, media }
         : null,
       engagementTarget: { type: 'SERIES_EPISODE' as const, id: episode.id },
+      likeCount: episode.engagementTarget?.likeCount ?? 0,
+      commentCount: episode.engagementTarget?.commentCount ?? 0,
     };
   }
 

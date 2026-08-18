@@ -13,26 +13,35 @@ import type { AuthUser } from '../auth/auth.service.js';
 import { CurrentUser, SessionGuard } from '../auth/session.guard.js';
 import { CreateCommentDto } from './comments.dto.js';
 import { CommentsService } from './comments.service.js';
+import { EngagementTargetService } from '../engagement/engagement-target.service.js';
 
 @ApiTags('comments')
 @Controller('posts/:postId/comments')
 export class CommentsController {
   constructor(
     @Inject(CommentsService) private readonly comments: CommentsService,
+    @Inject(EngagementTargetService)
+    private readonly targets: EngagementTargetService,
   ) {}
 
   @Get()
-  list(@Param('postId', new ParseUUIDPipe()) postId: string) {
-    return this.comments.list(postId);
+  async list(@Param('postId', new ParseUUIDPipe()) postId: string) {
+    const target = await this.targets.resolveLegacy(postId);
+    return target.nativeTargetId
+      ? this.comments.list(target.nativeTargetId)
+      : this.comments.listLegacy(target.legacyPostId!);
   }
 
   @Post()
   @UseGuards(SessionGuard)
-  create(
+  async create(
     @CurrentUser() user: AuthUser,
     @Param('postId', new ParseUUIDPipe()) postId: string,
     @Body() input: CreateCommentDto,
   ) {
-    return this.comments.create(user.id, postId, input.body);
+    const target = await this.targets.resolveLegacy(postId);
+    return target.nativeTargetId
+      ? this.comments.create(user.id, target.nativeTargetId, input.body)
+      : this.comments.createLegacy(user.id, target.legacyPostId!, input.body);
   }
 }

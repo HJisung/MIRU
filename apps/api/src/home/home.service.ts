@@ -1,6 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   DomainPublicationStatus,
+  EngagementTargetType,
   MediaPurpose,
   MediaStatus,
   PostFormat,
@@ -9,6 +10,8 @@ import {
 } from '@stream/database';
 import { DatabaseService } from '../database/database.service.js';
 import { MediaAttachmentService } from '../media/media-attachment.service.js';
+import { EngagementTargetService } from '../engagement/engagement-target.service.js';
+import { EngagementTargetType as ApiEngagementTargetType } from '../engagement/engagement.dto.js';
 import { toPlayableMedia } from '../playback/playback.mapper.js';
 import type { HomeVideoDto } from './home.dto.js';
 import type { CreateHomeVideoDto } from './home.dto.js';
@@ -24,6 +27,7 @@ const homeInclude = {
   },
   videoAsset: true,
   publication: { select: { likeCount: true, commentCount: true } },
+  engagementTarget: { select: { likeCount: true, commentCount: true } },
 } as const;
 
 @Injectable()
@@ -32,6 +36,8 @@ export class HomeService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(MediaAttachmentService)
     private readonly mediaAttachments: MediaAttachmentService,
+    @Inject(EngagementTargetService)
+    private readonly targets: EngagementTargetService,
   ) {}
 
   async list(): Promise<{ items: HomeVideoDto[] }> {
@@ -83,6 +89,9 @@ export class HomeService {
               videoAssetId: asset.id,
               title: input.title.trim(),
               description: input.description.trim(),
+              engagementTarget: {
+                create: { type: EngagementTargetType.HOME_VIDEO },
+              },
             },
           },
         },
@@ -117,16 +126,17 @@ export class HomeService {
     if (record.videoAsset?.status !== MediaStatus.READY)
       throw new NotFoundException('Ready Home video draft not found');
     const publishedAt = new Date();
-    await this.database.client.$transaction([
-      this.database.client.homeVideo.update({
+    await this.database.client.$transaction(async (tx) => {
+      await this.targets.lockActive(tx, ApiEngagementTargetType.HOME_VIDEO, id);
+      await tx.homeVideo.update({
         where: { id },
         data: { status: DomainPublicationStatus.PUBLISHED, publishedAt },
-      }),
-      this.database.client.post.update({
+      });
+      await tx.post.update({
         where: { id: record.publicationId },
         data: { status: PostStatus.PUBLISHED, publishedAt },
-      }),
-    ]);
+      });
+    });
     return this.findOne(id);
   }
 
@@ -206,8 +216,8 @@ export class HomeService {
       media,
       playable: { kind: 'HOME_VIDEO' as const, id: video.id, media },
       engagementTarget: { type: 'HOME_VIDEO' as const, id: video.id },
-      likeCount: video.publication.likeCount,
-      commentCount: video.publication.commentCount,
+      likeCount: video.engagementTarget?.likeCount ?? 0,
+      commentCount: video.engagementTarget?.commentCount ?? 0,
     };
   }
 

@@ -12,16 +12,24 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import type { AuthUser } from '../auth/auth.service.js';
 import { CurrentUser, SessionGuard } from '../auth/session.guard.js';
 import { CommentsService } from '../comments/comments.service.js';
 import { CreateCommentDto } from '../comments/comments.dto.js';
-import { CreateReportDto } from '../moderation/moderation.dto.js';
+import {
+  CreateReportDto,
+  EngagementReportReceiptDto,
+} from '../moderation/moderation.dto.js';
 import { ModerationService } from '../moderation/moderation.service.js';
 import { SocialService } from '../social/social.service.js';
 import { EngagementTargetService } from './engagement-target.service.js';
-import { EngagementTargetType } from './engagement.dto.js';
+import {
+  EngagementCommentDto,
+  EngagementLikeStateDto,
+  EngagementSaveStateDto,
+  EngagementTargetType,
+} from './engagement.dto.js';
 
 @ApiTags('engagement')
 @Controller('engagement/:targetType/:targetId')
@@ -40,6 +48,7 @@ export class EngagementController {
 
   @Put('like')
   @UseGuards(SessionGuard)
+  @ApiOkResponse({ type: EngagementLikeStateDto })
   async like(
     @CurrentUser() user: AuthUser,
     @Param('targetType', new ParseEnumPipe(EngagementTargetType))
@@ -51,6 +60,7 @@ export class EngagementController {
 
   @Delete('like')
   @UseGuards(SessionGuard)
+  @ApiOkResponse({ type: EngagementLikeStateDto })
   async unlike(
     @CurrentUser() user: AuthUser,
     @Param('targetType', new ParseEnumPipe(EngagementTargetType))
@@ -62,6 +72,7 @@ export class EngagementController {
 
   @Put('save')
   @UseGuards(SessionGuard)
+  @ApiOkResponse({ type: EngagementSaveStateDto })
   async save(
     @CurrentUser() user: AuthUser,
     @Param('targetType', new ParseEnumPipe(EngagementTargetType))
@@ -84,6 +95,7 @@ export class EngagementController {
   }
 
   @Get('comments')
+  @ApiOkResponse({ type: [EngagementCommentDto] })
   async listComments(
     @Param('targetType', new ParseEnumPipe(EngagementTargetType))
     type: EngagementTargetType,
@@ -94,6 +106,7 @@ export class EngagementController {
 
   @Post('comments')
   @UseGuards(SessionGuard)
+  @ApiCreatedResponse({ type: EngagementCommentDto })
   async comment(
     @CurrentUser() user: AuthUser,
     @Param('targetType', new ParseEnumPipe(EngagementTargetType))
@@ -110,6 +123,7 @@ export class EngagementController {
 
   @Post('reports')
   @UseGuards(SessionGuard)
+  @ApiCreatedResponse({ type: EngagementReportReceiptDto })
   async report(
     @CurrentUser() user: AuthUser,
     @Param('targetType', new ParseEnumPipe(EngagementTargetType))

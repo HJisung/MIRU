@@ -726,7 +726,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementReportReceiptDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -736,11 +743,248 @@
     },
     "/api/v1/moderation/queue": {
       "get": {
-        "operationId": "ModerationController_queue",
+        "operationId": "ModerationController_legacyQueue",
         "parameters": [],
         "responses": {
           "200": {
             "description": ""
+          }
+        },
+        "tags": [
+          "moderation"
+        ]
+      }
+    },
+    "/api/v1/moderation/reports": {
+      "get": {
+        "operationId": "ModerationController_queue",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "OPEN",
+                "REVIEWING",
+                "RESOLVED",
+                "DISMISSED"
+              ]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "HOME_VIDEO",
+                "SERIES",
+                "SERIES_EPISODE",
+                "SHORTFORM",
+                "COMMUNITY_POST"
+              ]
+            }
+          },
+          {
+            "name": "reason",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SPAM",
+                "HARASSMENT",
+                "NUDITY",
+                "VIOLENCE",
+                "COPYRIGHT",
+                "OTHER"
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 25,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationReportListDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "moderation"
+        ]
+      }
+    },
+    "/api/v1/moderation/reports/{reportId}": {
+      "get": {
+        "operationId": "ModerationController_detail",
+        "parameters": [
+          {
+            "name": "reportId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationReportDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "moderation"
+        ]
+      }
+    },
+    "/api/v1/moderation/reports/{reportId}/review": {
+      "post": {
+        "operationId": "ModerationController_review",
+        "parameters": [
+          {
+            "name": "reportId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationReportDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "moderation"
+        ]
+      }
+    },
+    "/api/v1/moderation/reports/{reportId}/dismiss": {
+      "post": {
+        "operationId": "ModerationController_dismiss",
+        "parameters": [
+          {
+            "name": "reportId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationReportDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "moderation"
+        ]
+      }
+    },
+    "/api/v1/moderation/reports/{reportId}/remove-content": {
+      "post": {
+        "operationId": "ModerationController_removeContent",
+        "parameters": [
+          {
+            "name": "reportId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationReportDetailDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2373,7 +2617,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementLikeStateDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2402,7 +2653,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementLikeStateDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2433,7 +2691,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementSaveStateDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2493,7 +2758,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EngagementCommentDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2532,7 +2807,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementCommentDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2573,7 +2855,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementReportReceiptDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2939,27 +3228,31 @@
           "reason"
         ]
       },
-      "LegacyFeedPostFormat": {
-        "type": "string",
-        "enum": [
-          "IMAGE",
-          "SHORT_VIDEO",
-          "LONG_VIDEO"
-        ]
-      },
-      "Object": {
+      "EngagementReportReceiptDto": {
         "type": "object",
-        "properties": {}
-      },
-      "PostFormat": {
-        "type": "string",
-        "enum": [
-          "IMAGE",
-          "SHORT_VIDEO",
-          "LONG_VIDEO",
-          "COMMUNITY_TEXT",
-          "COMMUNITY_VIDEO",
-          "COMMUNITY_LINK"
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "REVIEWING",
+              "RESOLVED",
+              "DISMISSED"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "createdAt"
         ]
       },
       "CreatorSummaryDto": {
@@ -2983,6 +3276,292 @@
           "id",
           "handle",
           "displayName"
+        ]
+      },
+      "EngagementTargetDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "HOME_VIDEO",
+              "SERIES",
+              "SERIES_EPISODE",
+              "SHORTFORM",
+              "COMMUNITY_POST"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Product-domain entity ID"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ]
+      },
+      "ModerationContentDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "body": {
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/CreatorSummaryDto"
+          }
+        },
+        "required": [
+          "body",
+          "author"
+        ]
+      },
+      "ModerationReportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "SPAM",
+              "HARASSMENT",
+              "NUDITY",
+              "VIOLENCE",
+              "COPYRIGHT",
+              "OTHER"
+            ]
+          },
+          "details": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "REVIEWING",
+              "RESOLVED",
+              "DISMISSED"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "reporter": {
+            "$ref": "#/components/schemas/CreatorSummaryDto"
+          },
+          "target": {
+            "$ref": "#/components/schemas/EngagementTargetDto"
+          },
+          "moderationStatus": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "REMOVED"
+            ]
+          },
+          "content": {
+            "$ref": "#/components/schemas/ModerationContentDto"
+          }
+        },
+        "required": [
+          "id",
+          "reason",
+          "details",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "reporter",
+          "target",
+          "moderationStatus",
+          "content"
+        ]
+      },
+      "ModerationReportListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationReportDto"
+            }
+          },
+          "nextCursor": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "ModerationAuditEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "REVIEW_STARTED",
+              "REPORT_DISMISSED",
+              "CONTENT_REMOVED"
+            ]
+          },
+          "previousStatus": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "REVIEWING",
+              "RESOLVED",
+              "DISMISSED"
+            ],
+            "nullable": true
+          },
+          "resultingStatus": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "REVIEWING",
+              "RESOLVED",
+              "DISMISSED"
+            ],
+            "nullable": true
+          },
+          "note": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/CreatorSummaryDto"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "note",
+          "createdAt",
+          "actor"
+        ]
+      },
+      "ModerationReportDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "SPAM",
+              "HARASSMENT",
+              "NUDITY",
+              "VIOLENCE",
+              "COPYRIGHT",
+              "OTHER"
+            ]
+          },
+          "details": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "REVIEWING",
+              "RESOLVED",
+              "DISMISSED"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "reporter": {
+            "$ref": "#/components/schemas/CreatorSummaryDto"
+          },
+          "target": {
+            "$ref": "#/components/schemas/EngagementTargetDto"
+          },
+          "moderationStatus": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "REMOVED"
+            ]
+          },
+          "content": {
+            "$ref": "#/components/schemas/ModerationContentDto"
+          },
+          "audit": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationAuditEntryDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "reason",
+          "details",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "reporter",
+          "target",
+          "moderationStatus",
+          "content",
+          "audit"
+        ]
+      },
+      "ModerationActionDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "LegacyFeedPostFormat": {
+        "type": "string",
+        "enum": [
+          "IMAGE",
+          "SHORT_VIDEO",
+          "LONG_VIDEO"
+        ]
+      },
+      "Object": {
+        "type": "object",
+        "properties": {}
+      },
+      "PostFormat": {
+        "type": "string",
+        "enum": [
+          "IMAGE",
+          "SHORT_VIDEO",
+          "LONG_VIDEO",
+          "COMMUNITY_TEXT",
+          "COMMUNITY_VIDEO",
+          "COMMUNITY_LINK"
         ]
       },
       "MediaSummaryDto": {
@@ -3072,6 +3651,14 @@
           "commentCount": {
             "type": "number"
           },
+          "engagementTarget": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTargetDto"
+              }
+            ]
+          },
           "author": {
             "$ref": "#/components/schemas/CreatorSummaryDto"
           },
@@ -3160,30 +3747,6 @@
           "kind",
           "id",
           "media"
-        ]
-      },
-      "EngagementTargetDto": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "HOME_VIDEO",
-              "SERIES",
-              "SERIES_EPISODE",
-              "SHORTFORM",
-              "COMMUNITY_POST"
-            ]
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Product-domain entity ID"
-          }
-        },
-        "required": [
-          "type",
-          "id"
         ]
       },
       "HomeVideoDto": {
@@ -3443,6 +4006,12 @@
                 "$ref": "#/components/schemas/EngagementTargetDto"
               }
             ]
+          },
+          "likeCount": {
+            "type": "number"
+          },
+          "commentCount": {
+            "type": "number"
           }
         },
         "required": [
@@ -3450,7 +4019,9 @@
           "seriesId",
           "episodeNumber",
           "title",
-          "synopsis"
+          "synopsis",
+          "likeCount",
+          "commentCount"
         ]
       },
       "SeriesDto": {
@@ -3518,6 +4089,12 @@
           "engagementTarget": {
             "$ref": "#/components/schemas/EngagementTargetDto"
           },
+          "likeCount": {
+            "type": "number"
+          },
+          "commentCount": {
+            "type": "number"
+          },
           "episodes": {
             "type": "array",
             "items": {
@@ -3535,6 +4112,8 @@
           "tags",
           "creator",
           "engagementTarget",
+          "likeCount",
+          "commentCount",
           "episodes"
         ]
       },
@@ -4667,6 +5246,82 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "EngagementLikeStateDto": {
+        "type": "object",
+        "properties": {
+          "liked": {
+            "type": "boolean"
+          },
+          "likeCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "liked",
+          "likeCount"
+        ]
+      },
+      "EngagementSaveStateDto": {
+        "type": "object",
+        "properties": {
+          "saved": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "saved"
+        ]
+      },
+      "EngagementAuthorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "handle",
+          "displayName",
+          "avatarUrl"
+        ]
+      },
+      "EngagementCommentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/EngagementAuthorDto"
+          }
+        },
+        "required": [
+          "id",
+          "body",
+          "createdAt",
+          "author"
         ]
       }
     }

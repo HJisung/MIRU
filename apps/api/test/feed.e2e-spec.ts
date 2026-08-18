@@ -139,7 +139,7 @@ describe('public discovery flow (PostgreSQL integration)', () => {
     expect(episodic).toBeDefined();
     expect(
       (episodic as { engagementTarget?: unknown }).engagementTarget,
-    ).toBeNull();
+    ).toEqual({ type: 'SERIES', id: episodic?.id });
     expect(episodic?.episodes.length).toBeGreaterThan(0);
     const single = works.find(
       (work) => work.id === '40000000-0000-4000-8000-000000000002',

@@ -8,6 +8,7 @@ import {
 } from '@nestjs/platform-fastify';
 import {
   DomainPublicationStatus,
+  EngagementTargetType,
   MediaKind,
   MediaPurpose,
   MediaStatus,
@@ -65,6 +66,9 @@ describe('processed video product attachments', () => {
           synopsis: 'A reviewed single work.',
           workType: SeriesWorkType.SINGLE_WORK,
           publicationStatus: DomainPublicationStatus.DRAFT,
+          engagementTarget: {
+            create: { type: EngagementTargetType.SERIES },
+          },
         },
       }),
       database.client.series.create({
@@ -74,6 +78,9 @@ describe('processed video product attachments', () => {
           synopsis: 'A reviewed episodic work.',
           workType: SeriesWorkType.EPISODIC,
           publicationStatus: DomainPublicationStatus.DRAFT,
+          engagementTarget: {
+            create: { type: EngagementTargetType.SERIES },
+          },
         },
       }),
     ]);

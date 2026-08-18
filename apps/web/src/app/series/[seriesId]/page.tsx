@@ -6,6 +6,7 @@ import { ApiError, getSeries } from "@/lib/api";
 import { mediaUrl } from "@/lib/client-api";
 import { duration } from "@/lib/format";
 import type { SeriesEpisode } from "@stream/api-contract";
+import { EngagementPanel } from "@/features/engagement/engagement-panel";
 
 interface SeriesDetailProps {
   params: Promise<{ seriesId: string }>;
@@ -59,6 +60,12 @@ export default async function SeriesDetail({ params }: SeriesDetailProps) {
         </div>
       </section>
       <section className="mx-auto max-w-[112rem] px-4 pt-9 sm:px-6 lg:px-10">
+        <EngagementPanel
+          type="SERIES"
+          id={work.id}
+          initialLikeCount={work.likeCount}
+          initialCommentCount={work.commentCount}
+        />
         {work.singleWork && (
           <Link
             href={`/watch/series/${work.id}`}

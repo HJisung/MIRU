@@ -19,6 +19,8 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
   drafts, atomic ordering, and individual publication controls
 - Author and manage Community TEXT, IMAGE, VIDEO, and LINK Posts with active
   Categories, retry safety, shared HLS playback, and archive semantics
+- Persist engagement against native typed product targets, including EPISODIC
+  Series aggregates, and operate an audited moderator removal workflow
 
 ## MVP
 
@@ -35,8 +37,8 @@ Implementation proceeds as end-to-end slices described in [implementation-plan.m
 
 - Add media lifecycle retention, stale-v1 reprocessing tools, and dead-letter
   administration around the adaptive HLS pipeline
-- Move engagement persistence behind the now domain-aware target API from
-  compatibility publication foreign keys to native target storage
+- Retire residual compatibility publication consumers and unmapped interaction
+  storage through an explicit retention/export policy
 - Add richer Series artwork/analytics and Community media-replacement tools
 - Nested comments, notifications, richer creator tools
 - Search, hashtags/topics, captions/subtitles

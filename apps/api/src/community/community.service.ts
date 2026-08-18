@@ -8,6 +8,7 @@ import {
 import {
   CommunityPostType,
   DomainPublicationStatus,
+  EngagementTargetType,
   MediaPurpose,
   MediaStatus,
   PostFormat,
@@ -32,6 +33,7 @@ const include = {
   },
   category: { select: { id: true, slug: true, name: true, description: true } },
   publication: { select: { likeCount: true, commentCount: true } },
+  engagementTarget: { select: { likeCount: true, commentCount: true } },
   media: {
     where: { asset: { status: MediaStatus.READY } },
     orderBy: { position: 'asc' as const },
@@ -265,6 +267,9 @@ export class CommunityService {
                 linkUrl,
                 status: DomainPublicationStatus.PUBLISHED,
                 publishedAt,
+                engagementTarget: {
+                  create: { type: EngagementTargetType.COMMUNITY_POST },
+                },
                 ...(asset
                   ? { media: { create: { assetId: asset.id, position: 0 } } }
                   : {}),
@@ -382,8 +387,8 @@ export class CommunityService {
       type: record.type,
       body: record.body,
       linkUrl: record.linkUrl,
-      likeCount: record.publication.likeCount,
-      commentCount: record.publication.commentCount,
+      likeCount: record.engagementTarget?.likeCount ?? 0,
+      commentCount: record.engagementTarget?.commentCount ?? 0,
       author: record.author,
       category: record.category,
       media: record.media.map(({ asset }) => {

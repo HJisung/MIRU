@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PostFormat } from '@stream/database';
+import { EngagementTargetDto } from '../engagement/engagement.dto.js';
 
 export class CreatorSummaryDto {
   @ApiProperty() id!: string;
@@ -40,6 +41,8 @@ export class FeedItemDto {
   @ApiProperty() publishedAt!: string;
   @ApiProperty() likeCount!: number;
   @ApiProperty() commentCount!: number;
+  @ApiPropertyOptional({ type: EngagementTargetDto, nullable: true })
+  engagementTarget!: EngagementTargetDto | null;
   @ApiProperty({ type: CreatorSummaryDto }) author!: CreatorSummaryDto;
   @ApiProperty({ type: [MediaSummaryDto] }) media!: MediaSummaryDto[];
   @ApiPropertyOptional({ type: SeriesSummaryDto, nullable: true })

@@ -64,6 +64,38 @@ export class FeedService {
           : {}),
       },
       include: {
+        homeVideo: {
+          select: {
+            id: true,
+            engagementTarget: {
+              select: { likeCount: true, commentCount: true },
+            },
+          },
+        },
+        shortForm: {
+          select: {
+            id: true,
+            engagementTarget: {
+              select: { likeCount: true, commentCount: true },
+            },
+          },
+        },
+        seriesEpisode: {
+          select: {
+            id: true,
+            engagementTarget: {
+              select: { likeCount: true, commentCount: true },
+            },
+          },
+        },
+        seriesSingleWork: {
+          select: {
+            id: true,
+            engagementTarget: {
+              select: { likeCount: true, commentCount: true },
+            },
+          },
+        },
         series: {
           select: {
             id: true,
